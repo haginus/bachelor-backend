@@ -1,10 +1,13 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User } = require("../models/models.js");
+const { User, Student, Domain} = require("../models/models.js");
 const { config } = require("../config/config");
 
 const getUser = async (where) => {
-    return User.findOne({ where });
+    return User.findOne({ 
+        where, 
+        include: [ { model: Student, include: [ { model: Domain } ] } ]
+    });
 }
 
 exports.login = async (req, res) => {
@@ -17,7 +20,9 @@ exports.login = async (req, res) => {
         }
         // create and assign the token
         const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
-        res.header("auth-token", token).json({"token": token});
+        let usr = JSON.parse(JSON.stringify(user)); // delete password in order to send to frontend
+        delete usr.password; 
+        res.header("auth-token", token).json({ "token": token, user: usr });
     } else {
         return res.status(401).json({ "error": "EMAIL_NOT_FOUND" });
     }
