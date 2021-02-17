@@ -27,7 +27,7 @@ if(config.MAKE_DELAY)
 
 app.get('/pop', async function (req, res) {
   let domain = await Domain.create({ name: "Informatică", type: "bachelor" });
-  let user = await User.create({ firstName: "Andrei", lastName: "Hagi", CNP: "1990808xxxxxx", email: "hagiandrei.ah@gmail.com", password: "123456" });
+  let user = await User.create({ firstName: "Andrei", lastName: "Hagi", CNP: "1990808xxxxxx", email: "hagiandrei.ah@gmail.com", password: "123456", type: 'student' });
   let student = await Student.create({ group: "331" });
   await student.setDomain(domain);
   await student.setUser(user);
@@ -75,7 +75,7 @@ app.get('/user/:userId', AuthController.isLoggedIn, function (req, res) {
 }); */
 
 app.get('/user/info', AuthController.isLoggedIn, async (req, res) => {
-  let user = await UserController.getUserData(req._id);
+  let user = await UserController.getUserData(req._user.id);
   res.json(user);
 });
 
