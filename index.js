@@ -84,6 +84,6 @@ app.use('/topics', topicsRoutes);
 
 
 // start app
-app.listen(3000, function () {
+app.listen(config.PORT, function () {
   console.log('Express is running on port 3000');
 });
