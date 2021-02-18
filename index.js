@@ -6,6 +6,7 @@ const AuthController = require('./controllers/auth.controller')
 const UserController = require('./controllers/user.controller')
 const studentRoutes = require('./routes/students')
 const topicsRoutes = require('./routes/topics')
+const adminRoutes = require('./routes/admin')
 const { config } = require('./config/config')
 
 
@@ -81,6 +82,7 @@ app.get('/user/info', AuthController.isLoggedIn, async (req, res) => {
 
 app.use('/student', studentRoutes);
 app.use('/topics', topicsRoutes);
+app.use('/admin', adminRoutes);
 
 
 // start app

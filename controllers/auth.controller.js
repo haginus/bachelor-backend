@@ -45,3 +45,11 @@ exports.isLoggedIn = async (req, res, next) => {
         res.status(403).json({ "error": "NOT_LOGGED_IN" });
     }
 }
+
+exports.isAdmin = async (req, res, next) => {
+    if(req._user.type !== "admin") {
+        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+    } else {
+        next();
+    }
+}
