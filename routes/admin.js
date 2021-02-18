@@ -9,11 +9,14 @@ router.use(AuthController.isAdmin);
 
 router.get('/students', async function (req, res) {
     try {
-        const students = await AdminController.getStudents();
+        let { sort, order, page, pageSize } = req.query;
+        page = parseInt(page);
+        pageSize = parseInt(pageSize);
+        const students = await AdminController.getStudents(sort, order, null, page, pageSize);
         res.json(students);
     } catch (err) {
         console.log(err)
-        return res.status(500).json("INTERNAL_ERROR");
+        return res.status(500).json(err);
     }
 });
 
