@@ -3,6 +3,8 @@ const UserController = require('./user.controller')
 const { Op } = require("sequelize");
 
 
+// Students
+
 exports.getStudents = async (sort, order, filter, page, pageSize) => {
     const limit = pageSize;
     const offset = page * pageSize;
@@ -30,4 +32,21 @@ exports.getStudents = async (sort, order, filter, page, pageSize) => {
         order: sortArray
     });
     return query;
+}
+
+exports.addStudent = async (firstName, lastName, CNP, email, group, domainId) => {
+    let domain = await Domain.findOne({ where: {id: domainId} });
+    if(!domain) {
+        throw "DOMAIN_NOT_FOUND";
+    }
+    const password = "123456"; // TEMPORARY TILL MAILING
+    let user = await User.create({ firstName, lastName, CNP, email, password, type: 'student' });
+    let student = await Student.create({ group });
+    await student.setDomain(domain);
+    await student.setUser(user);
+    return UserController.getUserData(user.id);
+}
+
+exports.getDomains = () => {
+    return Domain.findAll();
 }
