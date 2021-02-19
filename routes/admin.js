@@ -31,6 +31,17 @@ router.post('/students/add', async function (req, res) {
     }
 });
 
+router.post('/students/edit', async function (req, res) {
+    try {
+        let { id, firstName, lastName, CNP, group, domainId } = req.body;
+        const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, domainId);
+        res.json(student);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json(err);
+    }
+});
+
 router.get('/domains', async function (req, res) {
     let domains = await AdminController.getDomains();
     res.json(domains);
