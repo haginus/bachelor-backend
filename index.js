@@ -4,6 +4,7 @@ const cors = require('cors');
 const { User, Topic, Student, Domain } = require('./models/models');
 const AuthController = require('./controllers/auth.controller')
 const UserController = require('./controllers/user.controller')
+const authRoutes = require('./routes/auth')
 const studentRoutes = require('./routes/students')
 const topicsRoutes = require('./routes/topics')
 const adminRoutes = require('./routes/admin')
@@ -58,8 +59,6 @@ app.get('/test', function (req, res) {
   }).then(users => res.json(users));
 })
 
-app.post('/login', AuthController.login);
-
 // protected route
 app.get('/protected', AuthController.isLoggedIn, function (req, res) {
   res.json(req._user);
@@ -80,6 +79,7 @@ app.get('/user/info', AuthController.isLoggedIn, async (req, res) => {
   res.json(user);
 });
 
+app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);

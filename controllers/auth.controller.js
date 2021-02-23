@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User, Student, Domain} = require("../models/models.js");
+const { User, Student, Domain, ActivationToken} = require("../models/models.js");
 const { config } = require("../config/config");
 
 const getUser = async (where) => {
@@ -25,6 +25,31 @@ exports.login = async (req, res) => {
         res.header("auth-token", token).json({ "token": token, user: usr });
     } else {
         return res.status(401).json({ "error": "EMAIL_NOT_FOUND" });
+    }
+}
+
+exports.changePasswordWithActivationCode = async (req, res) => {
+    const { token, password, confirmPassword } = req.body;
+    if(password !== confirmPassword && password.length < 6) {
+        return res.status(400).json({ "error": "BAD_PASSWORD" });
+    }
+    const activationToken = await ActivationToken.findOne({ where: { token, used: false } })
+    if (activationToken) {
+        const user = await User.findOne({ where: { id: activationToken.userId } })
+        if(!user) {
+            return res.status(400).json({ "error": "USER_NOT_FOUND" });
+        }
+
+        await User.update({ password }, { where: {id: activationToken.userId } });
+        await ActivationToken.update({used: true}, { where: { id: activationToken.id } })
+        
+        // create and assign the token
+        const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
+        let usr = JSON.parse(JSON.stringify(user)); // delete password in order to send to frontend
+        delete usr.password; 
+        res.header("auth-token", token).json({ "token": token, user: usr });
+    } else {
+        return res.status(401).json({ "error": "INVALID_CODE" });
     }
 }
 
