@@ -1,23 +1,12 @@
 "use strict";
 const nodemailer = require("nodemailer");
+const { config } = require('../config/config')
+
+const transporter = nodemailer.createTransport(config.mailer);
 
 // async..await is not allowed in global scope, must use a wrapper
 async function main() {
-  // Generate test SMTP service account from ethereal.email
-  // Only needed if you don't have a real mail account for testing
-  let testAccount = await nodemailer.createTestAccount();
-  console.log(testAccount)
-
   // create reusable transporter object using the default SMTP transport
-  let transporter = nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: testAccount.user, // generated ethereal user
-      pass: testAccount.pass, // generated ethereal password
-    },
-  });
 
   // send mail with defined transport object
   let info = await transporter.sendMail({
@@ -36,4 +25,15 @@ async function main() {
   // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
 }
 
-main().catch(console.error);
+const sendWelcomeEmail = async (user, token) => {
+  let info = await transporter.sendMail({
+    from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>', // sender address
+    to: user.email, // list of receivers
+    subject: "Activați contul dvs.", // Subject line
+    html: `<p>Bună ziua, ${user.firstName} ${user.lastName}!<br>
+    Accesați <a href="${config.WEBSITE_URL}/login/token/${token}" target="_blank">acest link</a> pentru a vă activa contul în platforma de asociere.<br>
+    <br>Toate cele bune!`, // html body
+  });
+}
+
+exports.sendWelcomeEmail = sendWelcomeEmail;

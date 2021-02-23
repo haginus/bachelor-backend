@@ -1,5 +1,6 @@
 var express = require('express')
 var router = express.Router()
+const fileUpload = require('express-fileupload');
 const AuthController = require('../controllers/auth.controller')
 const AdminController = require('../controllers/admin.controller')
 
@@ -39,6 +40,17 @@ router.post('/students/edit', async function (req, res) {
     } catch (err) {
         console.log(err);
         return res.status(500).json(err);
+    }
+});
+
+router.post('/students/add-bulk', fileUpload({
+    limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
+}), async function(req, res) {
+    try {
+        let result = await AdminController.addStudentBulk(req.files.file.data);
+        res.json(result);
+    } catch(err) {
+        res.status(400).json(err);
     }
 });
 

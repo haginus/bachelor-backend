@@ -32,6 +32,17 @@ const Topic = sequelize.define('topic', {
   timestamps: false
 });
 
+const ActivationToken = sequelize.define('activationToken', {
+  token: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  used: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false
+  }
+});
+
 const User = sequelize.define('user', {
   firstName: {
     type: Sequelize.STRING,
@@ -52,7 +63,10 @@ const User = sequelize.define('user', {
   },
   password: {
     type: Sequelize.STRING,
-    allowNull: false
+    set(value) {
+      const salt = bcrypt.genSaltSync();
+      this.setDataValue('password', bcrypt.hashSync(value, salt));
+    }
   },
   validated: {
     type: Sequelize.BOOLEAN,
@@ -66,14 +80,11 @@ const User = sequelize.define('user', {
     }
   }
 }, {
-  hooks: {
-    beforeCreate: (user) => {
-      const salt = bcrypt.genSaltSync();
-      user.password = bcrypt.hashSync(user.password, salt);
-    }
-  },
   timestamps: false
 });
+
+User.hasMany(ActivationToken);
+ActivationToken.belongsTo(User);
 
 const Student = sequelize.define('student', {
   group: {
@@ -152,4 +163,4 @@ sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
-module.exports = { Domain, Topic, User, Student, Teacher, Offer, Application };
+module.exports = { Domain, Topic, User, Student, Teacher, Offer, Application, ActivationToken };
