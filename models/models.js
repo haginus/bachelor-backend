@@ -95,8 +95,12 @@ const Student = sequelize.define('student', {
   timestamps: false
 });
 
-User.hasOne(Student);
-Student.belongsTo(User);
+User.hasOne(Student, {
+  onDelete: "CASCADE"
+});
+Student.belongsTo(User, {
+  onDelete: "CASCADE"
+});
 
 Domain.hasMany(Student);
 Student.belongsTo(Domain);

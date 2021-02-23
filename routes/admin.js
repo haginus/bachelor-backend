@@ -54,6 +54,19 @@ router.post('/students/add-bulk', fileUpload({
     }
 });
 
+router.post('/students/delete', async function (req, res) {
+    try {
+        let { id } = req.body;
+        if(!id) {
+            throw "BAD_REQUEST";
+        }
+        const result = await AdminController.deleteUser(id);
+        res.json({ result });
+    } catch (err) {
+        return res.status(400).json(err);
+    }
+});
+
 router.get('/domains', async function (req, res) {
     let domains = await AdminController.getDomains();
     res.json(domains);

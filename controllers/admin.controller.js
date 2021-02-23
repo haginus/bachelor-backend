@@ -72,6 +72,11 @@ exports.editStudent = async (id, firstName, lastName, CNP, group, domainId) => {
     return UserController.getUserData(id);
 }
 
+exports.deleteUser = async (id) => {
+    let result = await User.destroy({ where: { id } });
+    return result;
+}
+
 exports.addStudentBulk = async (file) => {
     let users = []
     await new Promise((resolve, reject) => {
