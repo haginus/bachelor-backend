@@ -52,10 +52,10 @@ exports.addStudent = async (firstName, lastName, CNP, email, group, domainId) =>
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id });
         Mailer.sendWelcomeEmail(user, activationToken.token);
+        return UserController.getUserData(user.id);
     } catch (err) {
         throw "VALIDATION_ERROR";
     }
-    return UserController.getUserData(user.id);
 }
 
 exports.editStudent = async (id, firstName, lastName, CNP, group, domainId) => {
