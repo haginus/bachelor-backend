@@ -8,6 +8,8 @@ router.use(AuthController.isLoggedIn);
 router.use(AuthController.isAdmin);
 
 
+// STUDENTS
+
 router.get('/students', async function (req, res) {
     try {
         let { sort, order, page, pageSize } = req.query;
@@ -54,7 +56,7 @@ router.post('/students/add-bulk', fileUpload({
     }
 });
 
-router.post('/students/delete', async function (req, res) {
+router.post('/users/delete', async function (req, res) {
     try {
         let { id } = req.body;
         if(!id) {
@@ -66,6 +68,56 @@ router.post('/students/delete', async function (req, res) {
         return res.status(400).json(err);
     }
 });
+
+// TEACHERS
+
+router.get('/teachers', async function (req, res) {
+    try {
+        let { sort, order, page, pageSize } = req.query;
+        page = parseInt(page);
+        pageSize = parseInt(pageSize);
+        const teachers = await AdminController.getTeachers(sort, order, null, page, pageSize);
+        res.json(teachers);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/teachers/add', async function (req, res) {
+    try {
+        let { firstName, lastName, CNP, email } = req.body;
+        const teacher = await AdminController.addTeacher(firstName, lastName, CNP, email);
+        res.json(teacher);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/teachers/edit', async function (req, res) {
+    try {
+        let { id, firstName, lastName, CNP } = req.body;
+        const teacher = await AdminController.editTeacher(id, firstName, lastName, CNP);
+        res.json(teacher);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/teachers/add-bulk', fileUpload({
+    limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
+}), async function(req, res) {
+    try {
+        let result = await AdminController.addTeacherBulk(req.files.file.data);
+        res.json(result);
+    } catch(err) {
+        res.status(400).json(err);
+    }
+});
+
+// DOMAINS
 
 router.get('/domains', async function (req, res) {
     let domains = await AdminController.getDomains();

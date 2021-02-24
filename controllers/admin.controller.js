@@ -1,4 +1,4 @@
-const { Student, User, Domain, ActivationToken } = require("../models/models.js");
+const { Student, User, Domain, ActivationToken, Teacher } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -151,6 +151,88 @@ exports.addStudentBulk = async (file) => {
         if (result.status == 'fulfilled') {
             response.addedStudents++;
             response.students.push(result.value);
+        }
+    });
+
+    return response;
+}
+
+// Teachers
+
+exports.getTeachers = async (sort, order, filter, page, pageSize) => {
+    const limit = pageSize;
+    const offset = page * pageSize;
+    if (limit <= 0 || offset < 0) {
+        throw "INVALID_PARAMETERS";
+    }
+
+    let sortArray = [['id', 'ASC']]
+    if (['id', 'firstName', 'lastName', 'CNP', 'email'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+        sortArray = [[sort, order]];
+    }
+
+    let query = await User.findAndCountAll({
+        where: { type: "teacher" },
+        attributes: { exclude: ['password'] },
+        limit,
+        offset,
+        order: sortArray
+    });
+    return query;
+}
+
+exports.addTeacher = async (firstName, lastName, CNP, email) => {
+    try {
+        let user = await User.create({ firstName, lastName, CNP, email, type: 'teacher' });
+        let teacher = await Teacher.create({ userId: user.id });
+        let token = crypto.randomBytes(64).toString('hex');
+        let activationToken = await ActivationToken.create({ token, userId: user.id });
+        Mailer.sendWelcomeEmail(user, activationToken.token);
+        return UserController.getUserData(user.id);
+    } catch (err) {
+        throw "VALIDATION_ERROR";
+    }
+}
+
+exports.editTeacher = async (id, firstName, lastName, CNP) => {
+    let userUpdate = await User.update({ firstName, lastName, CNP }, {
+        where: { id }
+    });
+    return UserController.getUserData(id);
+}
+
+exports.addTeacherBulk = async (file) => {
+    let users = []
+    await new Promise((resolve, reject) => {
+        try {
+            var bufferStream = new stream.PassThrough();
+            bufferStream.end(file);
+            bufferStream
+                .pipe(csv(["firstName", "lastName", "CNP", "email"]))
+                .on('data', (data) => users.push(data))
+                .on('end', () => {
+                    resolve();
+                });
+        } catch (err) {
+            console.log(err)
+            throw "INVALID_CSV";
+        }
+    });
+
+    let promises = []
+    users.forEach(user => {
+        const { firstName, lastName, CNP, email } = user;
+        promises.push(this.addTeacher(firstName, lastName, CNP, email));
+    });
+
+    let results = await Promise.allSettled(promises);
+    let totalTeachers = users.length;
+    let response = { teachers: [], totalTeachers, addedTeachers: 0 };
+
+    results.forEach(result => {
+        if (result.status == 'fulfilled') {
+            response.addedTeachers++;
+            response.teachers.push(result.value);
         }
     });
 

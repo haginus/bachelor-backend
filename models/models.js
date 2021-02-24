@@ -114,8 +114,12 @@ const Teacher = sequelize.define('teacher', {
   timestamps: false
 });
 
-User.hasOne(Teacher);
-Teacher.belongsTo(User);
+User.hasOne(Teacher, {
+  onDelete: "CASCADE"
+});
+Teacher.belongsTo(User, {
+  onDelete: "CASCADE"
+});
 
 const Offer = sequelize.define('offer', {
   limit: {
