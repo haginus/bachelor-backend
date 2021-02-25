@@ -137,7 +137,7 @@ Teacher.hasMany(Offer);
 Offer.belongsTo(Teacher);
 
 Offer.belongsToMany(Topic, { through: "OfferTopics", timestamps: false });
-Topic.belongsToMany(Student, { through: "OfferTopics", timestamps: false });
+Topic.belongsToMany(Offer, { through: "OfferTopics", timestamps: false });
 
 Domain.hasMany(Offer);
 Offer.belongsTo(Domain);
@@ -157,7 +157,13 @@ const Application = sequelize.define('application', {
     validate: {
       len: [5, 128]
     }
+  },
+  accepted: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false
   }
+}, {
+  timestamps: false
 });
 
 Student.hasMany(Application);
@@ -171,4 +177,4 @@ sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
-module.exports = { Domain, Topic, User, Student, Teacher, Offer, Application, ActivationToken };
+module.exports = { Domain, Topic, User, Student, Teacher, Offer, Application, ActivationToken, sequelize };

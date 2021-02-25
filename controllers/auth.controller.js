@@ -78,3 +78,11 @@ exports.isAdmin = async (req, res, next) => {
         next();
     }
 }
+
+exports.isStudent = async (req, res, next) => {
+    if(req._user.type !== "student") {
+        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+    } else {
+        next();
+    }
+}
