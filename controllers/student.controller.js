@@ -5,13 +5,20 @@ const { Op, Sequelize } = require("sequelize");
 
 const getStudentByUid = (uid) => {
     return Student.findOne({
-        include: [{
-            model: User,
-            attributes: {
-                exclude: ['password']
-            },
-            where: { id: uid }
-        }]
+        include: [
+            {
+                model: User,
+                attributes: {
+                    exclude: ['password']
+                }
+            }, 
+            {
+                model: Topic,
+                through: {
+                    attributes: []
+                }
+            }
+        ]
     });
 }
 
@@ -132,4 +139,16 @@ const literals = {
                 application.studentId = ${studentId}
         )`);
     }
+}
+
+exports.getSuggestedTeacherOffers = async (uid) => {
+    const student = await getStudentByUid(uid);
+    if(!student) {
+        throw "MISSING_STUDENT";
+    }
+    const filters = {
+        topicIds: student.topics.map(topic => topic.id)
+    }
+
+    return this.getTeacherOffers(uid, filters);
 }

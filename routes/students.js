@@ -53,4 +53,13 @@ router.get('/teacher-offers', async function (req, res) {
     }
 });
 
+router.get('/teacher-offers/suggested', async function (req, res) {
+    try {
+        let teacherOffers = await StudentController.getSuggestedTeacherOffers(req._user.id);
+        res.json(teacherOffers); 
+    } catch(err) {
+        return res.status(400).json("BAD_REQUEST");
+    }
+});
+
 module.exports = router
