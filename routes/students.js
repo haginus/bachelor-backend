@@ -27,11 +27,29 @@ router.get('/info', async function (req, res) {
 });
 
 router.get('/teacher-offers', async function (req, res) {
+    let { topicIds, teacherName, onlyFree } = req.query
     try {
-        let teacherOffers = await StudentController.getTeacherOffers(req._user.id);
+        topicIds = topicIds?.split(',').map(id => {
+            let x = parseInt(id);
+            if(isNaN(x) || !isFinite(x))
+                throw "PARSE_ERROR";
+            return x;
+        });
+        if(onlyFree == 'true') {
+            onlyFree = true
+        } else {
+            onlyFree = false
+        }
+        let filters = {
+            teacherName,
+            topicIds,
+            onlyFree
+        }
+        let teacherOffers = await StudentController.getTeacherOffers(req._user.id, filters);
         res.json(teacherOffers);
     } catch (err) {
-        return res.status(500).json("SERVER_ERROR");
+        console.log(err)
+        return res.status(400).json("BAD_REQUEST");
     }
 });
 

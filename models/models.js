@@ -52,6 +52,12 @@ const User = sequelize.define('user', {
     type: Sequelize.STRING,
     allowNull: false
   },
+  fullName: {
+    type: Sequelize.VIRTUAL,
+    get() {
+      return `${this.firstName} ${this.lastName}`;
+    },
+  },
   CNP: {
     type: Sequelize.STRING(13),
     allowNull: false

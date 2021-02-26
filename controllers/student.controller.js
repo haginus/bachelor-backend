@@ -44,44 +44,63 @@ exports.validateStudent = async (uid, topicIds) => {
 
 }
 
-exports.getTeacherOffers = async (uid) => {
+exports.getTeacherOffers = async (uid, filters) => {
+    let teacherNameFilter = {}
+
+    if(filters?.teacherName) {
+        const name = filters.teacherName.split(' ');  // split name in parts
+        let orClauses = []
+        for(let i = 0; i < name.length; i++) { // for every name part check match with firstName, lastName columns
+            let or = {
+                [Op.or]: [
+                    { firstName: { [Op.substring]: name[i] } },
+                    { lastName: { [Op.substring]: name[i] } },
+                ]
+            }
+            orClauses.push(or);
+        }
+        teacherNameFilter = {
+            [Op.or]: orClauses
+        }
+    }
+
+    let topicFilter = filters.topicIds ? { topicId: filters.topicIds } : { }
+    let onlyFreeOffersFilter = filters.onlyFree ? { limit: { [Op.gt]: literals.countOfferAcceptedApplications } } : { } 
+
+    // the filters will be added to the query object by destructuring (i.e. ...topicFilter)
+
+    let student = await getStudentByUid(uid);
     let result = await User.findAll({
         attributes: ['id', 'firstName', 'lastName'],
+        where: {
+            ...teacherNameFilter
+        },
         include: [{
             model: Teacher,
             required: true,
             include: [{
                 model: Offer,
                 required: true,
+                where: { 
+                    domainId: student.domainId,
+                    ...onlyFreeOffersFilter
+                },
                 attributes: {
                     exclude: ['teacherId'],
                     include: [
-                        [ sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM applications AS application
-                            WHERE
-                                application.offerId = \`teacher->offers\`.id
-                                AND
-                                application.accepted = 1
-                        )`), 'takenPlaces'],
-                        [ sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM applications AS application
-                            WHERE
-                                application.offerId = \`teacher->offers\`.id
-                                AND
-                                application.studentId = (
-                                    SELECT id FROM students
-                                    WHERE userId = ${sequelize.escape(uid)}
-                                    )
-                        )`), 'hasApplied']
-                    ]
+                        [ literals.countOfferAcceptedApplications, 'takenPlaces'],
+                        [ literals.studentHasAppliendOffer(student.id), 'hasApplied']
+                    ],
                 },
                 include: {
                     model: Topic,
+                    required: true,
                     through: {
-                        attributes: []
-                    }
+                        attributes: [],
+                        where: {
+                            ...topicFilter
+                        }
+                    },
                 }
             }]
         }],
@@ -92,4 +111,25 @@ exports.getTeacherOffers = async (uid) => {
         delete user.teacher;
         return {...user, offers: teacher.offers}
     })
+}
+
+const literals = {
+    countOfferAcceptedApplications: sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM applications AS application
+        WHERE
+            application.offerId = \`teacher->offers\`.id
+            AND
+            application.accepted = 1
+    )`),
+    studentHasAppliendOffer(studentId) {
+        return sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM applications AS application
+            WHERE
+                application.offerId = \`teacher->offers\`.id
+                AND
+                application.studentId = ${studentId}
+        )`);
+    }
 }
