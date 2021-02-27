@@ -1,0 +1,54 @@
+<html>
+    <body>
+        <div class="card">
+            <div class="card-image centered">
+                <img src="https://fmi.unibuc.ro/wp-content/uploads/2020/05/sigla-fmi-1.png">
+            </div>
+            <div class="card-content">
+                <h2>Bun venit, <%= user.firstName %> <%= user.lastName %>!</h2>
+                <p>
+                    Ați fost înscris în Platforma de asociere între studenți și profesorii cordonatori a
+                    Facultății de Matematică și Informatică din cadrul Universității din București. <br><br>
+                    Pentru a finaliza înregistrarea, este nevoie să apăsați pe link-ul de mai jos:
+                </p>
+            </div>
+
+            <div class="card-actions">
+                <div class="centered">
+                    <a class="button" target="_blank" href="<%= url %>">Activați contul</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+<style>
+    body {
+        width: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .card {
+        margin: 16px auto;
+        padding: 32px 24px;
+        max-width: 400px;
+        border-radius: 4px;
+        box-shadow: 0px 3px 3px -2px rgb(0 0 0 / 20%), 0px 3px 4px 0px rgb(0 0 0 / 14%), 0px 1px 8px 0px rgb(0 0 0 / 12%);
+    }
+
+    .centered {
+        text-align: center;
+    }
+
+    .button {
+        text-decoration: none;
+        color: #fafafa;
+        background-color: #3f51b5;
+        padding: 12px 16px;
+        border-radius: 4px;
+        box-shadow: 0px 3px 3px -2px rgb(0 0 0 / 20%), 0px 3px 4px 0px rgb(0 0 0 / 14%), 0px 1px 8px 0px rgb(0 0 0 / 12%);
+    }
+
+    .card-actions {
+        padding-top: 32px;
+    }
+</style>
