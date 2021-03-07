@@ -14,6 +14,10 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const user = await getUser({ email });
     if (user) {
+        if(!user.password) {
+            return res.status(401).json({ "error": "NOT_ACTIVATED" });
+        }
+
         const validPassword = await bcrypt.compare(password, user.password);  // check if passwords match
         if (!validPassword) {
             return res.status(401).json({ "error": "WRONG_PASSWORD" });
