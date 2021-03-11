@@ -1,4 +1,4 @@
-const { Student, User, Domain, ActivationToken, Teacher } = require("../models/models.js");
+const { Student, User, Domain, ActivationToken, Teacher, Topic, Offer } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -272,6 +272,50 @@ exports.deleteDomain = async (id, moveStudentsTo) => {
     }
     await Student.update({ domainId: moveStudentsTo }, { where: { domainId: id }}) // move students to the domain
     return Domain.destroy({ where: { id } });
+}
+
+// TOPICS
+
+exports.getTopics = async (sort, order, filter, page, pageSize) => {
+    const limit = pageSize;
+    const offset = page * pageSize;
+    if (limit <= 0 || offset < 0) {
+        throw "INVALID_PARAMETERS";
+    }
+
+    let sortArray = [['id', 'ASC']]
+    if (['id', 'name'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+        sortArray = [[sort, order]];
+    }
+
+    let query = await Topic.findAndCountAll({
+        limit,
+        offset,
+        order: sortArray
+    });
+    return query;
+}
+
+exports.addTopic = (name) => {
+    return Topic.create({ name });
+}
+
+exports.editTopic = (id, name) => {
+    return Topic.update({ name }, { where: { id } });
+}
+
+exports.deleteTopic = async (id, moveId) => {
+    if(id == moveId) {
+        throw "BAD_REQUEST"
+    }
+
+    const moveTopic = await Topic.findOne({ where: { id: moveId } });
+    if(!moveTopic) {
+        throw "BAD_REQUEST"
+    }
+
+    await Offer.update({ topicId: moveId }, { where: { topicId: id } });
+    return Topic.destroy({ where: id });
 }
 
 const literals = {

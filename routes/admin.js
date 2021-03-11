@@ -165,4 +165,55 @@ router.post('/domains/delete', async (req, res) => {
     }
 });
 
+// TOPICS
+router.get('/topics', async function (req, res) {
+    try {
+        let { sort, order, page, pageSize } = req.query;
+        page = parseInt(page);
+        pageSize = parseInt(pageSize);
+        const topics = await AdminController.getTopics(sort, order, null, page, pageSize);
+        res.json(topics);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/topics/add', async (req, res) => {
+    const { name } = req.body;
+    try {
+        let topic = await AdminController.addTopic(name);
+        return res.json(topic);
+    } catch(err) {
+        console.log(err)
+        res.status(400).json("BAD_REQUEST")
+    }
+});
+
+
+router.post('/topics/edit', async (req, res) => {
+    const { id, name } = req.body;
+    try {
+        let topic = await AdminController.editTopic(id, name);
+        return res.json(topic);
+    } catch(err) {
+        console.log(err)
+        res.status(400).json("BAD_REQUEST")
+    }
+});
+
+router.post('/topics/delete', async (req, res) => {
+    const { id, moveId } = req.body;
+    if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
+        return res.status(400).json("BAD_REQUEST");
+    }
+    try {
+        await AdminController.deleteTopic(id, moveId);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(500);
+    }
+});
+
 module.exports = router
