@@ -124,6 +124,11 @@ router.get('/domains', async function (req, res) {
     res.json(domains);
 });
 
+router.get('/domains/extra', async function (req, res) {
+    let domains = await AdminController.getDomainsExtra();
+    res.json(domains);
+});
+
 router.post('/domains/add', async (req, res) => {
     const { name, type } = req.body;
     try {

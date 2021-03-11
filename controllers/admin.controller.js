@@ -243,6 +243,17 @@ exports.getDomains = () => {
     return Domain.findAll();
 }
 
+exports.getDomainsExtra = () => {
+    return Domain.findAll({
+        attributes: {
+            include: [
+                [literals.DOMAIN_STUDENT_NUMBER, 'studentNumber'],
+                [literals.DOMAIN_STUDENT_NUMBER, 'offerNumber']
+            ]
+        }
+    })
+}
+
 exports.addDomain = (name, type) => {
     return Domain.create({ name, type });
 }
@@ -261,4 +272,17 @@ exports.deleteDomain = async (id, moveStudentsTo) => {
     }
     await Student.update({ domainId: moveStudentsTo }, { where: { domainId: id }}) // move students to the domain
     return Domain.destroy({ where: { id } });
+}
+
+const literals = {
+    DOMAIN_STUDENT_NUMBER: `(
+        SELECT COUNT(student.id)
+        FROM students AS student
+        WHERE student.domainId = domain.id
+    )`,
+    DOMAIN_OFFER_NUMBER: `(
+        SELECT COUNT(offer.id)
+        FROM offers AS offer
+        WHERE offer.domainId = domain.id
+    )`
 }
