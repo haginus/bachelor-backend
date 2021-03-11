@@ -124,4 +124,40 @@ router.get('/domains', async function (req, res) {
     res.json(domains);
 });
 
+router.post('/domains/add', async (req, res) => {
+    const { name, type } = req.body;
+    try {
+        let domain = await AdminController.addDomain(name, type);
+        return res.json(domain);
+    } catch(err) {
+        console.log(err)
+        res.status(400).json("BAD_REQUEST")
+    }
+});
+
+router.post('/domains/edit', async (req, res) => {
+    const { id, name, type } = req.body;
+    try {
+        let domain = await AdminController.editDomain(id, name, type);
+        return res.json(domain);
+    } catch(err) {
+        console.log(err)
+        res.status(400).json("BAD_REQUEST")
+    }
+});
+
+router.post('/domains/delete', async (req, res) => {
+    const { id, moveStudentsTo } = req.body;
+    if(!id || isNaN(id) || !moveStudentsTo || isNaN(moveStudentsTo)) {
+        return res.status(400).json("BAD_REQUEST");
+    }
+    try {
+        await AdminController.deleteDomain(id, moveStudentsTo);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(500);
+    }
+});
+
 module.exports = router

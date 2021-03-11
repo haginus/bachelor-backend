@@ -242,3 +242,23 @@ exports.addTeacherBulk = async (file) => {
 exports.getDomains = () => {
     return Domain.findAll();
 }
+
+exports.addDomain = (name, type) => {
+    return Domain.create({ name, type });
+}
+
+exports.editDomain = (id, name, type) => {
+    return Domain.update({ name, type }, { where: { id } });
+}
+
+exports.deleteDomain = async (id, moveStudentsTo) => {
+    if(id == moveStudentsTo) {
+        throw "BAD_REQUEST";
+    }
+    const moveDomain = await Domain.findOne({ where: { id: moveStudentsTo } }); // find the domain we move students to
+    if(!moveDomain) {
+        throw "BAD_REQUEST";
+    }
+    await Student.update({ domainId: moveStudentsTo }, { where: { domainId: id }}) // move students to the domain
+    return Domain.destroy({ where: { id } });
+}
