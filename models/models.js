@@ -172,8 +172,7 @@ const Application = sequelize.define('application', {
     }
   },
   accepted: {
-    type: Sequelize.BOOLEAN,
-    defaultValue: false
+    type: Sequelize.BOOLEAN
   }
 }, {
   timestamps: false
