@@ -65,6 +65,9 @@ router.get('/teacher-offers/suggested', async function (req, res) {
 router.post('/teacher-offers/apply', async function (req, res) {
     try {
         const { offerId, title, description, usedTechnologies } = req.body;
+        if(!offerId || !title || !description) {
+            return res.status(400).json("BAD_REQUEST");
+        }
         await StudentController.applyToOffer(req._user.id, offerId, title, description, usedTechnologies);
         res.json({ success: true });
     } catch(err) {

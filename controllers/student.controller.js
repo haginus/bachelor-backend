@@ -160,7 +160,6 @@ exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies
             model: Application
         }
     }); // get offer
-    console.log(offer)
     if(!offer) {
         throw "OFFER_NOT_FOUND"
     }
