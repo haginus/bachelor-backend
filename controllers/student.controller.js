@@ -152,3 +152,32 @@ exports.getSuggestedTeacherOffers = async (uid) => {
 
     return this.getTeacherOffers(uid, filters);
 }
+
+exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies) => {
+    const offer = await Offer.findOne({
+        where: { id: offerId },
+        include: {
+            model: Application
+        }
+    }); // get offer
+    console.log(offer)
+    if(!offer) {
+        throw "OFFER_NOT_FOUND"
+    }
+    const student = await this.getStudentByUid(uid); // get student
+    if(!student) {
+        throw "STUDENT_NOT_FOUND"
+    }
+    if(student.domainId != offer.domainId) {  // check same domains
+        throw "DOMAIN_MISMATCH"
+    }
+    if(offer.applications.length + 1 > offer.limit) { // check if limit is higher than application number
+        throw "BUSY_OFFER"
+    }
+    if(offer.applications.filter(application => application.studentId == student.id).length > 0) { // check double applications
+        throw "ALREADY_APPLIED"
+    }
+    let application = await Application.create({ title, description, usedTechnologies, studentId: student.id });
+    return offer.addApplication(application);
+
+}

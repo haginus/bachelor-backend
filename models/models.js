@@ -154,14 +154,21 @@ const Application = sequelize.define('application', {
     type: Sequelize.STRING,
     allowNull: false,
     validate: {
-      len: [5, 128]
+      len: [3, 128]
     }
   },
   description: {
     type: Sequelize.STRING,
     allowNull: false,
     validate: {
-      len: [5, 128]
+      len: [5, 1024]
+    }
+  },
+  usedTechnologies: {
+    type: Sequelize.STRING,
+    allowNull: true,
+    validate: {
+      len: [1, 256]
     }
   },
   accepted: {
@@ -173,7 +180,11 @@ const Application = sequelize.define('application', {
 });
 
 Student.hasMany(Application);
-Application.belongsTo(Student);
+Application.belongsTo(Student, {
+  foreignKey: {
+    allowNull: false
+  }
+});
 
 Offer.hasMany(Application);
 Application.belongsTo(Offer);
