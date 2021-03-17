@@ -1,6 +1,7 @@
-const { User, Teacher, Offer, sequelize, Domain, Topic } = require("../models/models.js");
+const { User, Teacher, Offer, sequelize, Domain, Topic, Application, Student } = require("../models/models.js");
 const UserController = require('./user.controller')
 const { Op } = require("sequelize");
+const Mailer = require("../alerts/mailer")
 
 
 exports.validateTeacher = async (uid) => {
@@ -102,6 +103,124 @@ exports.addOffer = async (uid, domainId, topicIds, limit) => {
         console.log(err)
         throw "VALIDATION_ERROR";
     }
+}
+
+exports.getApplications = async (uid, offerId, state) => {
+    const teacher = await this.getTeacherByUserId(uid);
+    const offerIdFilter = offerId ? { id: offerId } : {}
+    let stateFilter;
+    switch(state) {
+        case 'accepted':
+            stateFilter = { accepted: true }
+            break
+        case 'declined':
+            stateFilter = { accepted: false }
+            break
+        case 'pending':
+            stateFilter = { accepted: null }
+            break
+        default:
+            stateFilter = {}
+    }
+
+    let result = await Application.findAll({
+        where: {
+            ...stateFilter
+        },
+        include: [
+            {
+                required: true,
+                model: Offer,
+                where: {
+                    teacherId: teacher.id,
+                    ...offerIdFilter
+                },
+                include: [
+                    {
+                        model: Domain
+                    },
+                    {
+                        model: Topic
+                    }
+                ],
+                attributes: {
+                    include: [
+                        [literals.countOfferAcceptedApplications, 'takenPlaces']
+                    ]
+                }
+            },
+            {
+                model: Student,
+                include: {
+                    model: User,
+                    attributes: ["id", "firstName", "lastName"]
+                }
+            },
+        ],
+        order: [
+            ['accepted', 'ASC']
+        ],
+    });
+
+    result = JSON.parse(JSON.stringify(result)).map(application => {
+        application.student = application.student.user;
+        return application;
+    })
+
+    return result;
+}
+
+exports.getApplication = (id) => {
+    return Application.findOne({ 
+        where: { id },
+        include: [{
+            model: Offer
+        },
+        {
+            model: Student,
+            include: [
+                {
+                    model: User,
+                    attributes: ["id", "firstName", "lastName", "email"]
+                }
+            ]
+        }]
+    });
+}
+
+exports.declineApplication = async (user, applicationId) => {
+    const teacher = await this.getTeacherByUserId(user.id);
+
+    let application = await this.getApplication(applicationId);
+    if(!application) {
+        throw "MISSING_APPLICATION"
+    }
+    if(application.offer.teacherId != teacher.id) {
+        throw "UNAUTHORIZED"
+    }
+
+    application.accepted = false;
+    Mailer.sendRejectedApplicationEmail(application.student.user, user, application);
+
+    await application.save();
+    return { success: true }
+}
+
+exports.acceptApplication = async (uid, applicationId) => {
+    const teacher = await this.getTeacherByUserId(uid);
+
+    let application = await this.getApplication(applicationId);
+    if(!application) {
+        throw "MISSING_APPLICATION"
+    }
+    if(application.offer.teacherId != teacher.id) {
+        throw "UNAUTHORIZED"
+    }
+
+    application.accepted = true;
+
+    await application.save();
+    return { success: true }
 }
 
 exports.getDomains = () => {

@@ -43,6 +43,27 @@ router.post('/offers/add', AuthController.isLoggedIn, async (req, res) => {
     }
 });
 
+router.get('/applications', AuthController.isLoggedIn, async (req, res) => {
+    try {
+        const applications = await TeacherController.getApplications(req._user.id, null, null);
+        res.json(applications)
+    } catch(err) {
+        console.log(err)
+        res.status(400).json(err);
+    }
+});
+
+router.post('/applications/decline', AuthController.isLoggedIn, async (req, res) => {
+    const { applicationId } = req.body;
+    try {
+        const result = await TeacherController.declineApplication(req._user, applicationId);
+        res.json(result)
+    } catch(err) {
+        console.log(err)
+        res.status(400).json(err);
+    }
+});
+
 router.get('/domains', async function (req, res) {
     let domains = await TeacherController.getDomains();
     res.json(domains);
