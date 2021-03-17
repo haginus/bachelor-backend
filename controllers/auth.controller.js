@@ -90,3 +90,11 @@ exports.isStudent = async (req, res, next) => {
         next();
     }
 }
+
+exports.isTeacher = async (req, res, next) => {
+    if(req._user.type !== "teacher") {
+        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+    } else {
+        next();
+    }
+}

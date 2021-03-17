@@ -199,15 +199,20 @@ exports.declineApplication = async (user, applicationId) => {
         throw "UNAUTHORIZED"
     }
 
+    if(application.accepted != null) {
+        throw "NOT_ALLOWED"
+    }
+
     application.accepted = false;
-    Mailer.sendRejectedApplicationEmail(application.student.user, user, application);
 
     await application.save();
+
+    Mailer.sendRejectedApplicationEmail(application.student.user, user, application);
     return { success: true }
 }
 
-exports.acceptApplication = async (uid, applicationId) => {
-    const teacher = await this.getTeacherByUserId(uid);
+exports.acceptApplication = async (user, applicationId) => {
+    const teacher = await this.getTeacherByUserId(user.id);
 
     let application = await this.getApplication(applicationId);
     if(!application) {
@@ -217,9 +222,23 @@ exports.acceptApplication = async (uid, applicationId) => {
         throw "UNAUTHORIZED"
     }
 
+    if(application.accepted != null) {
+        throw "NOT_ALLOWED"
+    }
+
+    const takenPlaces = await Application.count({
+        where: { offerId: application.offerId, accepted: true }
+    })
+
+    if(takenPlaces + 1 > application.offer.limit) {
+        throw "LIMIT_REACHED"
+    }
+
     application.accepted = true;
 
     await application.save();
+
+    Mailer.sendAcceptedApplicationEmail(application.student.user, user, application);
     return { success: true }
 }
 

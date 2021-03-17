@@ -26,3 +26,14 @@ exports.sendRejectedApplicationEmail = async (studentUser, teacherUser, applicat
     html
   });
 }
+
+exports.sendAcceptedApplicationEmail = async (studentUser, teacherUser, application) => {
+  const url = `${config.WEBSITE_URL}/student/paper`;
+  const html = await ejs.renderFile("./alerts/mail-templates/application-accepted.ejs", { studentUser, teacherUser, application, url } );
+  let info = await transporter.sendMail({
+    from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
+    to: studentUser.email,
+    subject: "Cerere de asociere acceptată",
+    html
+  });
+}
