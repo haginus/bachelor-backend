@@ -189,8 +189,176 @@ Offer.hasMany(Application);
 Application.belongsTo(Offer);
 
 
+const Paper = sequelize.define('paper', {
+  title: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      len: [3, 128]
+    }
+  },
+  description: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      len: [5, 1024]
+    }
+  },
+  // documents
+}, {
+  timestamps: false
+})
+
+const Document = sequelize.define('document', {
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [[
+        'sign_up_form', // Fisa de inscriere
+        'identity_card', // Copie CI
+        'birth_centificate', // Certificat de nastere
+        'bacalaureat_diploma', // Diploma bacalaureat
+        'marriage_certificate', // Certificat de casatorie
+        'language_certificate', // Certificat de competență lingvistică
+        'statutory_declaration', // Declaratie pe proprie raspundere,
+        "liquidation_form" // Formular de lichidare
+      ]],
+    }
+  },
+  type: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['generated', 'signed', 'copy']]
+    }
+  }
+}, {
+  timestamps: true,
+  updatedAt: false
+})
+
+Paper.hasMany(Document);
+Document.belongsTo(Paper);
+
+const StudentExtraData = sequelize.define('studentExtraData', {
+  birthLastName: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  parentInitial: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  fatherName: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  motherName: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  civilState: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['not_married', 'married', 'divorced', 'widow', 're_married']]
+    }
+  },
+  dateOfBirth: {
+    type: Sequelize.DATEONLY,
+    allowNull: false
+  },
+  citizenship: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  ethnicity: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  placeOfBirthCountry: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  placeOfBirthCounty: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  placeOfBirthLocality: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  landline: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  mobilePhone: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  personalEmail: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+},
+{
+  timestamps: false
+});
+
+Student.hasOne(StudentExtraData, {
+  onDelete: "CASCADE"
+});
+StudentExtraData.belongsTo(Student);
+
+const Address = sequelize.define('address', {
+  locality: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  county: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  street: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  streetNumber: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  building: {
+    type: Sequelize.STRING,
+  },
+  stair: {
+    type: Sequelize.STRING,
+  },
+  floor: {
+    type: Sequelize.STRING,
+  },
+  apartment: {
+    type: Sequelize.STRING,
+  },
+},
+{
+  timestamps: false
+});
+
+StudentExtraData.addScope('defaultScope', {
+  include: [{
+    model: Address
+  }]
+})
+
+StudentExtraData.hasOne(Address, {
+  onDelete: "CASCADE"
+});
+Address.belongsTo(StudentExtraData);
+
 sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
-module.exports = { Domain, Topic, User, Student, Teacher, Offer, Application, ActivationToken, sequelize };
+module.exports = { Domain, Topic, User, Student, StudentExtraData, Teacher, Offer, Application, Paper, Document,
+   ActivationToken, sequelize };
