@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { User, Topic, Student, Domain } = require('./models/models');
+const { User, Topic, Student, Domain, StudentExtraData } = require('./models/models');
 const AuthController = require('./controllers/auth.controller')
 const UserController = require('./controllers/user.controller')
 const authRoutes = require('./routes/auth')
@@ -10,6 +10,7 @@ const teacherRoutes = require('./routes/teacher')
 const topicsRoutes = require('./routes/topics')
 const adminRoutes = require('./routes/admin')
 const { config } = require('./config/config')
+const Mailer = require('./alerts/mailer');
 
 
 const app = express();
@@ -63,6 +64,29 @@ app.get('/test', function (req, res) {
 // protected route
 app.get('/protected', AuthController.isLoggedIn, function (req, res) {
   res.json(req._user);
+});
+
+app.get('/email', function (req, res) {
+  Mailer.sendRejectedApplicationEmail(
+    {
+      firstName: 'Andrei',
+      lastName: 'Hagi',
+      email: 'hagi@fmi.ro'
+    },
+    {
+      firstName: 'Ana',
+      lastName: 'Turlea',
+      email: 'hagi@fmi.ro'
+    },
+    {
+      title: "Getting to know your things."
+    }
+  )
+  res.json("");
+});
+
+app.get('/extra', function (req, res) {
+  StudentExtraData.findAll().then(r => res.json(r))
 });
 
 

@@ -5,9 +5,9 @@ const ejs = require('ejs');
 
 const transporter = nodemailer.createTransport(config.mailer);
 
-const sendWelcomeEmail = async (user, token) => {
+exports.sendWelcomeEmail = async (user, token) => {
   const url = `${config.WEBSITE_URL}/login/token/${token}`;
-  const html = await ejs.renderFile("./alerts//mail-templates/welcome.ejs", { user, url } );
+  const html = await ejs.renderFile("./alerts/mail-templates/welcome.ejs", { user, url } );
   let info = await transporter.sendMail({
     from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
     to: user.email,
@@ -16,4 +16,13 @@ const sendWelcomeEmail = async (user, token) => {
   });
 }
 
-exports.sendWelcomeEmail = sendWelcomeEmail;
+exports.sendRejectedApplicationEmail = async (studentUser, teacherUser, application) => {
+  const url = `${config.WEBSITE_URL}/student/teachers`;
+  const html = await ejs.renderFile("./alerts/mail-templates/application-rejected.ejs", { studentUser, teacherUser, application, url } );
+  let info = await transporter.sendMail({
+    from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
+    to: studentUser.email,
+    subject: "Cerere de asociere respinsă",
+    html
+  });
+}
