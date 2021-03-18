@@ -47,8 +47,18 @@ router.post('/offers/add', async (req, res) => {
 });
 
 router.get('/applications', async (req, res) => {
+    let { offerId, state } = req.query;
+    if(offerId) {
+        offerId = parseInt(offerId);
+        if(!isFinite(offerId)) {
+            offerId = null;
+        }
+    }
+    if(!['accepted', 'declined', 'pending'].includes(state)) {
+        state = null;
+    }
     try {
-        const applications = await TeacherController.getApplications(req._user.id, null, null);
+        const applications = await TeacherController.getApplications(req._user.id, offerId, state);
         res.json(applications)
     } catch(err) {
         console.log(err)
