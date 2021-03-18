@@ -1,4 +1,5 @@
-const { User, Teacher, Offer, sequelize, Domain, Topic, Application, Student } = require("../models/models.js");
+"use strict"
+const { User, Teacher, Offer, Paper, Domain, Topic, Application, Student, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const { Op } = require("sequelize");
 const Mailer = require("../alerts/mailer")
@@ -237,6 +238,23 @@ exports.acceptApplication = async (user, applicationId) => {
     application.accepted = true;
 
     await application.save();
+
+    await Application.destroy({  // remove other student applications
+        where: { 
+            studentId: application.studentId,
+            id: {
+                [Op.ne]: applicationId
+            }
+        }
+    });
+
+    const domain = await Domain.findOne({ where: { id: application.student.domainId } }); // get the domain for type
+
+    // CREATE PAPER
+    const { title, description, studentId } = application;
+    await Paper.create({
+        title, description, studentId, teacherId: teacher.id, type: domain.type
+    });
 
     Mailer.sendAcceptedApplicationEmail(application.student.user, user, application);
     return { success: true }

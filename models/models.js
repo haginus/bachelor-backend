@@ -204,10 +204,23 @@ const Paper = sequelize.define('paper', {
       len: [5, 1024]
     }
   },
+  type: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['bachelor', 'master']]
+    }
+  },
   // documents
 }, {
   timestamps: false
 })
+
+Student.hasOne(Paper);
+Paper.belongsTo(Student);
+
+Teacher.hasMany(Paper);
+Paper.belongsTo(Teacher);
 
 const Document = sequelize.define('document', {
   name: {
