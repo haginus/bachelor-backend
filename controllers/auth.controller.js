@@ -1,12 +1,12 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User, Student, Domain, ActivationToken} = require("../models/models.js");
+const { User, Student, Domain, Paper, ActivationToken} = require("../models/models.js");
 const { config } = require("../config/config");
 
 const getUser = async (where) => {
     return User.findOne({ 
         where, 
-        include: [ { model: Student, include: [ { model: Domain } ] } ]
+        include: [ { model: Student, include: [ { model: Domain }, {model: Paper } ] } ]
     });
 }
 

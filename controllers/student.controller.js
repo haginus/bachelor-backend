@@ -1,4 +1,4 @@
-const { Student, User, Topic, Teacher, Offer, Application, sequelize } = require("../models/models.js");
+const { Student, User, Topic, Teacher, Offer, Application, Paper, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const { Op, Sequelize } = require("sequelize");
 
@@ -167,6 +167,12 @@ exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies
     if(!student) {
         throw "STUDENT_NOT_FOUND"
     }
+
+    const hasPaper = await Application.count({ where: { studentId: student.id }});  // check if student is associated
+    if(hasPaper) {
+        throw "NOT_ALLOWED"
+    }
+
     if(student.domainId != offer.domainId) {  // check same domains
         throw "DOMAIN_MISMATCH"
     }
