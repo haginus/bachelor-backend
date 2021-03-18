@@ -1,4 +1,4 @@
-const { Student, User, Topic, Teacher, Offer, Application, Paper, sequelize } = require("../models/models.js");
+const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const { Op, Sequelize } = require("sequelize");
 
@@ -138,7 +138,15 @@ const literals = {
                 AND
                 application.studentId = ${studentId}
         )`);
-    }
+    },
+    countOfferAcceptedApplicationsForApplications: sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM applications AS app
+        WHERE
+            app.offerId = \`offer\`.id
+            AND
+            app.accepted = 1
+    )`),
 }
 
 exports.getSuggestedTeacherOffers = async (uid) => {
@@ -168,7 +176,7 @@ exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies
         throw "STUDENT_NOT_FOUND"
     }
 
-    const hasPaper = await Application.count({ where: { studentId: student.id }});  // check if student is associated
+    const hasPaper = await Paper.count({ where: { studentId: student.id }});  // check if student is associated
     if(hasPaper) {
         throw "NOT_ALLOWED"
     }
@@ -184,5 +192,94 @@ exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies
     }
     let application = await Application.create({ title, description, usedTechnologies, studentId: student.id });
     return offer.addApplication(application);
+}
 
+exports.getApplications = async (uid, state) => {
+    const student = await this.getStudentByUid(uid);
+    let stateFilter;
+    switch(state) {
+        case 'accepted':
+            stateFilter = { accepted: true }
+            break
+        case 'declined':
+            stateFilter = { accepted: false }
+            break
+        case 'pending':
+            stateFilter = { accepted: null }
+            break
+        default:
+            stateFilter = {}
+    }
+
+    let result = await Application.findAll({
+        where: {
+            studentId: student.id,
+            ...stateFilter
+        },
+        include: [
+            {
+                required: true,
+                model: Offer,
+                include: [
+                    {
+                        model: Domain
+                    },
+                    {
+                        model: Topic
+                    },
+                    {
+                        model: Teacher,
+                        include: {
+                            model: User,
+                            attributes: ["id", "firstName", "lastName"] 
+                        }
+                    },
+                ],
+                attributes: {
+                    include: [
+                        [literals.countOfferAcceptedApplicationsForApplications, 'takenPlaces']
+                    ]
+                }
+            },
+        ],
+        order: [
+            ['accepted', 'ASC']
+        ],
+    });
+
+    result = JSON.parse(JSON.stringify(result)).map(application => {
+        application.offer.teacher = application.offer.teacher.user;
+        return application;
+    })
+
+    return result;
+}
+
+exports.getApplication = (id) => {
+    return Application.findOne({ 
+        where: { id },
+        include: [{
+            model: Offer
+        }]
+    })
+}
+
+exports.cancelApplication = async (user, applicationId) => {
+    const student = await this.getStudentByUid(user.id);
+
+    let application = await this.getApplication(applicationId);
+    if(!application) {
+        throw "MISSING_APPLICATION"
+    }
+    if(application.studentId != student.id) {
+        throw "UNAUTHORIZED"
+    }
+
+    if(application.accepted != null) { // student can't delete an application after it has been accepted / declined by teacher
+        throw "NOT_ALLOWED"
+    }
+
+    await application.destroy();
+
+    return { success: true }
 }

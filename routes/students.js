@@ -78,4 +78,29 @@ router.post('/teacher-offers/apply', async function (req, res) {
     }
 });
 
+router.get('/applications', async (req, res) => {
+    let { state } = req.query;
+    if(!['accepted', 'declined', 'pending'].includes(state)) {
+        state = null;
+    }
+    try {
+        const applications = await StudentController.getApplications(req._user.id, state);
+        res.json(applications)
+    } catch(err) {
+        console.log(err)
+        res.status(400).json(err);
+    }
+});
+
+router.post('/applications/cancel', async (req, res) => {
+    const { applicationId } = req.body;
+    try {
+        const result = await StudentController.cancelApplication(req._user, applicationId);
+        res.json(result)
+    } catch(err) {
+        console.log(err)
+        res.status(400).json(err);
+    }
+});
+
 module.exports = router
