@@ -9,6 +9,7 @@ const studentRoutes = require('./routes/students')
 const teacherRoutes = require('./routes/teacher')
 const topicsRoutes = require('./routes/topics')
 const adminRoutes = require('./routes/admin')
+const documentsRoutes = require('./routes/documents')
 const { config } = require('./config/config')
 const Mailer = require('./alerts/mailer');
 
@@ -109,6 +110,7 @@ app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);
 app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
+app.use('/documents', documentsRoutes);
 
 
 // start app

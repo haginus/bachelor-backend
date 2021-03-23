@@ -1,6 +1,9 @@
 # config
 /config
 
+# storage
+/storage
+
 # dependencies
 /node_modules
 

@@ -1,6 +1,10 @@
-const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize } = require("../models/models.js");
+const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document } = require("../models/models.js");
 const UserController = require('./user.controller')
+const DocumentController = require('./document.controller')
 const { Op, Sequelize } = require("sequelize");
+const fs = require('fs');
+const path = require('path')
+const mime = require('mime-types')
 
 
 const getStudentByUid = (uid) => {
@@ -283,3 +287,211 @@ exports.cancelApplication = async (user, applicationId) => {
 
     return { success: true }
 }
+
+exports.getPaper = async (uid) => {
+    const student = await this.getStudentByUid(uid);
+    let paper = await Paper.scope(["documents", "teacher"]).findOne({ where: { studentId: student.id } });
+    paper = JSON.parse(JSON.stringify(paper)); // sequelize will return the user info nested as `user` in paper.teacher
+    paper.teacher = paper.teacher.user;
+    return paper;
+}
+
+exports.getExtraData = async (uid) => {
+    const student = await this.getStudentByUid(uid);
+    return StudentExtraData.scope("noKeys").findOne({ where: { studentId: student.id } });
+}
+
+exports.setExtraData = async (uid, data) => {  // sets the new extra data and triggers document generation
+    const student = await this.getStudentByUid(uid);
+    const oldData = await StudentExtraData.findOne({ where: { studentId: student.id } });
+    let newAddress, newMainData;
+    try {
+        newAddress = data.address;
+        newMainData = { ...data };
+        delete newMainData["address"];
+        delete newMainData["id"]; // remove attributes that may interfere to the normal identification process
+        delete newMainData["studentId"];
+        delete newAddress["id"];
+        delete newAddress["studentExtraDatumId"];
+    } catch(err) {
+        throw "INVALID_DATA";
+    }
+    const transaction = await sequelize.transaction(); // initialize a SQL transaction
+    if(oldData) { // if data exists
+        try {
+            let [dataUpdated] = await StudentExtraData.update(newMainData, {
+                where: { studentId: student.id },
+                transaction,
+                fields: ["birthLastName", "parentInitial", "fatherName", "motherName", "civilState", "dateOfBirth", "citizenship",
+                "ethnicity", "placeOfBirthCountry", "placeOfBirthCounty", "placeOfBirthLocality", "landline", "mobilePhone", "personalEmail"]
+            }); // update main data
+            let [addressUpdated] = await Address.update(newAddress, {
+                 where: { studentExtraDatumId: oldData.id },
+                 transaction,
+                 fields: ["locality", "county", "street", "streetNumber", "building", "stair", "floor", "apartment"]
+            }); // update address
+            if(dataUpdated || addressUpdated) {
+                await generatePaperDocuments(student, data);
+            }
+            await transaction.commit();
+        } catch(err) {
+            await transaction.rollback(); // in case anything goes wrong, we rollback the transaction
+            if(err == "INTERNAL_ERROR") {
+                throw err;
+            } else throw "INVALID_DATA";
+        }
+    } else { // if data does not exist, we create it
+        try {
+            newMainData.studentId = student.id;
+            let extraDataModel = await StudentExtraData.create(newMainData, { transaction });
+            let addressModel = await Address.create(newAddress, { transaction });
+            await extraDataModel.setAddress(addressModel, { transaction });
+            await generatePaperDocuments(student, data);
+            await transaction.commit();
+        } catch(err) {
+            await transaction.rollback();
+            if(err == "INTERNAL_ERROR") {
+                throw err;
+            } else throw "INVALID_DATA";
+        }
+    }
+    return { success: true }
+}
+
+const generatePaperDocuments = async (student, extraData) => {
+    let paper = await Paper.scope(["documents", "teacher"]).findOne({ where: { studentId: student.id } });
+    if(!paper) {
+        throw "BAD_REQUEST";
+    }
+    
+    const transaction = await sequelize.transaction();
+    try {
+        // delete old generated and signed documents
+        await Document.destroy({
+            transaction,
+            where: {
+                paperId: paper.id,
+                name: {
+                    [Op.in]: ['sign_up_form', 'statutory_declaration', 'liquidation_form']
+                }
+            }
+        });
+        const data = { ...JSON.parse(JSON.stringify(student)), extra: extraData }
+        let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
+        let signUpFormDocument = await Document.create({ name: 'sign_up_form', type: 'generated',
+            paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
+            
+        fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
+
+        //await DocumentController.generateDocument('statutory_declaration', data);
+        //await DocumentController.generateDocument('liquidation_form', data);
+        await transaction.commit();
+    } catch(err) {
+        await transaction.rollback();
+        console.log(err);
+        throw "INTERNAL_ERROR";
+    }
+}
+
+exports.uploadPaperDocument = async (user, documentFile, name, type) => {
+    if(type == 'generated') { // do not allow "uploading" generated files
+        throw "BAD_REQUEST";
+    }
+
+    const paper = user.student.paper;
+    if(!paper) { // only allow uploads if paper exists
+        throw "NOT_AUTHORIZED";
+    }
+    const paperId = paper.id;
+    const mimeType = documentFile.mimetype; // get uploaded file mimeType
+    const requiredDoc = this.paperRequiredDocuments.find(doc => doc.name == name); // find uploaded doc name in required list
+    if(!requiredDoc) { // if it is not then throw error
+        throw "INVALID_DOCUMENT";
+    }
+    if(!requiredDoc.types[type]) { // check if uploaded doc type is required
+        throw "INVALID_DOCUMENT";
+    }
+    const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(','); // get accepted mimeTypes
+    if(!acceptedMimeTypes.includes(mimeType)) { // check if uploaded doc mimeType is in the accepted array
+        throw "INVALID_MIMETYPE";
+    }
+
+    const fileExtension = mime.extension(mimeType); // get the file extension
+
+    const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
+
+    if(type == 'signed') { // if uploaded document type is signed
+        if(paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
+            throw "MISSING_GENERATED_DOCUMENT";
+        }
+        if(paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
+            throw "ALREADY_SIGNED";
+        }
+    }
+
+    if(type == 'copy') { // if uploaded document type is copy
+        if(paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
+            throw "ALREADY_UPLOADED";
+        }
+    }
+
+    const transaction = await sequelize.transaction(); // start a db transaction
+    const newDocument = await Document.create({ name, type, mimeType, paperId }, { transaction }); // create a new doc in db
+    try {
+        fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
+        await transaction.commit(); // commit if everything is fine
+    } catch(err) {
+        console.log(err);
+        await transaction.rollback(); // rollback if anything goes wrong
+        throw "INTERNAL_ERROR";
+    }
+
+    return { success: true }
+}
+
+const getStoragePath = (fileName) => {
+    return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
+}
+
+exports.testGen = async (id, extraData) => {
+    let student = await this.getStudentByUid(id); 
+    generatePaperDocuments(student, extraData);
+}
+
+exports.paperRequiredDocuments = [
+    {
+      title: "Cerere de înscriere",
+      name: "sign_up_form",
+      types: {
+        generated: true,
+        signed: true
+      },
+      acceptedMimeTypes: 'application/pdf'
+    },
+    {
+      title: "Declarație pe proprie răspundere",
+      name: "statutory_declaration",
+      types: {
+        generated: true,
+        signed: true
+      },
+      acceptedMimeTypes: 'application/pdf'
+    },
+    {
+      title: "Formular de lichidare",
+      name: "liquidation_form",
+      types: {
+        generated: true,
+        signed: true
+      },
+      acceptedMimeTypes: 'application/pdf'
+    },
+    {
+      title: "Copie C.I.",
+      name: "identity_card",
+      types: {
+        copy: true
+      },
+      acceptedMimeTypes: 'application/pdf,image/png,image/jpeg'
+    }
+]

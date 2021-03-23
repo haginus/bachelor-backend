@@ -245,14 +245,35 @@ const Document = sequelize.define('document', {
     validate: {
       isIn: [['generated', 'signed', 'copy']]
     }
+  },
+  mimeType: {
+    type: Sequelize.STRING,
+    allowNull: false
   }
 }, {
   timestamps: true,
+  paranoid: true,
   updatedAt: false
 })
 
 Paper.hasMany(Document);
 Document.belongsTo(Paper);
+
+Paper.addScope('documents', {
+  include: [{
+    model: Document,
+  }]
+});
+
+Paper.addScope('teacher', {
+  include: [{
+    model: Teacher,
+    include: [{
+      model: User,
+      attributes: ['id', 'firstName', 'lastName']
+    }]
+  }]
+});
 
 const StudentExtraData = sequelize.define('studentExtraData', {
   birthLastName: {
@@ -358,6 +379,18 @@ const Address = sequelize.define('address', {
   timestamps: false
 });
 
+StudentExtraData.addScope('noKeys', {
+  attributes: {
+    exclude: ['id', 'studentId']
+  },
+  include: [{
+    model: Address,
+    attributes: {
+      exclude: ['studentExtraDatumId', 'id']
+    }
+  }]
+})
+
 StudentExtraData.addScope('defaultScope', {
   include: [{
     model: Address
@@ -373,5 +406,5 @@ sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
-module.exports = { Domain, Topic, User, Student, StudentExtraData, Teacher, Offer, Application, Paper, Document,
+module.exports = { Domain, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
    ActivationToken, sequelize };

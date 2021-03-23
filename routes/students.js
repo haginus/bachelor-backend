@@ -2,6 +2,7 @@ var express = require('express')
 var router = express.Router()
 const AuthController = require('../controllers/auth.controller')
 const StudentController = require('../controllers/student.controller')
+const fileUpload = require('express-fileupload');
 
 router.use(AuthController.isLoggedIn);
 router.use(AuthController.isStudent);
@@ -100,6 +101,57 @@ router.post('/applications/cancel', async (req, res) => {
     } catch(err) {
         console.log(err)
         res.status(400).json(err);
+    }
+});
+
+router.get('/paper', async (req, res) => {
+    try {
+        const paper = await StudentController.getPaper(req._user.id);
+        res.json(paper)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json("");
+    }
+});
+
+router.get('/extra-data', async (req, res) => {
+    try {
+        const data = await StudentController.getExtraData(req._user.id);
+        res.json(data)
+    } catch(err) {
+        console.log(err)
+        res.status(500).json("");
+    }
+});
+
+router.post('/extra-data/set', async (req, res) => {
+    try {
+        const data = await StudentController.setExtraData(req._user.id, req.body);
+        res.json(data);
+    } catch(err) {
+        res.status(400).json(err);
+    }
+});
+
+router.post('/paper/documents/upload', fileUpload({
+    limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
+}), async function(req, res) {
+    try {
+        const { name, type } = req.body;
+        let result = await StudentController.uploadPaperDocument(req._user, req.files.file, name, type);
+        res.json(result);
+    } catch(err) {
+        res.status(400).json(err);
+    }
+});
+
+router.post('/test-gen', async (req, res) => {
+    try {
+        const data = await StudentController.testGen(req._user.id, req.body);
+        res.json("data")
+    } catch(err) {
+        console.log(err)
+        res.status(500).json("");
     }
 });
 
