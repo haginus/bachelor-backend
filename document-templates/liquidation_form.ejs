@@ -1,0 +1,153 @@
+<html>
+
+<head>
+    <title>Fișă de lichidare</title>
+</head>
+
+<body>
+    <div class="header-container">
+        <p class="col">
+            UNIVERSITATEA DIN BUCUREȘTI <br>
+            Facultatea de Matematică și Informatică	<br>
+            Domeniul: <%= student.domain.name %> <br>
+            Programul de studii: 
+            <% switch (student.domain.type) {
+                case 'bachelor' : %>
+                        Licență
+                        <% break;
+                case 'master' : %>
+                        Master
+                        <% break;
+                } %> <br>
+            Promoția: 
+        </p>
+        <p class="col right" style="white-space: pre-wrap;">
+            Forma de finanțare:       🗆 buget/ 🗆 taxă
+            Forma de învățământ:  🗆 IF /🗆 IFR /🗆 ID
+        </p>
+        
+    </div>
+    <h3>Domnule rector,</h3>
+    <p class="main">
+        Subsemnatul (a) <%= student.user.lastName %> <%= student.user.firstName %>, născut(ă) în <%= birthDate %>,
+        în localitatea <%= student.extra.placeOfBirthLocality %>,
+        judeţul/sectorul <%= student.extra.placeOfBirthCounty %>, țara <%= student.extra.placeOfBirthCountry %>, 
+        având Codul Numeric Personal <%= student.user.CNP %>, absolvent(ă) de studii universitare de LICENȚĂ/MASTER,
+        în sesiunea IULIE 2021, vă rog să binevoiţi a-mi aproba eliberarea diplomei de studii. <br> <br>
+        Domiciliez în localitatea <%= student.extra.address.locality %>, sector/judeţ <%= student.extra.address.county %>,
+        strada <%= student.extra.address.street %>, numărul <%= student.extra.address.streetNumber %>,
+        <% if(student.extra.address.building) { %>
+            bloc <%= student.extra.address.building %>, scara <%= student.extra.address.stair %>,
+            etaj <%= student.extra.address.floor %>, apartament <%= student.extra.address.apartment %>,
+        <% } else { } %>
+        telefon <%= student.extra.mobilePhone %>, e-mail <%= student.extra.personalEmail %>.
+    </p>
+    <p>
+        <b>Declarația absolventului:</b> <br>
+        Am luat cunoștință de informarea privind protecția datelor cu caracter personal. (accesibilă la:  https://unibuc.ro/wp-content/uploads/2020/06/Informare-examene-de-finalizare-a-studiilor.pdf)
+    </p>
+    <div class="footer-container">
+        <p class="col">
+            <span>Data</span><br>
+            <span>
+                <%= date %>
+            </span>
+        </p>
+        <p class="col">
+            <span>Semnătura</span> <br>
+            <span>_________________</span>
+        </p>
+    </div>
+    <p class="center bold" style="margin-bottom: 16pt;">
+        ARE/NU ARE DEBITE <br>
+        (se completează de către serviciile menționate<sup>1</sup>)
+    </p>
+    <p class="italic">
+        Biblioteca _____________________________________________________________________
+    </p>
+    <p class="italic">
+        Serviciul contabilitate (taxe) _______________________________________________________
+    </p>
+    <p class="italic">
+        Serviciul social __________________________________________________________________
+    </p>
+
+    <p class="footer-note">
+        <sup>1 </sup>
+        Avizarea fișei de lichidare pentru promoția 2020 se va face de către secretarul de an, fără deplasarea absolvenților,
+        în baza situației existente la nivelul secretariatului privind eventualele debite la plata taxelor de studii și a altor
+        taxe de școlaritate, precum și a listelor de debitori din anii terminali, transmise la cererea facultății de către
+        Serviciul Social al UB, respectiv de filialele BCU, cu cel puțin 2 zile înainte de începerea peioadei de înscriere la
+        examenul de finalizare. Debitele care nu pot fi plătite până la sfârșitul perioadei de înscriere din motive determinate
+        de starea de urgență sau de regulile de distanțare socială, vor fi achitate până în momentul eliberării adeverinței de
+        licență, respectiv disertație, dar nu mai târziu de 30 de zile de la ridicarea restricțiilor care au condus la împiedicarea
+        deplasării pentru plata taxelor respective. Studenții care la data înscrierii au orice tip de debit sunt obligați să depună
+        la secretariat fișa de lichidare în original (cu dovada stingerii respectivului debit) până în momentul eliberării
+        adeverinței de licență/disertație, dar nu mai târziu de data de 30.09.2021.
+    </p>
+</body>
+
+</html>
+
+<style>
+    body {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 12pt;
+        margin: 1.5cm;
+    }
+
+    h3 {
+        text-align: center;
+    }
+
+    p.main {
+        text-align: justify;
+        line-height: 16pt;
+    }
+
+    p.italic {
+        font-style: italic;
+        line-height: 32pt;
+    }
+
+    p.bold {
+        font-weight: bold;
+    }
+
+    p.center {
+        text-align: center;
+    }
+
+    .footer-container,
+    .header-container {
+        display: flex;
+
+    }
+
+    .footer-container {
+        margin-top: 0.5cm;
+    }
+
+    .header-container {
+        font-weight: bold;
+    }
+
+    .footer-container .col,
+    .header-container .col {
+        flex: 1;
+    }
+
+    .footer-container .col {
+        text-align: center;
+        line-height: 1cm;
+    }
+
+    .col.right {
+        text-align: right;
+    }
+
+    .footer-note {
+        font-size: 10pt;
+        text-align: justify;
+    }
+</style>

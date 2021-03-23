@@ -21,6 +21,9 @@ const getStudentByUid = (uid) => {
                 through: {
                     attributes: []
                 }
+            },
+            {
+                model: Domain
             }
         ]
     });
@@ -380,11 +383,21 @@ const generatePaperDocuments = async (student, extraData) => {
         let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
         let signUpFormDocument = await Document.create({ name: 'sign_up_form', type: 'generated',
             paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
-            
+
         fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
 
-        //await DocumentController.generateDocument('statutory_declaration', data);
-        //await DocumentController.generateDocument('liquidation_form', data);
+        let statutoryDeclarationBuffer = await DocumentController.generateDocument('statutory_declaration', data);  // generate PDF
+        let statutoryDeclarationDocument = await Document.create({ name: 'statutory_declaration', type: 'generated',
+            paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
+
+        fs.writeFileSync(getStoragePath(`${statutoryDeclarationDocument.id}.pdf`), statutoryDeclarationBuffer); // write to storage
+
+        let liquidationFormBuffer = await DocumentController.generateDocument('liquidation_form', data);  // generate PDF
+        let liquidationFormDocument = await Document.create({ name: 'liquidation_form', type: 'generated',
+            paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
+
+        fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
+
         await transaction.commit();
     } catch(err) {
         await transaction.rollback();

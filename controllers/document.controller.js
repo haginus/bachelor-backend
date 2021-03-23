@@ -39,11 +39,40 @@ exports.generateDocument = (name, data) => {
     if(name == 'sign_up_form') {
         return generateSignUpForm(data);
     }
+    if(name == 'statutory_declaration') {
+        return generateStatutoryDeclaration(data);
+    }
+    if(name == 'liquidation_form') {
+        return generateLiquidationForm(data);
+    }
+
     throw "INVALID_DOCUMENT_NAME";
 }
 
 const generateSignUpForm = async (student) => {
     const content = await ejs.renderFile("./document-templates/sign_up_form.ejs", { student } );
+    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    return fileBuffer;
+}
+
+const generateStatutoryDeclaration = async (student) => {
+    const today = new Date();
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+
+    const date = today.toLocaleDateString('ro-RO', options);
+    const content = await ejs.renderFile("./document-templates/statutory_declaration.ejs", { student, date } );
+    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    return fileBuffer;
+}
+
+const generateLiquidationForm = async (student) => {
+    const today = new Date();
+    const birth = new Date(student.extra.dateOfBirth);
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+    
+    const date = today.toLocaleDateString('ro-RO', options);
+    const birthDate = birth.toLocaleDateString('ro-RO', options);
+    const content = await ejs.renderFile("./document-templates/liquidation_form.ejs", { student, date, birthDate } );
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
 }
