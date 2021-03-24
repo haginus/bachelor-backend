@@ -235,7 +235,8 @@ const Document = sequelize.define('document', {
         'marriage_certificate', // Certificat de casatorie
         'language_certificate', // Certificat de competență lingvistică
         'statutory_declaration', // Declaratie pe proprie raspundere,
-        "liquidation_form" // Formular de lichidare
+        "liquidation_form", // Formular de lichidare
+        "bachelor_diploma" // Diplomă de licență
       ]],
     }
   },

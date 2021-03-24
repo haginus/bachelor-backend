@@ -5,6 +5,7 @@ const { Op, Sequelize } = require("sequelize");
 const fs = require('fs');
 const path = require('path')
 const mime = require('mime-types')
+const paperRequiredDocuments = require('./../json/paper-required-documents.json')
 
 
 const getStudentByUid = (uid) => {
@@ -416,17 +417,18 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
         throw "NOT_AUTHORIZED";
     }
     const paperId = paper.id;
+    const requiredDocuments = await this.getPaperRequiredDocuments(user, null);
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
-    const requiredDoc = this.paperRequiredDocuments.find(doc => doc.name == name); // find uploaded doc name in required list
+    const requiredDoc = requiredDocuments.find(doc => doc.name == name); // find uploaded doc name in required list
     if(!requiredDoc) { // if it is not then throw error
         throw "INVALID_DOCUMENT";
     }
     if(!requiredDoc.types[type]) { // check if uploaded doc type is required
-        throw "INVALID_DOCUMENT";
+        throw "INVALID_DOCUMENT_TYPE";
     }
     const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(','); // get accepted mimeTypes
     if(!acceptedMimeTypes.includes(mimeType)) { // check if uploaded doc mimeType is in the accepted array
-        throw "INVALID_MIMETYPE";
+        throw "INVALID_DOCUMENT_MIMETYPE";
     }
 
     const fileExtension = mime.extension(mimeType); // get the file extension
@@ -466,45 +468,44 @@ const getStoragePath = (fileName) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
-exports.testGen = async (id, extraData) => {
-    let student = await this.getStudentByUid(id); 
-    generatePaperDocuments(student, extraData);
-}
-
-exports.paperRequiredDocuments = [
-    {
-      title: "Cerere de înscriere",
-      name: "sign_up_form",
-      types: {
-        generated: true,
-        signed: true
-      },
-      acceptedMimeTypes: 'application/pdf'
-    },
-    {
-      title: "Declarație pe proprie răspundere",
-      name: "statutory_declaration",
-      types: {
-        generated: true,
-        signed: true
-      },
-      acceptedMimeTypes: 'application/pdf'
-    },
-    {
-      title: "Formular de lichidare",
-      name: "liquidation_form",
-      types: {
-        generated: true,
-        signed: true
-      },
-      acceptedMimeTypes: 'application/pdf'
-    },
-    {
-      title: "Copie C.I.",
-      name: "identity_card",
-      types: {
-        copy: true
-      },
-      acceptedMimeTypes: 'application/pdf,image/png,image/jpeg'
+exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be provided, extraData can be null
+    if(!user?.student?.paper) { // if student has no paper
+        throw "UNAUTHORIZED";
     }
-]
+
+    if(!extraData) { // if extraData was not provided
+        extraData = await this.getExtraData(user.id);
+    }
+
+    let isMarried, isPreviousPromotion, paperType;
+    if(!extraData) { // if student didn't set up extraData, we assume the following
+        isMarried = false;
+    } else { // else we get the data we need
+        isMarried = ['married', 're_married', 'widow'].includes(extraData.civilState);
+    }
+
+    isPreviousPromotion = true; // TODO: work on later
+    paperType = user.student.domain.type; // paper type is the same as student domain type
+
+    return paperRequiredDocuments.filter(doc => {
+        if(!doc.onlyFor) { // if document is required for everyone
+            return true;
+        }
+        if(doc.onlyFor.married && !isMarried) { // if document requires married status and student is not married
+            return false;
+        }
+        if(doc.onlyFor.paperType && doc.onlyFor.paperType != paperType) { // if doc requires a different paper type
+            return false;
+        }
+        if(doc.onlyFor.previousPromotions && !isPreviousPromotion) { // if doc requires a previous promotion and student is in current promotion
+            return false;
+        }
+        return true; // if all tests passed then student needs to have this document
+    }).map(doc => {
+        let sentDoc = { ...doc }
+        delete sentDoc['onlyFor']; // remove the onlyFor attribute
+        sentDoc['acceptedExtensions'] = doc.acceptedMimeTypes.split(',') // get accepted extensions from mimeType
+                                    .map(mimeType => mime.extension(mimeType)).filter(t => t); // remove not found mimeType extensions (false)
+        return sentDoc;
+    })
+}

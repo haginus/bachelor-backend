@@ -133,6 +133,15 @@ router.post('/extra-data/set', async (req, res) => {
     }
 });
 
+router.get('/paper/documents/get-required', async (req, res) => {
+    try {
+        let documents = await StudentController.getPaperRequiredDocuments(req._user, null);
+        res.json(documents);
+    } catch(err) {
+        res.status(400).json(err);
+    }
+});
+
 router.post('/paper/documents/upload', fileUpload({
     limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
 }), async function(req, res) {

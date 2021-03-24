@@ -1,0 +1,79 @@
+[
+    {
+        "title": "Cerere de înscriere",
+        "name": "sign_up_form",
+        "types": {
+            "generated": true,
+            "signed": true
+        },
+        "acceptedMimeTypes": "application/pdf"
+    },
+    {
+        "title": "Declarație pe proprie răspundere",
+        "name": "statutory_declaration",
+        "types": {
+            "generated": true,
+            "signed": true
+        },
+        "acceptedMimeTypes": "application/pdf"
+    },
+    {
+        "title": "Formular de lichidare",
+        "name": "liquidation_form",
+        "types": {
+            "generated": true,
+            "signed": true
+        },
+        "acceptedMimeTypes": "application/pdf"
+    },
+    {
+        "title": "Carte de identitate",
+        "name": "identity_card",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg"
+    },
+    {
+        "title": "Certificat de naștere",
+        "name": "birth_certificate",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg"
+    },
+    {
+        "title": "Certificat de căsătorie",
+        "name": "marriage_certificate",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg",
+        "onlyFor": {
+            "married": true
+        }
+    },
+    {
+        "title": "Diplomă de bacalaureat",
+        "name": "bacalaureat_diploma",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg",
+        "onlyFor": {
+            "previousPromotions": true
+        }
+    },
+    {
+        "title": "Diplomă de bacalaureat",
+        "name": "bachelor_diploma",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg",
+        "onlyFor": {
+            "previousPromotions": true,
+            "paperType": "master"
+        }
+    }
+]
