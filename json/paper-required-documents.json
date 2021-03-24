@@ -54,6 +54,18 @@
         }
     },
     {
+        "title": "Certificatul de competență lingvistică",
+        "name": "language_certificate",
+        "types": {
+            "copy": true
+        },
+        "acceptedMimeTypes": "application/pdf,image/png,image/jpeg",
+        "onlyFor": {
+            "previousPromotions": true,
+            "type": "bachelor"
+        }
+    },
+    {
         "title": "Diplomă de bacalaureat",
         "name": "bacalaureat_diploma",
         "types": {
@@ -65,7 +77,7 @@
         }
     },
     {
-        "title": "Diplomă de bacalaureat",
+        "title": "Diplomă de licență",
         "name": "bachelor_diploma",
         "types": {
             "copy": true
