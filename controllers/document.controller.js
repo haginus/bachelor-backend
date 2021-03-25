@@ -50,7 +50,14 @@ exports.generateDocument = (name, data) => {
 }
 
 const generateSignUpForm = async (student) => {
-    const content = await ejs.renderFile("./document-templates/sign_up_form.ejs", { student } );
+    const today = new Date();
+    const birth = new Date(student.extra.dateOfBirth);
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+    
+    const date = today.toLocaleDateString('ro-RO', options);
+    const birthDate = birth.toLocaleDateString('ro-RO', options);
+
+    const content = await ejs.renderFile("./document-templates/sign_up_form.ejs", { student, date, birthDate } );
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
 }

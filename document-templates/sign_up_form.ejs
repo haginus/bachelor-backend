@@ -1,526 +1,288 @@
 <html>
 
 <head>
-    <meta http-equiv=Content-Type content="text/html; charset=utf-8">
-    <style>
-        <!--
-        /* Font Definitions */
-        @font-face {
-            font-family: Wingdings;
-            panose-1: 5 0 0 0 0 0 0 0 0 0;
-        }
-
-        @font-face {
-            font-family: "Cambria Math";
-            panose-1: 2 4 5 3 5 4 6 3 2 4;
-        }
-
-        @font-face {
-            font-family: Georgia;
-            panose-1: 2 4 5 2 5 4 5 2 3 3;
-        }
-
-        @font-face {
-            font-family: "Trebuchet MS";
-            panose-1: 2 11 6 3 2 2 2 2 2 4;
-        }
-
-        @font-face {
-            font-family: "Wingdings 2";
-            panose-1: 5 2 1 2 1 5 7 7 7 7;
-        }
-
-        @font-face {
-            font-family: Tahoma;
-            panose-1: 2 11 6 4 3 5 4 4 2 4;
-        }
-
-        /* Style Definitions */
-        p.MsoNormal,
-        li.MsoNormal,
-        div.MsoNormal {
-            margin: 0cm;
-            font-size: 12.0pt;
-            font-family: "Times New Roman", serif;
-        }
-
-        h1 {
-            margin: 0cm;
-            text-align: justify;
-            line-height: 150%;
-            page-break-after: avoid;
-            font-size: 12.0pt;
-            font-family: "Trebuchet MS", sans-serif;
-        }
-
-        p.MsoBodyText2,
-        li.MsoBodyText2,
-        div.MsoBodyText2 {
-            margin: 0cm;
-            font-size: 12.0pt;
-            font-family: "Trebuchet MS", sans-serif;
-            font-weight: bold;
-        }
-
-        a:link,
-        span.MsoHyperlink {
-            color: blue;
-            text-decoration: underline;
-        }
-
-        @page WordSection1 {
-            size: 21.0cm 842.0pt;
-            margin: 14.2pt 42.5pt 18.0pt 42.5pt;
-        }
-
-        div.WordSection1 {
-            page: WordSection1;
-        }
-
-        /* List Definitions */
-        ol {
-            margin-bottom: 0cm;
-        }
-
-        ul {
-            margin-bottom: 0cm;
-        }
-        -->
-    </style>
-
+    <title>Fișă de înscriere</title>
 </head>
 
-<body lang=en-RO link=blue vlink="#954F72" style='word-wrap:break-word'>
-
-    <div class=WordSection1>
-
-        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><span lang=RO>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:115%'><span lang=RO>UNIVERSITATEA
-                DIN BUCUREŞTI                               <b>Forma de finanțare:</b>      </span><b><span lang=RO
-                    style='font-size:14.0pt;line-height:115%;font-family:"Wingdings 2"'></span><span lang=RO> buget/
-                </span></b><b><span lang=RO style='font-size:14.0pt;line-height:
-115%;font-family:"Wingdings 2"'></span><span lang=RO> taxă</span></b></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:115%'><b><span lang=RO>Facultatea de Matematică și
-                    Informatică                         </span></b><b><span lang=RO>Forma de învățământ</span></b><span
-                lang=RO>:<b>  </b></span><b><span lang=RO
-                    style='font-size:14.0pt;line-height:115%;font-family:"Wingdings 2"'></span><span lang=RO> IF
-                    /</span></b><b><span lang=RO style='font-size:14.0pt;line-height:
-115%;font-family:"Wingdings 2"'></span><span lang=RO> IFR /</span></b><b><span lang=RO
-                    style='font-size:14.0pt;line-height:115%;font-family:"Wingdings 2"'></span><span lang=RO>
-                    ID</span></b></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:115%'><b><span lang=RO>Domeniul:
-                    .........................................................</span></b></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:115%'><b><span lang=RO>Programul de
-                    studii</span></b><span lang=RO>: <b>............................................</b></span></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:115%'><b><span lang=RO>Promoția:
-                    ...............................</span></b></p>
-
-        <p class=MsoBodyText2 align=right style='margin-left:111.6pt;text-align:right;
-text-indent:-111.6pt;line-height:17.0pt'><span lang=RO style='font-family:"Times New Roman",serif'>Nr.
-                Matricol .....……….…… Grupa ………..</span></p>
-
-        <p class=MsoNormal align=right style='text-align:right;line-height:115%'><b><span lang=RO
-                    style='font-size:8.0pt;line-height:115%'>&nbsp;</span></b></p>
-
-        <p class=MsoNormal align=right style='text-align:right;line-height:115%'><b><span lang=RO>M.G. ………</span></b>
+<body>
+    <div class="header-container">
+        <p class="col">
+            UNIVERSITATEA DIN BUCUREȘTI <br>
+            Facultatea de Matematică și Informatică	<br>
+            Domeniul: <%= student.domain.name %> <br>
+            Programul de studii: 
+            <% switch (student.domain.type) {
+                case 'bachelor' : %>
+                        Licență
+                        <% break;
+                case 'master' : %>
+                        Master
+                        <% break;
+            } %> <br>
+            Promoția: 
         </p>
+        <p class="col right" style="white-space: pre-wrap;">Forma de finanțare:       🗆 buget/ 🗆 taxă
+            Forma de învățământ:  🗆 IF /🗆 IFR /🗆 ID
 
-        <p class=MsoNormal align=right style='text-align:right;line-height:115%'><span lang=RO>&nbsp;</span></p>
+            Număr matricol:  Grupa: <%= student.group %>
 
-        <p class=MsoNormal align=center style='text-align:center;line-height:12.0pt'><b><span lang=RO>FIȘĂ DE
-                    ÎNSCRIERE</span></b></p>
+            M.G. .........
 
-        <p class=MsoNormal align=center style='text-align:center;line-height:12.0pt'><b><span lang=RO>pentru examenul de
-                    finalizare a studiilor (LICENȚĂ)</span></b></p>
-
-        <p class=MsoNormal align=center style='text-align:center;line-height:12.0pt'><b><span lang=RO>sesiunea IULIE
-                    2020</span></b></p>
-
-        <h1><span lang=RO style='font-size:11.0pt;line-height:150%;font-family:"Times New Roman",serif'>Date
-                personale</span></h1>
-
-        <div align=center>
-
-            <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=697 style='border-collapse:collapse'>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Nume de familie la
-                                naştere</span></p>
-                    </td>
-                    <td width=177 colspan=3 valign=top style='width:132.65pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO style='font-size:11.0pt'>
-                                <%= student.extra.birthLastName %>
-                            </span></p>
-                    </td>
-                    <td width=107 valign=top style='width:80.4pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Nume de familie
-                                actual</span></p>
-                    </td>
-                    <td width=259 colspan=2 valign=top style='width:194.15pt;border:solid black 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>
-                                <%= student.user.lastName %>
-                                </span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Prenume</span></p>
-                    </td>
-                    <td width=284 colspan=4 valign=top style='width:213.05pt;border-top:none;
-  border-left:solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:
-  none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>
-                                <%= student.user.firstName %>
-                                </span></p>
-                    </td>
-                    <td width=154 valign=top style='width:115.2pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Iniţiala
-                                tatălui/mamei</span></p>
-                    </td>
-                    <td width=105 valign=top style='width:78.95pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO style='font-size:11.0pt'>A</span>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Fiul/Fiica lui</span></p>
-                    </td>
-                    <td width=177 colspan=3 valign=top style='width:132.65pt;border-top:none;
-  border-left:solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:
-  none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                    <td width=107 valign=top style='width:80.4pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>şi</span></p>
-                    </td>
-                    <td width=259 colspan=2 valign=top style='width:194.15pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Data naşterii</span></p>
-                    </td>
-                    <td width=177 colspan=3 valign=top style='width:132.65pt;border-top:none;
-  border-left:solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:
-  none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                    <td width=107 valign=top style='width:80.4pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO style='font-size:11.0pt'>Stare
-                                civilă</span></p>
-                    </td>
-                    <td width=259 colspan=2 valign=top style='width:194.15pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Cetăţenie</span></p>
-                    </td>
-                    <td width=543 colspan=6 valign=top style='width:407.2pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=154 valign=top style='width:115.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Etnie</span></p>
-                    </td>
-                    <td width=94 valign=top style='width:70.55pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:solid windowtext 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                    <td width=60 valign=top style='width:44.8pt;border-top:none;border-left:none;
-  border-bottom:solid black 1.0pt;border-right:solid windowtext 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>CNP</span></p>
-                    </td>
-                    <td width=389 colspan=4 valign=top style='width:291.85pt;border-top:none;
-  border-left:none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr height=0>
-                    <td width=154 style='border:none'></td>
-                    <td width=94 style='border:none'></td>
-                    <td width=60 style='border:none'></td>
-                    <td width=23 style='border:none'></td>
-                    <td width=107 style='border:none'></td>
-                    <td width=154 style='border:none'></td>
-                    <td width=105 style='border:none'></td>
-                </tr>
-            </table>
-
-        </div>
-
-        <p class=MsoNormal><b><span lang=RO style='font-size:11.0pt;color:white'>Locul </span></b><b><span lang=RO
-                    style='font-size:11.0pt'>naşterii</span></b></p>
-
-        <div align=center>
-
-            <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=697 style='border-collapse:collapse'>
-                <tr>
-                    <td width=136 valign=top style='width:101.8pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Ţara</span></p>
-                    </td>
-                    <td width=240 valign=top style='width:180.2pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                    <td width=120 valign=top style='width:89.75pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Judeţ/Sector</span></p>
-                    </td>
-                    <td width=202 valign=top style='width:151.25pt;border:solid black 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=136 valign=top style='width:101.8pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Localitatea</span></p>
-                    </td>
-                    <td width=562 colspan=3 valign=top style='width:421.2pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-            </table>
-
-        </div>
-
-        <p class=MsoNormal><b><span lang=RO style='font-size:11.0pt'>Date de contact</span></b></p>
-
-        <div align=center>
-
-            <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 style='border-collapse:collapse'>
-                <tr>
-                    <td width=108 colspan=2 valign=top style='width:81.0pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Telefon fix</span></p>
-                    </td>
-                    <td width=161 valign=top style='width:120.4pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                    <td width=127 valign=top style='width:95.6pt;border:solid black 1.0pt;
-  border-right:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>Telefon mobil</span></p>
-                    </td>
-                    <td width=301 valign=top style='width:226.0pt;border:solid black 1.0pt;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=64 valign=top style='width:48.15pt;border-top:none;border-left:
-  solid black 1.0pt;border-bottom:solid black 1.0pt;border-right:none;
-  padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal><span lang=RO style='font-size:11.0pt'>E-mail</span></p>
-                    </td>
-                    <td width=633 colspan=4 valign=top style='width:474.85pt;border:solid black 1.0pt;
-  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='layout-grid-mode:char'><span lang=RO
-                                style='font-size:11.0pt'>&nbsp;</span></p>
-                    </td>
-                </tr>
-                <tr height=0>
-                    <td width=64 style='border:none'></td>
-                    <td width=44 style='border:none'></td>
-                    <td width=161 style='border:none'></td>
-                    <td width=127 style='border:none'></td>
-                    <td width=301 style='border:none'></td>
-                </tr>
-            </table>
-
-        </div>
-
-        <p class=MsoNormal style='text-align:justify;line-height:18.0pt'><span lang=RO
-                style='font-size:8.0pt'>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify'><b><span lang=RO>Prezint și
-                    susțin lucrarea de licență/proiectul de diplomă cu titlul: </span></b></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:150%'><span
-                lang=RO>.........................................................................................................................................................................</span>
         </p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:150%'><span
-                lang=RO>..........................................................................................................................................................................</span>
-        </p>
-
-        <p class=MsoNormal style='text-align:justify'><span lang=EN-US>coordonator </span><span lang=RO>ştiinţific
-            </span><span lang=EN-US>………………………………………………………………………………………...</span></p>
-
-        <p class=MsoNormal style='text-align:justify'><span lang=RO style='font-size:
-8.0pt'>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify'><span lang=RO>Depun la dosarul de
-                înscriere: </span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:black'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Diploma de bacalaureat - copie certificată
-                conform cu originalul (<i>va fi adaugata la dosar de catre secretarul de an</i>);</span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:black'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>2 fotografii color, pe hârtie
-                fotografică, dim.3/4 (<i>vor fi aduse de absolvent la ridicarea adeverintei de
-                    licenta</i>);</span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:black'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Certificatul de naștere - copie
-                certificată conform cu originalul (<i>va fi adaugata la dosar de catre
-                    secretarul de an</i>);</span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:black'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Certificatul de căsătorie - copie
-                certificată conform cu originalul (unde este cazul) (<i>va fi adăugată la dosar
-                    de către secretarul de an</i>);</span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:black'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Certificatul de competență
-                lingvistică - copie certificată conform cu originalul (<i>va fi adăugată la
-                    dosar de către secretarul de an</i>);</span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:#00B050'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Copie CI</span><i><span lang=RO style='font-size:10.0pt'>
-                    (va fi transmisă de absolvent în format electronic);</span></i></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:#00B050'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Declarația pe propria răspundere
-                că lucrarea de licenţă este rezultatul muncii mele</span><span lang=RO style='font-size:10.0pt'>
-            </span><i><span lang=RO>(</span></i><i><span lang=RO style='font-size:10.0pt'>va fi transmisă de absolvent
-                    în format electronic);</span></i></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:#00B050'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt;color:black'>Lucrarea de licență/proiectul de
-                diplomă și referatul coordonatorului științific (<b>în format pdf</b>)</span><span lang=RO
-                style='font-size:10.0pt'> <i>(vor fi transmise de absolvent);</i></span></p>
-
-        <p class=MsoNormal style='margin-left:35.7pt;text-align:justify;text-indent:
--17.85pt'><span lang=RO style='font-size:10.0pt;color:#00B050'>-<span
-                    style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span
-                lang=RO style='font-size:10.0pt'>Fișa de lichidare <i>(va fi transmisă de
-                    absolvent în format electronic);</i></span></p>
-
-        <p class=MsoNormal style='margin-left:17.85pt;text-align:justify'><span lang=RO>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify;text-indent:17.85pt;line-height:
-115%'><b><span lang=RO style='line-height:115%'>Declarația absolventului:</span></b></p>
-
-        <p class=MsoNormal style='text-align:justify;text-indent:17.85pt;line-height:
-115%'><span lang=RO>Am luat cunoștință de informarea privind protecția datelor
-                cu caracter personal (accesibilă la:  <a
-                    href="https://unibuc.ro/wp-content/uploads/2020/06/Informare-examene-de-finalizare-a-studiilor.pdf">https://unibuc.ro/wp-content/uploads/2020/06/Informare-examene-de-finalizare-a-studiilor.pdf</a>.)</span>
-        </p>
-
-        <p class=MsoNormal style='text-align:justify;text-indent:17.85pt;line-height:
-115%'><span lang=RO style='line-height:115%'>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:150%'><span lang=RO
-                style='font-size:8.0pt;line-height:150%'>&nbsp;</span></p>
-
-        <div align=center>
-
-            <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=660
-                style='width:495.0pt;border-collapse:collapse'>
-                <tr>
-                    <td width=338 valign=top style='width:253.75pt;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><span lang=RO>              
-                                    Data,</span></p>
-                        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><span lang=RO>&nbsp;</span></p>
-                    </td>
-                    <td width=322 valign=top style='width:241.25pt;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='line-height:12.0pt'><span lang=RO>                                   
-                                Semnătura,</span></p>
-                    </td>
-                </tr>
-                <tr>
-                    <td width=338 valign=top style='width:253.75pt;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><span
-                                lang=RO>…………………………….</span></p>
-                    </td>
-                    <td width=322 valign=top style='width:241.25pt;padding:0cm 5.4pt 0cm 5.4pt'>
-                        <p class=MsoNormal align=right style='text-align:right;line-height:12.0pt'><span
-                                lang=RO>……………………………………..</span></p>
-                    </td>
-                </tr>
-            </table>
-
-        </div>
-
-        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><span lang=RO>&nbsp;</span></p>
-
-        <p class=MsoNormal style='text-align:justify;line-height:12.0pt'><b><span lang=RO>&nbsp;</span></b></p>
-
+        
     </div>
+    
+    <p class="title">
+        FIȘĂ DE ÎNSCRIERE <br>
+        pentru examenul de finalizare a studiilor
+            <% switch (student.domain.type) {
+                case 'bachelor' : %>
+                        (LICENȚĂ)
+                        <% break;
+                case 'master' : %>
+                        (DISERTAȚIE)
+                        <% break;
+            } %>
+        <br>
+        sesiunea IULIE 2021
+    </p>
 
+    <p class="table-header">Date personale</p>
+    <table>
+        <tr>
+            <td class="first-td-1">Nume de familie la naștere</td>
+            <td width=160 class="content"><%= student.extra.birthLastName %></td>
+            <td width=110>Nume de familie actual</td>
+            <td class="content"><%= student.user.lastName %></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="first-td-1">Prenume</td>
+            <td width=285 class="content"><%= student.user.firstName %></td>
+            <td width=140>Inițiala tatălui/mamei</td>
+            <td class="content"><%= student.extra.parentInitial %></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="first-td-1">Fiul/fiica lui</td>
+            <td width=160 class="content"><%= student.extra.fatherName %></td>
+            <td width=110>și</td>
+            <td class="content"><%= student.extra.motherName %></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="first-td-1">Data nașterii</td>
+            <td width=160 class="content"><%= birthDate %></td>
+            <td width=110>Stare civilă</td>
+            <td class="content">
+                <% switch (student.extra.civilState) {
+                    case 'not_married' : %>
+                        Necăsătorit
+                        <% break;
+                    case 'married' : %>
+                        Căsătorit
+                        <% break;
+                    case 'divorced' : %>
+                        Divorțat
+                        <% break;
+                    case 'widow' : %>
+                        Văduv
+                        <% break;
+                    case 're_married' : %>
+                        Recăsătorit
+                        <% break;
+                } %> <br>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="first-td-1">Cetățenie</td>
+            <td class="content"><%= student.extra.citizenship %></td>
+        </tr>
+    </table>
+    <table class="last">
+        <tr>
+            <td class="first-td-1">Etnie</td>
+            <td width=160 class="content"><%= student.extra.ethnicity %></td>
+            <td width=110>CNP</td>
+            <td class="content"><%= student.user.CNP %></td>
+        </tr>
+    </table>
+
+    <p class="table-header">Locul nașterii</p>
+    <table>
+        <tr>
+            <td width=100>Țara</td>
+            <td width=200 class="content"><%= student.extra.placeOfBirthCountry %></td>
+            <td width=110>Județ/Sector</td>
+            <td class="content"><%= student.extra.placeOfBirthCounty %></td>
+        </tr>
+    </table>
+    <table class="last">
+        <tr>
+            <td width=100>Localitatea</td>
+            <td class="content"><%= student.extra.placeOfBirthLocality %></td>
+        </tr>
+    </table>
+
+    <p class="table-header">Date de contact</p>
+    <table>
+        <tr>
+            <td width=100>Telefon fix</td>
+            <td width=200 class="content"><%= student.extra.landline %></td>
+            <td width=110>Telefon mobil</td>
+            <td class="content"><%= student.extra.mobilePhone %></td>
+        </tr>
+    </table>
+    <table class="last">
+        <tr>
+            <td width=100>E-mail</td>
+            <td class="content"><%= student.extra.personalEmail %></td>
+        </tr>
+    </table>
+
+
+    <p class="bold">
+        Prezint și susțin lucrarea de disertație cu titlul:
+    </p>
+    <p class="italic"><%= student.paper.title %></p>
+    <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
+
+    <p>
+        Depun la dosarul de înscriere <i>(vor fi transmise de absolvenți în format electronic):</i>
+    </p>
+    <ul>
+        <li>Diploma de bacalaureat</li>
+        <li>2 fotografii color, pe hârtie fotografică, dimensiunea 3/4 <i>(vor fi aduse de absolvent la ridicarea adeverintei de licență)</i></li>
+        <li>Certificatul de naștere</li>
+        <li>Certificatul de căsătorie <i>(unde este cazul)</i></li>
+        <li>Copie carte de identitate</li>
+        <li>Declarația pe propria răspundere că lucrarea de licenţă este rezultatul muncii mele</li>
+        <li>Lucrarea de disertație și referatul coordonatorului științific <b><i>(în format pdf)</i></b></li>
+        <li>Fișa de lichidare</li>
+    </ul>
+
+    <p>
+        <b>Declarația absolventului:</b> <br>
+        Am luat cunoștință de informarea privind protecția datelor cu caracter personal. (accesibilă la:  https://unibuc.ro/wp-content/uploads/2020/06/Informare-examene-de-finalizare-a-studiilor.pdf)
+    </p>
+
+    <div class="footer-container">
+        <p class="col">
+            <span>Data</span><br>
+            <span>
+                <%= date %>
+            </span>
+        </p>
+        <p class="col">
+            <span>Semnătura</span> <br>
+            <span>_________________</span>
+        </p>
+    </div>
 </body>
 
 </html>
+
+<style>
+    body {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 12pt;
+        margin: 1.5cm;
+        margin-top: 1cm;
+        margin-bottom: 0cm;
+    }
+
+    .title {
+        text-align: center;
+        font-weight: bold;
+        margin-top: -12px;
+    }
+
+    .table-header {
+        font-size: 11pt;
+        font-weight: bold;
+        margin-bottom: 4px;
+        margin-top: 4px;
+    }
+
+    table {
+        border-spacing: 0px;
+        width: 100%;
+        font-size: 11pt;
+        border-top: 1px solid black;
+        border-left: 1px solid black;
+    }
+
+    table.last {
+        border-bottom: 1px solid black;
+    } 
+
+
+
+    .first-td-1 {
+        width: 140px;
+    }
+
+    td {
+        border-right: 1px solid black;
+        padding: 0 7px;
+    }
+
+    li {
+        font-size: 10pt;
+    }
+
+    p.main {
+        text-align: justify;
+        line-height: 12pt;
+    }
+
+    p.italic {
+        font-style: italic;
+    }
+
+    p.bold {
+        font-weight: bold;
+    }
+
+    p.center {
+        text-align: center;
+    }
+
+    .footer-container,
+    .header-container {
+        display: flex;
+
+    }
+
+    .footer-container {
+        margin-top: 0.5cm;
+    }
+
+    .header-container {
+        font-weight: bold;
+    }
+
+    .footer-container .col,
+    .header-container .col {
+        flex: 1;
+    }
+
+    .footer-container .col {
+        text-align: center;
+        line-height: 1cm;
+    }
+
+    .col.right {
+        text-align: right;
+    }
+
+    .footer-note {
+        font-size: 10pt;
+        text-align: justify;
+    }
+</style>
