@@ -26,7 +26,10 @@ const getStudentByUid = (uid) => {
             {
                 model: Domain
             }
-        ]
+        ],
+        where: {
+            userId: uid
+        }
     });
 }
 
@@ -296,7 +299,9 @@ exports.getPaper = async (uid) => {
     const student = await this.getStudentByUid(uid);
     let paper = await Paper.scope(["documents", "teacher"]).findOne({ where: { studentId: student.id } });
     paper = JSON.parse(JSON.stringify(paper)); // sequelize will return the user info nested as `user` in paper.teacher
-    paper.teacher = paper.teacher.user;
+    if(paper) {
+        paper.teacher = paper.teacher.user;
+    }
     return paper;
 }
 
@@ -363,7 +368,7 @@ exports.setExtraData = async (uid, data) => {  // sets the new extra data and tr
 }
 
 const generatePaperDocuments = async (student, extraData) => {
-    let paper = await Paper.scope(["documents", "teacher"]).findOne({ where: { studentId: student.id } });
+    let paper = await this.getPaper(student.user.id);
     if(!paper) {
         throw "BAD_REQUEST";
     }
@@ -380,7 +385,10 @@ const generatePaperDocuments = async (student, extraData) => {
                 }
             }
         });
-        const data = { ...JSON.parse(JSON.stringify(student)), extra: extraData }
+
+        let data = { ...JSON.parse(JSON.stringify(student)), extra: extraData }
+        data.paper = JSON.parse(JSON.stringify(paper));
+
         let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
         let signUpFormDocument = await Document.create({ name: 'sign_up_form', type: 'generated',
             paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
