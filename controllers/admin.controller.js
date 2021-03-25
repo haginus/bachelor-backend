@@ -39,16 +39,14 @@ exports.getStudents = async (sort, order, filter, page, pageSize) => {
     return query;
 }
 
-exports.addStudent = async (firstName, lastName, CNP, email, group, domainId) => {
+exports.addStudent = async (firstName, lastName, CNP, email, group, domainId, identificationCode, promotion) => {
     let domain = await Domain.findOne({ where: { id: domainId } });
     if (!domain) {
         throw "DOMAIN_NOT_FOUND";
     }
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'student' });
-        let student = await Student.create({ group });
-        await student.setDomain(domain);
-        await student.setUser(user);
+        let student = await Student.create({ group, identificationCode, promotion, domainId, userId: user.id });
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id });
         Mailer.sendWelcomeEmail(user, activationToken.token);
@@ -58,7 +56,7 @@ exports.addStudent = async (firstName, lastName, CNP, email, group, domainId) =>
     }
 }
 
-exports.editStudent = async (id, firstName, lastName, CNP, group, domainId) => {
+exports.editStudent = async (id, firstName, lastName, CNP, group, domainId, identificationCode, promotion) => {
     let domain = await Domain.findOne({ where: { id: domainId } });
     if (!domain) {
         throw "DOMAIN_NOT_FOUND";
@@ -66,7 +64,7 @@ exports.editStudent = async (id, firstName, lastName, CNP, group, domainId) => {
     let userUpdate = await User.update({ firstName, lastName, CNP }, {
         where: { id }
     });
-    let studentUpdate = await Student.update({ group, domainId }, {
+    let studentUpdate = await Student.update({ group, domainId, identificationCode, promotion }, {
         where: { userId: id }
     });
     return UserController.getUserData(id);

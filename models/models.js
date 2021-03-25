@@ -96,6 +96,14 @@ const Student = sequelize.define('student', {
   group: {
     type: Sequelize.STRING,
     allowNull: false
+  },
+  promotion: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  identificationCode: {
+    type: Sequelize.STRING,
+    allowNull: false
   }
 }, {
   timestamps: false

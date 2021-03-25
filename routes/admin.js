@@ -25,8 +25,9 @@ router.get('/students', async function (req, res) {
 
 router.post('/students/add', async function (req, res) {
     try {
-        let { firstName, lastName, CNP, email, group, domainId } = req.body;
-        const student = await AdminController.addStudent(firstName, lastName, CNP, email, group, domainId);
+        let { firstName, lastName, CNP, email, group, domainId, identificationCode, promotion } = req.body;
+        const student = await AdminController.addStudent(firstName, lastName, CNP, email, group,
+                                                        domainId, identificationCode, promotion);
         res.json(student);
     } catch (err) {
         console.log(err)
@@ -36,8 +37,9 @@ router.post('/students/add', async function (req, res) {
 
 router.post('/students/edit', async function (req, res) {
     try {
-        let { id, firstName, lastName, CNP, group, domainId } = req.body;
-        const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, domainId);
+        let { id, firstName, lastName, CNP, group, domainId, identificationCode, promotion } = req.body;
+        const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, domainId,
+                                                            identificationCode, promotion);
         res.json(student);
     } catch (err) {
         console.log(err);
