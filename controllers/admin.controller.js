@@ -1,4 +1,4 @@
-const { Student, User, Domain, ActivationToken, Teacher, Topic, Offer } = require("../models/models.js");
+const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -238,11 +238,11 @@ exports.addTeacherBulk = async (file) => {
 }
 
 exports.getDomains = () => {
-    return Domain.findAll();
+    return Domain.scope("specializations").findAll();
 }
 
 exports.getDomainsExtra = () => {
-    return Domain.findAll({
+    return Domain.scope("specializations").findAll({
         attributes: {
             include: [
                 [literals.DOMAIN_STUDENT_NUMBER, 'studentNumber'],
@@ -252,23 +252,74 @@ exports.getDomainsExtra = () => {
     })
 }
 
-exports.addDomain = (name, type) => {
-    return Domain.create({ name, type });
+exports.getDomain = (id) => {
+    return Domain.scope("specializations").findOne({
+        attributes: {
+            include: [
+                [literals.DOMAIN_STUDENT_NUMBER, 'studentNumber'],
+                [literals.DOMAIN_STUDENT_NUMBER, 'offerNumber']
+            ]
+        },
+        where: { id }
+    })
 }
 
-exports.editDomain = (id, name, type) => {
-    return Domain.update({ name, type }, { where: { id } });
+exports.addDomain = (name, type, specializations) => {
+    return Domain.create(
+        { name, type, specializations },
+        {
+            include: [ Specialization ]
+        }
+    );
 }
 
-exports.deleteDomain = async (id, moveStudentsTo) => {
-    if(id == moveStudentsTo) {
+exports.editDomain = async (id, name, type, specializations) => {
+    const oldDomain = await this.getDomain(id); // get old domain data
+    const specIds = oldDomain.specializations.map(spec => spec.id);
+    const transaction = await sequelize.transaction(); // start transaction
+    try {
+        await Domain.update({ name, type }, { where: { id }, transaction }); // update domain data
+        specs = {
+            toAdd: specializations.filter(spec => !spec.id), // specs that do not have an id will be added,
+            toEdit: specializations.filter(spec => specIds.includes(spec.id)), // specs that have ids in specIds
+            toDelete: specIds.filter(specId => !specializations.map(spec => spec.id).includes(specId)) // specs int specIds but not in the new array
+        }
+        if(specs.toAdd.length > 0) {
+            specs.toAdd = specs.toAdd.map(spec => {
+                return { name: spec.name, domainId: oldDomain.id } // add domainId
+            });
+            await Specialization.bulkCreate(specs.toAdd, { transaction });
+        }
+        for(spec of specs.toEdit) {
+            await Specialization.update({ name: spec.name }, { where: { id: spec.id }, transaction });
+        }
+        if(specs.toDelete.length > 0) {
+            specs.toDelete.forEach(specId => { // check if deleted specs have students
+                let spec = oldDomain.specializations.find(spec => spec.id == specId);
+                if(spec?.studentNumber > 0) {
+                    throw "NOT_ALLOWED"
+                }
+            });
+            await Specialization.destroy({ where: {
+                id: {
+                    [Op.in]: specs.toDelete
+                }
+            }, transaction });
+        }
+        await transaction.commit();
+    } catch(err) {
+        console.log(err)
+        await transaction.rollback();
         throw "BAD_REQUEST";
     }
-    const moveDomain = await Domain.findOne({ where: { id: moveStudentsTo } }); // find the domain we move students to
-    if(!moveDomain) {
+    return this.getDomain(id);
+}
+
+exports.deleteDomain = async (id) => {
+    const domain = await this.getDomain(id);
+    if(domain.studentNumber > 0) {
         throw "BAD_REQUEST";
     }
-    await Student.update({ domainId: moveStudentsTo }, { where: { domainId: id }}) // move students to the domain
     return Domain.destroy({ where: { id } });
 }
 

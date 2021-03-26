@@ -21,6 +21,29 @@ const Domain = sequelize.define('domain', {
   timestamps: false
 });
 
+const Specialization = sequelize.define('specialization', {
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false
+  }
+}, {
+  timestamps: false
+});
+
+Domain.hasMany(Specialization);
+Specialization.belongsTo(Domain);
+
+Domain.addScope('specializations', {
+  include: {
+    model: Specialization,
+    attributes: {
+      include: [
+        [sequelize.literal(`(SELECT COUNT(*) FROM students WHERE specializationId = specializations.id)`), 'studentNumber']
+      ]
+    }
+  }
+})
+
 const Topic = sequelize.define('topic', {
   name: {
     type: Sequelize.STRING,
@@ -118,6 +141,9 @@ Student.belongsTo(User, {
 
 Domain.hasMany(Student);
 Student.belongsTo(Domain);
+
+Specialization.hasMany(Student);
+Student.belongsTo(Specialization);
 
 Student.belongsToMany(Topic, { through: "StudentTopics", timestamps: false });
 Topic.belongsToMany(Student, { through: "StudentTopics", timestamps: false });
@@ -415,5 +441,5 @@ sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
-module.exports = { Domain, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
+module.exports = { Domain, Specialization, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
    ActivationToken, sequelize };

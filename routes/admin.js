@@ -132,9 +132,9 @@ router.get('/domains/extra', async function (req, res) {
 });
 
 router.post('/domains/add', async (req, res) => {
-    const { name, type } = req.body;
+    const { name, type, specializations } = req.body;
     try {
-        let domain = await AdminController.addDomain(name, type);
+        let domain = await AdminController.addDomain(name, type, specializations);
         return res.json(domain);
     } catch(err) {
         console.log(err)
@@ -143,9 +143,9 @@ router.post('/domains/add', async (req, res) => {
 });
 
 router.post('/domains/edit', async (req, res) => {
-    const { id, name, type } = req.body;
+    const { id, name, type, specializations } = req.body;
     try {
-        let domain = await AdminController.editDomain(id, name, type);
+        let domain = await AdminController.editDomain(id, name, type, specializations);
         return res.json(domain);
     } catch(err) {
         console.log(err)
@@ -154,8 +154,8 @@ router.post('/domains/edit', async (req, res) => {
 });
 
 router.post('/domains/delete', async (req, res) => {
-    const { id, moveStudentsTo } = req.body;
-    if(!id || isNaN(id) || !moveStudentsTo || isNaN(moveStudentsTo)) {
+    const { id } = req.body;
+    if(!id || isNaN(id)) {
         return res.status(400).json("BAD_REQUEST");
     }
     try {
