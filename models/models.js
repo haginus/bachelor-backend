@@ -30,7 +30,9 @@ const Specialization = sequelize.define('specialization', {
   timestamps: false
 });
 
-Domain.hasMany(Specialization);
+Domain.hasMany(Specialization, {
+  onDelete: "CASCADE"
+});
 Specialization.belongsTo(Domain);
 
 Domain.addScope('specializations', {

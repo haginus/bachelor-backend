@@ -163,7 +163,7 @@ router.post('/domains/delete', async (req, res) => {
         res.status(200).json({ success: true });
     } catch(err) {
         console.log(err);
-        res.status(500);
+        res.status(400).json(err);
     }
 });
 

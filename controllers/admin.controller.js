@@ -290,6 +290,9 @@ exports.addDomain = (name, type, specializations) => {
 
 exports.editDomain = async (id, name, type, specializations) => {
     const oldDomain = await this.getDomain(id); // get old domain data
+    if(!oldDomain) {
+        throw "BAD_REQUEST";
+    }
     const specIds = oldDomain.specializations.map(spec => spec.id);
     const transaction = await sequelize.transaction(); // start transaction
     try {
@@ -332,7 +335,7 @@ exports.editDomain = async (id, name, type, specializations) => {
 
 exports.deleteDomain = async (id) => {
     const domain = await this.getDomain(id);
-    if(domain.studentNumber > 0) {
+    if(!domain || domain.studentNumber > 0) {
         throw "BAD_REQUEST";
     }
     return Domain.destroy({ where: { id } });
