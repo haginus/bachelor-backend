@@ -31,7 +31,7 @@ exports.getStudents = async (sort, order, filter, page, pageSize) => {
     let query = await User.findAndCountAll({
         //where,
         attributes: { exclude: ['password'] },
-        include: [{ model: Student, required: true, include: [{ model: Domain }] }],
+        include: [{ model: Student, required: true, include: [{ model: Domain }, { model: Specialization }] }],
         limit,
         offset,
         order: sortArray
@@ -39,34 +39,49 @@ exports.getStudents = async (sort, order, filter, page, pageSize) => {
     return query;
 }
 
-exports.addStudent = async (firstName, lastName, CNP, email, group, domainId, identificationCode, promotion) => {
-    let domain = await Domain.findOne({ where: { id: domainId } });
-    if (!domain) {
-        throw "DOMAIN_NOT_FOUND";
+exports.addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion) => {
+    let specialization = await Specialization.findOne({ where: { id: specializationId } });
+    if (!specialization) {
+        throw "SPECIALIZATION_NOT_FOUND";
     }
+    let domainId = specialization.domainId;
+    const transaction = await sequelize.transaction();
     try {
-        let user = await User.create({ firstName, lastName, CNP, email, type: 'student' });
-        let student = await Student.create({ group, identificationCode, promotion, domainId, userId: user.id });
-        let token = crypto.randomBytes(64).toString('hex');
-        let activationToken = await ActivationToken.create({ token, userId: user.id });
-        Mailer.sendWelcomeEmail(user, activationToken.token);
-        return UserController.getUserData(user.id);
+        let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
+        // create student entity
+        let student = await Student.create({ group, identificationCode, promotion, domainId, specializationId, userId: user.id }, { transaction });
+        let token = crypto.randomBytes(64).toString('hex'); // generate activation token
+        let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
+        await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
+        await transaction.commit(); // commit changes
+        return UserController.getUserData(user.id); // return user data
     } catch (err) {
+        console.log(err);
+        await transaction.rollback(); // if anything goes wrong, rollback
         throw "VALIDATION_ERROR";
     }
 }
 
-exports.editStudent = async (id, firstName, lastName, CNP, group, domainId, identificationCode, promotion) => {
-    let domain = await Domain.findOne({ where: { id: domainId } });
-    if (!domain) {
-        throw "DOMAIN_NOT_FOUND";
+exports.editStudent = async (id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion) => {
+    let specialization = await Specialization.findOne({ where: { id: specializationId } });
+    if (!specialization) {
+        throw "SPECIALIZATION_NOT_FOUND";
     }
-    let userUpdate = await User.update({ firstName, lastName, CNP }, {
-        where: { id }
-    });
-    let studentUpdate = await Student.update({ group, domainId, identificationCode, promotion }, {
-        where: { userId: id }
-    });
+    let domainId = specialization.domainId;
+    const transaction = await sequelize.transaction();
+    try {
+        let userUpdate = await User.update({ firstName, lastName, CNP }, { // update user data
+            where: { id }, transaction
+        });
+        let studentUpdate = await Student.update({ group, domainId, identificationCode, promotion, specializationId }, { // update student data
+            where: { userId: id }, transaction
+        });
+        await transaction.commit();
+    } catch(err) {
+        console.log(err);
+        await transaction.rollback(); // if anything goes wrong, rollback
+        throw "VALIDATION_ERROR";
+    }
     return UserController.getUserData(id);
 }
 
