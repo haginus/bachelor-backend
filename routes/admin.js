@@ -159,7 +159,7 @@ router.post('/domains/delete', async (req, res) => {
         return res.status(400).json("BAD_REQUEST");
     }
     try {
-        await AdminController.deleteDomain(id, moveStudentsTo);
+        await AdminController.deleteDomain(id);
         res.status(200).json({ success: true });
     } catch(err) {
         console.log(err);
