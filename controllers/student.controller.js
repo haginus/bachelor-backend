@@ -1,4 +1,4 @@
-const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document } = require("../models/models.js");
+const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings } = require("../models/models.js");
 const UserController = require('./user.controller')
 const DocumentController = require('./document.controller')
 const { Op, Sequelize } = require("sequelize");
@@ -173,6 +173,9 @@ exports.getSuggestedTeacherOffers = async (uid) => {
 }
 
 exports.applyToOffer = async (uid, offerId, title, description, usedTechnologies) => {
+    if(!(await checkApplyPeriod())) { // check if today is in the application period
+        throw "NOT_IN_APPLY_PERIOD"
+    }
     const offer = await Offer.findOne({
         where: { id: offerId },
         include: {
@@ -311,6 +314,9 @@ exports.getExtraData = async (uid) => {
 }
 
 exports.setExtraData = async (uid, data) => {  // sets the new extra data and triggers document generation
+    if(!(await checkFileSubmissionPeriod())) {
+        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    }
     const student = await this.getStudentByUid(uid);
     const oldData = await StudentExtraData.findOne({ where: { studentId: student.id } });
     let newAddress, newMainData;
@@ -368,6 +374,9 @@ exports.setExtraData = async (uid, data) => {  // sets the new extra data and tr
 }
 
 const generatePaperDocuments = async (student, extraData) => {
+    if(!(await checkFileSubmissionPeriod())) {
+        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    }
     let paper = await this.getPaper(student.user.id);
     if(!paper) {
         throw "BAD_REQUEST";
@@ -416,6 +425,10 @@ const generatePaperDocuments = async (student, extraData) => {
 }
 
 exports.uploadPaperDocument = async (user, documentFile, name, type) => {
+    if(!(await checkFileSubmissionPeriod())) {
+        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    }
+    
     if(type == 'generated') { // do not allow "uploading" generated files
         throw "BAD_REQUEST";
     }
@@ -516,4 +529,28 @@ exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be
                                     .map(mimeType => mime.extension(mimeType)).filter(t => t); // remove not found mimeType extensions (false)
         return sentDoc;
     })
+}
+
+const checkApplyPeriod = async () => {
+    const sessionSettings = await SessionSettings.findOne();
+    if(sessionSettings == null) { // settings not set
+        return false;
+    }
+    const today = new Date().getTime();
+    const start = new Date(sessionSettings.applyStartDate).getTime();
+    const end = new Date(sessionSettings.applyEndDate).getTime();
+
+    return start <= today && today <= end;
+}
+
+const checkFileSubmissionPeriod = async () => {
+    const sessionSettings = await SessionSettings.findOne();
+    if(sessionSettings == null) { // settings not set
+        return false;
+    }
+    const today = new Date().getTime();
+    const start = new Date(sessionSettings.fileSubmissionStartDate).getTime();
+    const end = new Date(sessionSettings.fileSubmissionEndDate).getTime();
+
+    return start <= today && today <= end;
 }
