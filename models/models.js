@@ -4,6 +4,70 @@ const { config } = require('../config/config');
 
 const sequelize = new Sequelize(config.DATABASE_STRING);
 
+const SessionSettings = sequelize.define('sessionSettings', {
+  lock: { // table with one row
+    type: Sequelize.CHAR,
+    primaryKey: true,
+    defaultValue: 'X',
+    validate: {
+      equals: 'X'
+    }
+  },
+  sessionName: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  currentPromotion: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  applyStartDate: {
+    type: Sequelize.DATEONLY,
+    allowNull: false
+  },
+  applyEndDate: {
+    type: Sequelize.DATEONLY,
+    allowNull: false,
+    validate: {
+      isGreaterThanApplyStartDate(value) {
+        if (new Date(value).getTime() < new Date(this.applyStartDate).getTime()) {
+          throw new Error('applyEndDate must be greater than applyStartDate.');
+        }
+      }
+    }
+  },
+  fileSubmissionStartDate: {
+    type: Sequelize.DATEONLY,
+    allowNull: false,
+    validate: {
+      isGreaterThanApplyStartDate(value) {
+        if (new Date(value).getTime() < new Date(this.applyStartDate).getTime()) {
+          throw new Error('fileSubmissionStartDate must be greater than applyStartDate.');
+        }
+      }
+    }
+  },
+  fileSubmissionEndDate: {
+    type: Sequelize.DATEONLY,
+    allowNull: false,
+    validate: {
+      isGreaterThanFileSubmissionStartDate(value) {
+        if (new Date(value).getTime() < new Date(this.fileSubmissionStartDate).getTime()) {
+          throw new Error('fileSubmissionEndDate must be greater than fileSubmissionStartDate.');
+        }
+      }
+    }
+  }
+},
+{
+  timestamps: false,
+  defaultScope: {
+    attributes: {
+      exclude: ['lock']
+    }
+  }
+});
+
 const Domain = sequelize.define('domain', {
   name: {
     type: Sequelize.STRING,
@@ -444,4 +508,4 @@ sequelize.sync()
   .catch(error => console.log('This error occured', error));
 
 module.exports = { Domain, Specialization, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
-   ActivationToken, sequelize };
+   ActivationToken, SessionSettings, sequelize };

@@ -218,4 +218,15 @@ router.post('/topics/delete', async (req, res) => {
     }
 });
 
+router.post('/session', async (req, res) => {
+    const settings = req.body;
+    try {
+        await AdminController.changeSessionSettings(settings);
+        res.json({ success: true });
+    } catch(err) {
+        console.log(err)
+        res.status(400).json("BAD_REQUEST");
+    }
+})
+
 module.exports = router

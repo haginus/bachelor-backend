@@ -1,4 +1,4 @@
-const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, sequelize } = require("../models/models.js");
+const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -383,6 +383,19 @@ exports.deleteTopic = async (id, moveId) => {
 
     await Offer.update({ topicId: moveId }, { where: { topicId: id } });
     return Topic.destroy({ where: id });
+}
+
+// SESSION SETTINGS
+
+exports.changeSessionSettings = async (settings) => {
+    // Get the old settings
+    let oldSettings = await SessionSettings.findOne();
+    // If settings are set, do update query
+    if(oldSettings) {
+        return SessionSettings.update(settings, { where: { lock: 'X' } });
+    } else { // else do create query
+        return SessionSettings.create(settings)
+    }
 }
 
 const literals = {
