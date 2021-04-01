@@ -198,6 +198,24 @@ const Student = sequelize.define('student', {
   identificationCode: {
     type: Sequelize.STRING,
     allowNull: false
+  },
+  fundingForm: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['budget', 'tax']],
+    }
+  },
+  matriculationYear: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  studyForm: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['if', 'ifr', 'id']],
+    }
   }
 }, {
   timestamps: false

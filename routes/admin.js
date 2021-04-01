@@ -25,9 +25,10 @@ router.get('/students', async function (req, res) {
 
 router.post('/students/add', async function (req, res) {
     try {
-        let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion } = req.body;
+        let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
+            studyForm, fundingForm, matriculationYear } = req.body;
         const student = await AdminController.addStudent(firstName, lastName, CNP, email, group,
-                                                    specializationId, identificationCode, promotion);
+                                    specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear);
         res.json(student);
     } catch (err) {
         console.log(err)
@@ -37,9 +38,10 @@ router.post('/students/add', async function (req, res) {
 
 router.post('/students/edit', async function (req, res) {
     try {
-        let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion } = req.body;
+        let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
+            studyForm, fundingForm, matriculationYear } = req.body;
         const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, specializationId,
-                                                            identificationCode, promotion);
+                                                identificationCode, promotion, studyForm, fundingForm, matriculationYear);
         res.json(student);
     } catch (err) {
         console.log(err);
