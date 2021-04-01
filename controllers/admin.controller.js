@@ -304,12 +304,12 @@ exports.editDomain = async (id, name, type, specializations) => {
         }
         if(specs.toAdd.length > 0) {
             specs.toAdd = specs.toAdd.map(spec => {
-                return { name: spec.name, domainId: oldDomain.id } // add domainId
+                return { name: spec.name, studyYears: spec.studyYears, domainId: oldDomain.id } // add domainId
             });
             await Specialization.bulkCreate(specs.toAdd, { transaction });
         }
         for(spec of specs.toEdit) {
-            await Specialization.update({ name: spec.name }, { where: { id: spec.id }, transaction });
+            await Specialization.update({ name: spec.name, studyYears: spec.studyYears }, { where: { id: spec.id }, transaction });
         }
         if(specs.toDelete.length > 0) {
             specs.toDelete.forEach(specId => { // check if deleted specs have students

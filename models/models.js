@@ -89,6 +89,11 @@ const Specialization = sequelize.define('specialization', {
   name: {
     type: Sequelize.STRING,
     allowNull: false
+  },
+  studyYears: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 3
   }
 }, {
   timestamps: false
