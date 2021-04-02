@@ -1,4 +1,4 @@
-const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, sequelize } = require("../models/models.js");
+const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -387,6 +387,19 @@ exports.deleteTopic = async (id, moveId) => {
 
     await Offer.update({ topicId: moveId }, { where: { topicId: id } });
     return Topic.destroy({ where: id });
+}
+
+// COMMITTEES
+
+exports.getCommittees = async () => {
+    let committees = await Committee.findAll();
+    return JSON.parse(JSON.stringify(committees)).map(committee => {
+        committee.members = committee.members.map(member => {
+            member.role = member.committeeMembers.role;
+            return member;
+        })
+        return committee;
+    });
 }
 
 // SESSION SETTINGS

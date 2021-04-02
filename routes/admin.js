@@ -220,6 +220,21 @@ router.post('/topics/delete', async (req, res) => {
     }
 });
 
+// COMMITTEES
+
+router.get('/committees', async function (req, res) {
+    try {
+        const committees = await AdminController.getCommittees();
+        res.json(committees);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json("INTERNAL_ERROR");
+    }
+});
+
+
+// SESSION SETTINGS
+
 router.post('/session', async (req, res) => {
     const settings = req.body;
     try {

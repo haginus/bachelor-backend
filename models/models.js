@@ -183,6 +183,10 @@ const User = sequelize.define('user', {
   timestamps: false
 });
 
+User.addScope("min", {
+  attributes: ['id', 'firstName', 'lastName', 'fullName']
+});
+
 User.hasMany(ActivationToken);
 ActivationToken.belongsTo(User);
 
@@ -526,9 +530,48 @@ StudentExtraData.hasOne(Address, {
 });
 Address.belongsTo(StudentExtraData);
 
+const Committee = sequelize.define('committee', {
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+}, {
+  timestamps: false,
+  defaultScope: {
+    include: [
+      {
+        model: Teacher,
+        as: 'members',
+        include: User.scope("min")
+      },
+      Paper,
+      Domain
+    ]
+  }
+});
+
+const CommitteeMembers = sequelize.define('committeeMembers', {
+  role: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['president', 'secretary', 'member']]
+    }
+  }
+}, { timestamps: false });
+
+Committee.belongsToMany(Teacher, { through: CommitteeMembers, as: 'members' });
+Teacher.belongsToMany(Committee, { through: CommitteeMembers });
+
+Committee.belongsToMany(Domain, { through: 'committeeDomains', timestamps: false });
+Domain.belongsToMany(Committee, { through: 'committeeDomains', timestamps: false });
+
+Committee.hasMany(Paper);
+Paper.belongsTo(Committee);
+
 sequelize.sync()
   .then(() => console.log('Database has synced correctly.'))
   .catch(error => console.log('This error occured', error));
 
 module.exports = { Domain, Specialization, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
-   ActivationToken, SessionSettings, sequelize };
+   ActivationToken, SessionSettings, Committee, sequelize };
