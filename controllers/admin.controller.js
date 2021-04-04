@@ -1,4 +1,4 @@
-const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, sequelize } = require("../models/models.js");
+const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMembers, sequelize } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -190,6 +190,7 @@ exports.getTeachers = async (sort, order, filter, page, pageSize) => {
 
     let query = await User.findAndCountAll({
         where: { type: "teacher" },
+        include: Teacher,
         attributes: { exclude: ['password'] },
         limit,
         offset,
@@ -400,6 +401,42 @@ exports.getCommittees = async () => {
         })
         return committee;
     });
+}
+
+exports.addCommittee = async (name, domainsIds, members) => {
+    try {
+        const presidentNumber = members.filter(member => member.role == 'president').length;
+        const secretaryNumber = members.filter(member => member.role == 'secretary').length;
+        const memberNumber = members.filter(member => member.role == 'member').length;
+        if(presidentNumber != 1 || secretaryNumber != 1 || memberNumber < 2) {
+            throw "WRONG_COMMITTEE_COMPONENCE";
+        }
+    } catch(err) {
+        if(err == "WRONG_COMMITTEE_COMPONENCE") {
+            throw err;
+        }
+        throw "BAD_REQUEST";
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        const committee = await Committee.create({ name }, { transaction });
+        const domains = await Domain.findAll({ where: { // get domains from ids
+            id: {
+                [Op.in]: domainsIds
+            }
+        }});
+        await committee.setDomains(domains, { transaction }); // set domains
+        let committeeMembers = members.map(member => { // add the committee id
+            return { ...member, committeeId: committee.id }
+        });
+        await CommitteeMembers.bulkCreate(committeeMembers, { transaction });
+        await transaction.commit();
+    } catch(err) {
+        console.log(err)
+        await transaction.rollback();
+        throw "VALIDATION_ERROR";
+    }
+    
 }
 
 // SESSION SETTINGS

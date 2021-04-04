@@ -232,6 +232,17 @@ router.get('/committees', async function (req, res) {
     }
 });
 
+router.post('/committees/add', async (req, res) => {
+    const { name, domains, members } = req.body;
+    try {
+        await AdminController.addCommittee(name, domains, members);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
 
 // SESSION SETTINGS
 

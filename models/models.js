@@ -574,4 +574,4 @@ sequelize.sync()
   .catch(error => console.log('This error occured', error));
 
 module.exports = { Domain, Specialization, Topic, User, Student, StudentExtraData, Address, Teacher, Offer, Application, Paper, Document,
-   ActivationToken, SessionSettings, Committee, sequelize };
+   ActivationToken, SessionSettings, Committee, CommitteeMembers, sequelize };
