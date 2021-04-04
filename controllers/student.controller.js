@@ -1,6 +1,7 @@
 const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings } = require("../models/models.js");
 const UserController = require('./user.controller')
 const DocumentController = require('./document.controller')
+const AuthController = require('./auth.controller')
 const { Op, Sequelize } = require("sequelize");
 const fs = require('fs');
 const path = require('path')
@@ -498,6 +499,8 @@ exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be
         extraData = await this.getExtraData(user.id);
     }
 
+    const sessionSettings = await AuthController.getSessionSettings(); // get session settings
+
     let isMarried, isPreviousPromotion, paperType;
     if(!extraData) { // if student didn't set up extraData, we assume the following
         isMarried = false;
@@ -505,7 +508,7 @@ exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be
         isMarried = ['married', 're_married', 'widow'].includes(extraData.civilState);
     }
 
-    isPreviousPromotion = true; // TODO: work on later
+    isPreviousPromotion = sessionSettings?.currentPromotion != user.student.promotion; // check if student is in different promotion
     paperType = user.student.domain.type; // paper type is the same as student domain type
 
     return paperRequiredDocuments.filter(doc => {
