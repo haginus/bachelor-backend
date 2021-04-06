@@ -1,4 +1,4 @@
-const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMembers, sequelize } = require("../models/models.js");
+const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMembers, sequelize, Paper } = require("../models/models.js");
 const UserController = require('./user.controller')
 const Mailer = require('../alerts/mailer')
 const crypto = require('crypto');
@@ -396,6 +396,7 @@ exports.getCommittees = async () => {
     let committees = await Committee.findAll();
     return JSON.parse(JSON.stringify(committees)).map(committee => {
         committee.members = committee.members.map(member => {
+            member.teacherId = member.id
             member.role = member.committeeMembers.role;
             return member;
         })
@@ -403,7 +404,8 @@ exports.getCommittees = async () => {
     });
 }
 
-exports.addCommittee = async (name, domainsIds, members) => {
+// Helper function to check whether the committee is well defined
+const checkCommitteeComponence = (members) => {
     try {
         const presidentNumber = members.filter(member => member.role == 'president').length;
         const secretaryNumber = members.filter(member => member.role == 'secretary').length;
@@ -417,6 +419,12 @@ exports.addCommittee = async (name, domainsIds, members) => {
         }
         throw "BAD_REQUEST";
     }
+}
+
+exports.addCommittee = async (name, domainsIds, members) => {
+    // Will throw if the committee is badly formed
+    checkCommitteeComponence(members);
+
     const transaction = await sequelize.transaction();
     try {
         const committee = await Committee.create({ name }, { transaction });
@@ -436,8 +444,46 @@ exports.addCommittee = async (name, domainsIds, members) => {
         await transaction.rollback();
         throw "VALIDATION_ERROR";
     }
-    
 }
+
+exports.editCommittee = async (id, name, domainsIds, members) => {
+    // Will throw if the committee is badly formed
+    checkCommitteeComponence(members);
+    // Find the old committee by ID
+    const oldCommittee = await Committee.findOne({ where: { id } });
+    // If there is no committee to edit, throw
+    if(!oldCommittee) {
+        throw "BAD_REQUEST";
+    }
+    const transaction = await sequelize.transaction(); // init a transaction
+    try {
+        oldCommittee.name = name;
+        await oldCommittee.save({ transaction });
+        const domains = await Domain.findAll({ where: { // get domains from ids
+            id: {
+                [Op.in]: domainsIds
+            }
+        }});
+        await oldCommittee.setDomains(domains, { transaction }); // set domains
+        await oldCommittee.setMembers([], { transaction }); // remove all the members in order to insert in bulk
+        let committeeMembers = members.map(member => { // add the committee id
+            return { ...member, committeeId: oldCommittee.id }
+        });
+        await CommitteeMembers.bulkCreate(committeeMembers, { transaction });
+        await transaction.commit();
+
+    } catch (err) {
+        console.log(err)
+        await transaction.rollback();
+        throw "BAD_REQUEST";
+    }
+}
+
+exports.deletCommittee = (id) => {
+    return Committee.destroy({ where: {id } });
+}
+
+
 
 // SESSION SETTINGS
 

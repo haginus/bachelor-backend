@@ -243,6 +243,30 @@ router.post('/committees/add', async (req, res) => {
     }
 });
 
+router.post('/committees/edit', async (req, res) => {
+    const { id, name, domains, members } = req.body;
+    try {
+        await AdminController.editCommittee(id, name, domains, members);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.post('/committees/delete', async (req, res) => {
+    const { id } = req.body;
+    try {
+        await AdminController.deletCommittee(id);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+
+
 
 // SESSION SETTINGS
 
