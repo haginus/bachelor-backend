@@ -404,6 +404,21 @@ exports.getCommittees = async () => {
     });
 }
 
+// Get Committee by ID
+exports.getCommittee = async (id) => {
+    let committee = await Committee.findOne({ where: { id } });
+    if(!committee) {
+        return null;
+    }
+    committee = JSON.parse(JSON.stringify(committee));
+    committee.members = committee.members.map(member => {
+        member.teacherId = member.id
+        member.role = member.committeeMembers.role;
+        return member;
+    });
+    return committee;
+}
+
 // Helper function to check whether the committee is well defined
 const checkCommitteeComponence = (members) => {
     try {
@@ -479,11 +494,40 @@ exports.editCommittee = async (id, name, domainsIds, members) => {
     }
 }
 
-exports.deletCommittee = (id) => {
+exports.deleteCommittee = (id) => {
     return Committee.destroy({ where: {id } });
 }
 
+exports.setCommitteePapers = async (id, paperIds) => {
+    const committee = await Committee.findOne({ where: { id } }); // get committee
+    if(!committee) {
+        throw "BAD_REQUEST";
+    }
+    const memberIds = committee.members.map(m => m.id); // get member IDs
+    const papers = await Paper.findAll({ where: {
+        id: {
+            [Op.in]: paperIds
+        }
+    }}); // find all papers and check if the coordinating teacher is in committee
+    papers.forEach(paper => {
+        if(memberIds.includes(paper.teacherId)) {
+            throw "MEMBER_PAPER_INCOMPATIBILITY";
+        }
+    });
+    return committee.setPapers(papers);
+}
 
+// PAPERS
+
+exports.getPapers = async (filter) => {
+    let where = filter ? filter : {}
+    let papers = await Paper.scope(['teacher', 'student']).findAll({ where });
+    return JSON.parse(JSON.stringify(papers)).map(paper => {
+        paper.teacher = paper.teacher.user;
+        paper.student = paper.student.user;
+        return paper;
+    });
+}
 
 // SESSION SETTINGS
 

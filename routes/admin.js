@@ -232,6 +232,17 @@ router.get('/committees', async function (req, res) {
     }
 });
 
+router.get('/committees/:id', async function (req, res) {
+    try {
+        const { id } = req.params;
+        const committee = await AdminController.getCommittee(id);
+        res.json(committee);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json("INTERNAL_ERROR");
+    }
+});
+
 router.post('/committees/add', async (req, res) => {
     const { name, domains, members } = req.body;
     try {
@@ -257,7 +268,7 @@ router.post('/committees/edit', async (req, res) => {
 router.post('/committees/delete', async (req, res) => {
     const { id } = req.body;
     try {
-        await AdminController.deletCommittee(id);
+        await AdminController.deleteCommittee(id);
         res.status(200).json({ success: true });
     } catch(err) {
         console.log(err);
@@ -265,7 +276,31 @@ router.post('/committees/delete', async (req, res) => {
     }
 });
 
+router.post('/committees/assign-papers', async (req, res) => {
+    const { id, paperIds } = req.body;
+    if(!id || !Array.isArray(paperIds)) {
+        return res.status(400).json("BAD_REQUEST");
+    }
+    try {
+        await AdminController.setCommitteePapers(id, paperIds);
+        res.status(200).json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
 
+// PAPERS
+router.post('/papers', async function (req, res) {
+    try {
+        const { filter } = req.body;
+        const papers = await AdminController.getPapers(filter);
+        res.json(papers);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json("INTERNAL_ERROR");
+    }
+});
 
 
 // SESSION SETTINGS

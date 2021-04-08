@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { User, Topic, Student, Domain, StudentExtraData } = require('./models/models');
+const { User, Topic, Student, Domain, StudentExtraData, Committee } = require('./models/models');
 const AuthController = require('./controllers/auth.controller')
 const UserController = require('./controllers/user.controller')
 const authRoutes = require('./routes/auth')
@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const delay = async function(req, res, next) {
   await new Promise((res, rej) => {
-    setTimeout(res, 1000);
+    setTimeout(res, 200);
   });
   next();
 }
@@ -47,19 +47,8 @@ app.get('/pop', async function (req, res) {
 });
 
 app.get('/test', function (req, res) {
-  User.findAll({
-    include: [
-      { model: Student, attributes: { exclude: ["password"] }, include: [
-        { model: Domain },
-        { model: Topic,
-          attributes: ["id", "name"],
-          through: {
-            attributes: []
-          }
-        }
-      ]}
-    ]
-  }).then(users => res.json(users));
+
+  Committee.findAll().then(users => res.json(users));
 })
 
 // protected route

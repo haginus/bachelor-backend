@@ -388,18 +388,20 @@ Paper.hasMany(Document);
 Document.belongsTo(Paper);
 
 Paper.addScope('documents', {
-  include: [{
-    model: Document,
-  }]
+  include: [ Document ]
 });
 
 Paper.addScope('teacher', {
   include: [{
     model: Teacher,
-    include: [{
-      model: User,
-      attributes: ['id', 'firstName', 'lastName']
-    }]
+    include: User.scope('min')
+  }]
+});
+
+Paper.addScope('student', {
+  include: [{
+    model: Student,
+    include: User.scope('min')
   }]
 });
 
