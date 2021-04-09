@@ -57,6 +57,17 @@ const SessionSettings = sequelize.define('sessionSettings', {
         }
       }
     }
+  },
+  paperSubmissionEndDate: {
+    type: Sequelize.DATEONLY,
+    allowNull: false,
+    validate: {
+      isGreaterThanFileSubmissionStartDate(value) {
+        if (new Date(value).getTime() < new Date(this.fileSubmissionStartDate).getTime()) {
+          throw new Error('paperSubmissionEndDate must be greater than fileSubmissionStartDate.');
+        }
+      }
+    }
   }
 },
 {
