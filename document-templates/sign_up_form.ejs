@@ -10,24 +10,44 @@
             UNIVERSITATEA DIN BUCUREȘTI <br>
             Facultatea de Matematică și Informatică	<br>
             Domeniul: <%= student.domain.name %> <br>
-            Programul de studii: 
-            <% switch (student.domain.type) {
-                case 'bachelor' : %>
-                        Licență
-                        <% break;
-                case 'master' : %>
-                        Master
-                        <% break;
-            } %> <br>
-            Promoția: 
+            Programul de studii: <%= student.specialization.name %> <br>
+            Promoția: <%= student.promotion %>
         </p>
-        <p class="col right" style="white-space: pre-wrap;">Forma de finanțare:       🗆 buget/ 🗆 taxă
-            Forma de învățământ:  🗆 IF /🗆 IFR /🗆 ID
-
-            Număr matricol:  Grupa: <%= student.group %>
-
+        <p class="col right">Forma de finanțare: 
+            <span style="margin-left: 16px;"></span>
+            <% switch (student.fundingForm) {
+                case 'budget' : %>
+                    ☒ buget/ ☐ taxă
+                    <% break;
+                case 'tax' : %>
+                    ☐ buget/ ☒ taxă
+                    <% break;
+                default: %>
+                    ☐ buget/ ☐ taxă
+                    <% break;
+            } %>
+            <br>
+            Forma de învățământ: 
+            <% switch (student.studyForm) {
+                case 'if' : %>
+                    ☒ IF/ ☐ IFR/☐ ID
+                    <% break;
+                case 'ifr' : %>
+                    ☐ IF/ ☒ IFR/☐ ID
+                    <% break;
+                case 'id' : %>
+                    ☐ IF/ ☐ IFR/☒ ID
+                    <% break;
+                default: %>
+                    ☐ IF/ ☐ IFR/☐ ID
+                    <% break;
+            } %>
+            <br><br>
+            Număr matricol: <%= student.identificationCode %> 
+            <span style="margin-left: 8px;"></span>
+            Grupa: <%= student.group %>
+            <br><br>
             M.G. .........
-
         </p>
         
     </div>
@@ -44,7 +64,7 @@
                         <% break;
             } %>
         <br>
-        sesiunea IULIE 2021
+        sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>
     </p>
 
     <p class="table-header">Date personale</p>
@@ -147,7 +167,16 @@
 
 
     <p class="bold">
-        Prezint și susțin lucrarea de disertație cu titlul:
+        Prezint și susțin lucrarea de
+        <% switch (student.domain.type) {
+            case 'bachelor' : %>
+                    licenţă
+                    <% break;
+            case 'master' : %>
+                    disertație
+                    <% break;
+        } %>
+        cu titlul:
     </p>
     <p class="italic"><%= student.paper.title %></p>
     <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
@@ -156,6 +185,9 @@
         Depun la dosarul de înscriere <i>(vor fi transmise de absolvenți în format electronic):</i>
     </p>
     <ul>
+        <%if (student.domain.type == 'master') { %>
+            <li>Diploma de licenţă</li>
+        <% } %>
         <li>Diploma de bacalaureat</li>
         <li>2 fotografii color, pe hârtie fotografică, dimensiunea 3/4 <i>(vor fi aduse de absolvent la ridicarea adeverintei de licență)</i></li>
         <li>Certificatul de naștere</li>
@@ -265,6 +297,7 @@
 
     .header-container {
         font-weight: bold;
+        margin-bottom: 0.9cm;
     }
 
     .footer-container .col,

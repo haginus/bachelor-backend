@@ -1,4 +1,4 @@
-const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings } = require("../models/models.js");
+const { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings, Specialization } = require("../models/models.js");
 const UserController = require('./user.controller')
 const DocumentController = require('./document.controller')
 const AuthController = require('./auth.controller')
@@ -24,9 +24,8 @@ const getStudentByUid = (uid) => {
                     attributes: []
                 }
             },
-            {
-                model: Domain
-            }
+            Domain,
+            Specialization
         ],
         where: {
             userId: uid
@@ -315,7 +314,8 @@ exports.getExtraData = async (uid) => {
 }
 
 exports.setExtraData = async (uid, data) => {  // sets the new extra data and triggers document generation
-    if(!(await checkFileSubmissionPeriod())) {
+    const sessionSettings = await SessionSettings.findOne();
+    if(!(await checkFileSubmissionPeriod(sessionSettings))) {
         throw "NOT_IN_FILE_SUBMISSION_PERIOD";
     }
     const student = await this.getStudentByUid(uid);
@@ -347,7 +347,7 @@ exports.setExtraData = async (uid, data) => {  // sets the new extra data and tr
                  fields: ["locality", "county", "street", "streetNumber", "building", "stair", "floor", "apartment"]
             }); // update address
             if(dataUpdated || addressUpdated) {
-                await generatePaperDocuments(student, data);
+                await generatePaperDocuments(student, data, sessionSettings);
             }
             await transaction.commit();
         } catch(err) {
@@ -374,10 +374,7 @@ exports.setExtraData = async (uid, data) => {  // sets the new extra data and tr
     return { success: true }
 }
 
-const generatePaperDocuments = async (student, extraData) => {
-    if(!(await checkFileSubmissionPeriod())) {
-        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
-    }
+const generatePaperDocuments = async (student, extraData, sessionSettings) => {
     let paper = await this.getPaper(student.user.id);
     if(!paper) {
         throw "BAD_REQUEST";
@@ -398,6 +395,7 @@ const generatePaperDocuments = async (student, extraData) => {
 
         let data = { ...JSON.parse(JSON.stringify(student)), extra: extraData }
         data.paper = JSON.parse(JSON.stringify(paper));
+        data.sessionSettings = JSON.parse(JSON.stringify(sessionSettings));
 
         let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
         let signUpFormDocument = await Document.create({ name: 'sign_up_form', category: "secretary_files", type: 'generated',
@@ -549,8 +547,11 @@ const checkApplyPeriod = async () => {
     return start <= today && today <= end;
 }
 
-const checkFileSubmissionPeriod = async () => {
-    const sessionSettings = await SessionSettings.findOne();
+// Session Settings may miss
+const checkFileSubmissionPeriod = async (sessionSettings) => {
+    if(!sessionSettings) {
+        sessionSettings = await SessionSettings.findOne();
+    }
     if(sessionSettings == null) { // settings not set
         return false;
     }

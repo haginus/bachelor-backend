@@ -10,7 +10,6 @@ router.get('/view', async (req, res) => {
     let { id } = req.query;
     try {
         let buffer = await DocumentController.getDocument(req._user, id);
-        console.log(buffer);
         res.send(buffer);
     } catch(err) {
         res.status(400).json(err);

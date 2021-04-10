@@ -133,7 +133,7 @@
         "uploadBy": "student"
     },
     {
-        "title": "Raport plagiat",
+        "title": "Referat coordonator științific",
         "name": "plagiarism_report",
         "category": "paper_files",
         "types": {
@@ -143,7 +143,7 @@
         "uploadBy": "teacher"
     },
     {
-        "title": "Raport preliminar comisie",
+        "title": "Referat preliminar comisie",
         "name": "committee_report",
         "category": "paper_files",
         "types": {
