@@ -400,19 +400,19 @@ const generatePaperDocuments = async (student, extraData) => {
         data.paper = JSON.parse(JSON.stringify(paper));
 
         let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
-        let signUpFormDocument = await Document.create({ name: 'sign_up_form', type: 'generated',
+        let signUpFormDocument = await Document.create({ name: 'sign_up_form', category: "secretary_files", type: 'generated',
             paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
 
         fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
 
         let statutoryDeclarationBuffer = await DocumentController.generateDocument('statutory_declaration', data);  // generate PDF
-        let statutoryDeclarationDocument = await Document.create({ name: 'statutory_declaration', type: 'generated',
+        let statutoryDeclarationDocument = await Document.create({ name: 'statutory_declaration', category: "secretary_files", type: 'generated',
             paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
 
         fs.writeFileSync(getStoragePath(`${statutoryDeclarationDocument.id}.pdf`), statutoryDeclarationBuffer); // write to storage
 
         let liquidationFormBuffer = await DocumentController.generateDocument('liquidation_form', data);  // generate PDF
-        let liquidationFormDocument = await Document.create({ name: 'liquidation_form', type: 'generated',
+        let liquidationFormDocument = await Document.create({ name: 'liquidation_form', category: "secretary_files", type: 'generated',
             paperId: paper.id, mimeType: 'application/pdf' }, { transaction });
 
         fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
@@ -441,7 +441,9 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
     const paperId = paper.id;
     const requiredDocuments = await this.getPaperRequiredDocuments(user, null);
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
-    const requiredDoc = requiredDocuments.find(doc => doc.name == name); // find uploaded doc name in required list
+    const uploadedBy = user.id;
+    const requiredDoc = requiredDocuments
+        .find(doc => doc.name == name && doc.uploadBy == 'student'); // find uploaded doc name in required list
     if(!requiredDoc) { // if it is not then throw error
         throw "INVALID_DOCUMENT";
     }
@@ -454,6 +456,7 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
     }
 
     const fileExtension = mime.extension(mimeType); // get the file extension
+    const category = requiredDoc.category;
 
     const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
 
@@ -473,7 +476,7 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
     }
 
     const transaction = await sequelize.transaction(); // start a db transaction
-    const newDocument = await Document.create({ name, type, mimeType, paperId }, { transaction }); // create a new doc in db
+    const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
     try {
         fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
         await transaction.commit(); // commit if everything is fine

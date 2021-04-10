@@ -364,19 +364,10 @@ const Document = sequelize.define('document', {
   name: {
     type: Sequelize.STRING,
     allowNull: false,
-    validate: {
-      isIn: [[
-        'sign_up_form', // Fisa de inscriere
-        'identity_card', // Copie CI
-        'birth_centificate', // Certificat de nastere
-        'bacalaureat_diploma', // Diploma bacalaureat
-        'marriage_certificate', // Certificat de casatorie
-        'language_certificate', // Certificat de competență lingvistică
-        'statutory_declaration', // Declaratie pe proprie raspundere,
-        "liquidation_form", // Formular de lichidare
-        "bachelor_diploma" // Diplomă de licență
-      ]],
-    }
+  },
+  category: {
+    type: Sequelize.STRING,
+    allowNull: false,
   },
   type: {
     type: Sequelize.STRING,
@@ -397,6 +388,9 @@ const Document = sequelize.define('document', {
 
 Paper.hasMany(Document);
 Document.belongsTo(Paper);
+
+User.hasMany(Document, { foreignKey: 'uploadedBy' });
+Document.belongsTo(User, { foreignKey: 'uploadedBy' });
 
 Paper.addScope('documents', {
   include: [ Document ]
