@@ -195,7 +195,7 @@ const User = sequelize.define('user', {
 });
 
 User.addScope("min", {
-  attributes: ['id', 'firstName', 'lastName', 'fullName']
+  attributes: ['id', 'firstName', 'lastName', 'fullName', 'email']
 });
 
 User.hasMany(ActivationToken);
