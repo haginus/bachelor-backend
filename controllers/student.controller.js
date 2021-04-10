@@ -484,7 +484,7 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
         throw "INTERNAL_ERROR";
     }
 
-    return { success: true }
+    return newDocument;
 }
 
 const getStoragePath = (fileName) => {
