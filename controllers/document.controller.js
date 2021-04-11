@@ -7,7 +7,7 @@ const mime = require('mime-types');
 
 const HtmlToPdfOptions = { format: 'A4' };
 
-const getStoragePath = (fileName) => {
+exports.getStoragePath = (fileName) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
@@ -22,12 +22,12 @@ exports.getDocument = async (user, documentId) => {
     if(!document) {
         throw "NOT_FOUND";
     }
-    if(!(document.paper.studentId == user.student.id || user.type == 'admin')) {
+    if(!(document.paper.studentId == user.student?.id || user.type == 'admin')) {
         throw "NOT_AUTHORIZED";
     }
     const extension = mime.extension(document.mimeType);
     try {
-        let buffer = fs.readFileSync(getStoragePath(`${document.id}.${extension}`));
+        let buffer = fs.readFileSync(this.getStoragePath(`${document.id}.${extension}`));
         return buffer;
     } catch(err) {
         console.log(err)
