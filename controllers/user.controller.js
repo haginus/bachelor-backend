@@ -1,10 +1,10 @@
-const { User, Student, Domain, Paper, Specialization } = require("../models/models.js");
+const { User, Student, Domain, Paper, Specialization, Teacher } = require("../models/models.js");
 
 const getUser = async (where) => {
     return User.findOne({
         where,
         attributes: { exclude: ['password'] },
-        include: [ { model: Student, include: [ Domain, Specialization, Paper ] } ]
+        include: [ { model: Student, include: [ Domain, Specialization, Paper ] }, Teacher ]
     });
 }
 

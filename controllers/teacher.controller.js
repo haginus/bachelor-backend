@@ -1,8 +1,10 @@
 "use strict"
-const { User, Teacher, Offer, Paper, Domain, Topic, Application, Student, sequelize } = require("../models/models.js");
+const { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization } = require("../models/models.js");
 const UserController = require('./user.controller')
+const StudentController = require('./student.controller')
 const { Op } = require("sequelize");
 const Mailer = require("../alerts/mailer")
+const paperRequiredDocuments = require('./../json/paper-required-documents.json')
 
 
 exports.validateTeacher = async (uid) => {
@@ -262,6 +264,41 @@ exports.acceptApplication = async (user, applicationId) => {
 
 exports.getDomains = () => {
     return Domain.findAll();
+}
+
+exports.getStudentPapers = async (user) => {
+    let papers = await user.teacher.getPapers({
+        scope: ['committee'],
+        include: [
+            {
+                model: Document,
+                required: false,
+                where: { category: 'paper_files' }
+            },
+            {
+                required: true,
+                model: Student,
+                include: [User.scope("min"), StudentExtraData, Domain, Specialization]
+            }
+        ]
+    });
+    const sessionSettings = await SessionSettings.findOne();
+
+    return Promise.all(JSON.parse(JSON.stringify(papers)).map(async paper => {
+        // Inverse data in a way that can be used by getPaperRequiredDocuments
+        // must be user -> student -> { paper, domain }
+        console.log(paper)
+        let _paper = JSON.parse(JSON.stringify(paper));
+        let user = _paper.student.user;
+        delete _paper.student.user;
+        user.student = _paper.student;
+        delete _paper.student;
+        user.student.paper = { ..._paper };
+        let required = await StudentController.getPaperRequiredDocuments(user, user.student.StudentExtraDatum, sessionSettings);
+        paper.student = { ...paper.student.user };
+        paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
+        return paper;
+    }));
 }
 
 

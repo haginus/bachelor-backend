@@ -93,4 +93,9 @@ router.get('/domains', async function (req, res) {
     res.json(domains);
 });
 
+router.get('/papers', async function (req, res) {
+    let papers = await TeacherController.getStudentPapers(req._user);
+    res.json(papers);
+});
+
 module.exports = router;

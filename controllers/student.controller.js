@@ -490,8 +490,15 @@ exports.uploadPaperDocument = async (user, documentFile, name, type) => {
 const getStoragePath = (fileName) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
+/**
+ * 
+ * @param {User} user 
+ * @param {StudentExtraData} [extraData] 
+ * @param {SessionSettings} [sessionSettings]
+ * @returns A list of required documents corresponding to the user's paper.
+ */
 
-exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be provided, extraData can be null
+exports.getPaperRequiredDocuments = async (user, extraData, sessionSettings) => { // user must be provided, extraData can be null
     if(!user?.student?.paper) { // if student has no paper
         throw "UNAUTHORIZED";
     }
@@ -500,7 +507,9 @@ exports.getPaperRequiredDocuments = async (user, extraData) => { // user must be
         extraData = await this.getExtraData(user.id);
     }
 
-    const sessionSettings = await AuthController.getSessionSettings(); // get session settings
+    if(!sessionSettings) { // if sessionSettings was not provided
+        sessionSettings = await AuthController.getSessionSettings();
+    }
 
     let isMarried, isPreviousPromotion, paperType;
     if(!extraData) { // if student didn't set up extraData, we assume the following
