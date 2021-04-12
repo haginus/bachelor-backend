@@ -1,17 +1,14 @@
-import { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings, Specialization } from "../models/models";
+import { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings, Specialization, DocumentType } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as AuthController from './auth.controller';
 import { Model, Op, Sequelize } from "sequelize";
 import fs from 'fs';
 import path from 'path';
-import mime from 'mime-types';
-import paperRequiredDocuments from './../json/paper-required-documents.json';
+import { UploadedFile } from "express-fileupload";
 
 
-const getStoragePath = (fileName: string) => {
-    return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
-}
+const getStoragePath = DocumentController.getStoragePath;
 
 const getStudentByUid = (uid) => {
     return Student.findOne({
@@ -320,7 +317,7 @@ export class StudentController {
 
     public static setExtraData = async (uid, data) => {  // sets the new extra data and triggers document generation
         const sessionSettings = await SessionSettings.findOne();
-        if (!(await StudentController.checkFileSubmissionPeriod(sessionSettings))) {
+        if (!(await DocumentController.checkFileSubmissionPeriod(sessionSettings))) {
             throw "NOT_IN_FILE_SUBMISSION_PERIOD";
         }
         const student = await StudentController.getStudentByUid(uid);
@@ -434,123 +431,13 @@ export class StudentController {
         }
     }
 
-    public static uploadPaperDocument = async (user, documentFile, name, type) => {
-        if (!(await StudentController.checkFileSubmissionPeriod())) {
-            throw "NOT_IN_FILE_SUBMISSION_PERIOD";
-        }
-
-        if (type == 'generated') { // do not allow "uploading" generated files
-            throw "BAD_REQUEST";
-        }
-
-        const paper = user.student.paper;
-        if (!paper) { // only allow uploads if paper exists
-            throw "NOT_AUTHORIZED";
-        }
-        const paperId = paper.id;
-        const requiredDocuments = await StudentController.getPaperRequiredDocuments(user);
-        const mimeType = documentFile.mimetype; // get uploaded file mimeType
-        const uploadedBy = user.id;
-        const requiredDoc = requiredDocuments
-            .find(doc => doc.name == name && doc.uploadBy == 'student'); // find uploaded doc name in required list
-        if (!requiredDoc) { // if it is not then throw error
-            throw "INVALID_DOCUMENT";
-        }
-        if (!requiredDoc.types[type]) { // check if uploaded doc type is required
-            throw "INVALID_DOCUMENT_TYPE";
-        }
-        const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(','); // get accepted mimeTypes
-        if (!acceptedMimeTypes.includes(mimeType)) { // check if uploaded doc mimeType is in the accepted array
-            throw "INVALID_DOCUMENT_MIMETYPE";
-        }
-
-        const fileExtension = mime.extension(mimeType); // get the file extension
-        const category = requiredDoc.category;
-
-        const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
-
-        if (type == 'signed') { // if uploaded document type is signed
-            if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
-                throw "MISSING_GENERATED_DOCUMENT";
-            }
-            if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
-                throw "ALREADY_SIGNED";
-            }
-        }
-
-        if (type == 'copy') { // if uploaded document type is copy
-            if (paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
-                throw "ALREADY_UPLOADED";
-            }
-        }
-
-        const transaction = await sequelize.transaction(); // start a db transaction
-        const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
-        try {
-            fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
-            await transaction.commit(); // commit if everything is fine
-        } catch (err) {
-            console.log(err);
-            await transaction.rollback(); // rollback if anything goes wrong
-            throw "INTERNAL_ERROR";
-        }
-
-        return newDocument;
+    public static uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType) => {
+        return DocumentController.uploadPaperDocument(user, documentFile, name, type, 'student', user.student.paper.id);
     }
 
-    /**
-     * 
-     * @param {User} user 
-     * @param {StudentExtraData} [extraData] 
-     * @param {SessionSettings} [sessionSettings]
-     * @returns A list of required documents corresponding to the user's paper.
-     */
 
-    public static getPaperRequiredDocuments = async (user: User, extraData?: StudentExtraData,
-        sessionSettings?: SessionSettings) => { 
-        if (!user?.student?.paper) { // if student has no paper
-            throw "UNAUTHORIZED";
-        }
-
-        if (!extraData) { // if extraData was not provided
-            extraData = await StudentController.getExtraData(user.id);
-        }
-
-        if (!sessionSettings) { // if sessionSettings was not provided
-            sessionSettings = await AuthController.getSessionSettings();
-        }
-
-        let isMarried, isPreviousPromotion, paperType;
-        if (!extraData) { // if student didn't set up extraData, we assume the following
-            isMarried = false;
-        } else { // else we get the data we need
-            isMarried = ['married', 're_married', 'widow'].includes(extraData.civilState);
-        }
-
-        isPreviousPromotion = sessionSettings?.currentPromotion != user.student.promotion; // check if student is in different promotion
-        paperType = user.student.domain.type; // paper type is the same as student domain type
-
-        return paperRequiredDocuments.filter(doc => {
-            if (!doc.onlyFor) { // if document is required for everyone
-                return true;
-            }
-            if (doc.onlyFor.married && !isMarried) { // if document requires married status and student is not married
-                return false;
-            }
-            if (doc.onlyFor.paperType && doc.onlyFor.paperType != paperType) { // if doc requires a different paper type
-                return false;
-            }
-            if (doc.onlyFor.previousPromotions && !isPreviousPromotion) { // if doc requires a previous promotion and student is in current promotion
-                return false;
-            }
-            return true; // if all tests passed then student needs to have this document
-        }).map(doc => {
-            let sentDoc = { ...doc }
-            delete sentDoc['onlyFor']; // remove the onlyFor attribute
-            sentDoc['acceptedExtensions'] = doc.acceptedMimeTypes.split(',') // get accepted extensions from mimeType
-                .map(mimeType => mime.extension(mimeType)).filter(t => t); // remove not found mimeType extensions (false)
-            return sentDoc;
-        })
+    public static getPaperRequiredDocuments = (user: User) => { 
+        return DocumentController.getPaperRequiredDocuments(user.student.id);
     }
 
     public static checkApplyPeriod = async ()=> {
@@ -565,19 +452,5 @@ export class StudentController {
         return start <= today && today <= end;
     }
 
-    // Session Settings may miss
-    public static checkFileSubmissionPeriod = async (sessionSettings?: SessionSettings) => {
-        if (!sessionSettings) {
-            sessionSettings = await SessionSettings.findOne();
-        }
-        if (sessionSettings == null) { // settings not set
-            return false;
-        }
-        const today = new Date().getTime();
-        const start = new Date(sessionSettings.fileSubmissionStartDate).getTime();
-        const end = new Date(sessionSettings.fileSubmissionEndDate).getTime();
-
-        return start <= today && today <= end;
-    }
 
 }

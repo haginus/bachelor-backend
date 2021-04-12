@@ -1,4 +1,24 @@
-[
+import { DomainType, UploadPerspective } from "./models/models"
+
+// 'signed' cannot exist without 'generated', 'copy' is exclusive
+export type PaperRequiredDocumentTypes = { generated: true, signed?: boolean } | { copy: true } 
+
+export interface PaperRequiredDocument {
+    title: string;
+    name: string;
+    category: string;
+    types: PaperRequiredDocumentTypes;
+    acceptedMimeTypes: string;
+    acceptedExtensions?: string[]; // will be calculated using mime
+    uploadBy: UploadPerspective;
+    onlyFor?: {
+        married?: boolean,
+        paperType?: DomainType,
+        previousPromotions?: boolean
+    }
+}
+
+export const paperRequiredDocuments: PaperRequiredDocument[] = [
     {
         "title": "Cerere de înscriere",
         "name": "sign_up_form",
@@ -75,7 +95,7 @@
         "acceptedMimeTypes": "application/pdf,image/png,image/jpeg",
         "onlyFor": {
             "previousPromotions": true,
-            "type": "bachelor"
+            "paperType": "bachelor"
         },
         "uploadBy": "student"
     },

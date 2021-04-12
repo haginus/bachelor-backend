@@ -1,6 +1,7 @@
 "use strict"
 import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization } from "../models/models";
 import * as UserController from './user.controller';
+import * as DocumentController from './document.controller';
 import { StudentController } from './student.controller';
 import { Model, Op, Sequelize } from "sequelize";
 import * as Mailer from "../alerts/mailer";
@@ -265,35 +266,29 @@ export const getDomains = () => {
     return Domain.findAll();
 }
 
-export const getStudentPapers = async (user) => {
+export const getStudentPapers = async (user: User) => {
     let papers = await user.teacher.getPapers({
         scope: ['committee'],
         include: [
             {
-                model: Document,
+                model: Document as typeof Model,
                 required: false,
                 where: { category: 'paper_files' }
             },
             {
                 required: true,
-                model: Student,
-                include: [User.scope("min"), StudentExtraData, Domain, Specialization]
+                model: Student as typeof Model,
+                include: [
+                    User.scope("min"),
+                    Domain as typeof Model,
+                    Specialization as typeof Model
+                ]
             }
         ]
     });
-    const sessionSettings = await SessionSettings.findOne();
 
     return Promise.all(JSON.parse(JSON.stringify(papers)).map(async paper => {
-        // Inverse data in a way that can be used by getPaperRequiredDocuments
-        // must be user -> student -> { paper, domain }
-        console.log(paper)
-        let _paper = JSON.parse(JSON.stringify(paper));
-        let user = _paper.student.user;
-        delete _paper.student.user;
-        user.student = _paper.student;
-        delete _paper.student;
-        user.student.paper = { ..._paper };
-        let required = await StudentController.getPaperRequiredDocuments(user, user.student.StudentExtraDatum, sessionSettings);
+        let required = await DocumentController.getPaperRequiredDocuments(paper.id);
         paper.student = { ...paper.student.user };
         paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
         return paper;

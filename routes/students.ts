@@ -2,7 +2,7 @@ import express from 'express'
 const router = express.Router()
 import * as AuthController from '../controllers/auth.controller';
 import {StudentController} from '../controllers/student.controller';
-import fileUpload from 'express-fileupload';
+import fileUpload, { UploadedFile } from 'express-fileupload';
 
 router.use(AuthController.isLoggedIn);
 router.use(AuthController.isStudent);
@@ -130,7 +130,7 @@ router.post('/extra-data/set', async (req, res) => {
 
 router.get('/paper/documents/get-required', async (req, res) => {
     try {
-        let documents = await StudentController.getPaperRequiredDocuments(req._user, null, null);
+        let documents = await StudentController.getPaperRequiredDocuments(req._user);
         res.json(documents);
     } catch(err) {
         res.status(400).json(err);
@@ -142,7 +142,7 @@ router.post('/paper/documents/upload', fileUpload({
 }), async function(req, res) {
     try {
         const { name, type } = req.body;
-        let result = await StudentController.uploadPaperDocument(req._user, req.files.file, name, type);
+        let result = await StudentController.uploadPaperDocument(req._user, req.files.file as UploadedFile, name, type);
         res.json(result);
     } catch(err) {
         res.status(400).json(err);

@@ -23,7 +23,7 @@ import {
 
 export const sequelize = new Sequelize(config.DATABASE_STRING);
 
-type DomainType = 'bachelor' | 'master';
+export type DomainType = 'bachelor' | 'master';
 
 interface DomainAttributes {
   id: number;
@@ -86,7 +86,7 @@ export class ActivationToken extends Model<ActivationTokenAttributes, Activation
   public readonly updatedAt!: Date;
 }
 
-type UserType = 'student' | 'teacher' | 'admin';
+export type UserType = 'student' | 'teacher' | 'admin';
 
 interface UserAttributes {
   id: number;
@@ -202,6 +202,7 @@ export class Student extends Model<StudentAttributes, StudentCreationAttributes>
   public domain: Domain;
   public specialization: Specialization;
   public topics: Topic[];
+  public studentExtraDatum: StudentExtraData;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public setUser!: BelongsToSetAssociationMixin<User, number>;
@@ -389,13 +390,15 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   };
 }
 
-type DocumentType = 'generated' | 'signed' | 'copy';
+export type DocumentType = 'generated' | 'signed' | 'copy';
+export type UploadPerspective = 'student' | 'teacher' | 'committee';
+export type DocumentCategory = 'secretary_files' | 'paper_files';
 
 interface DocumentAttributes {
   id: number;
   paperId: number;
   name: string;
-  category: string;
+  category: DocumentCategory;
   type: DocumentType;
   mimeType: string;
   uploadedBy: number | null;
@@ -407,7 +410,7 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   id: number;
   paperId: number;
   name: string;
-  category: string;
+  category: DocumentCategory;
   type: DocumentType;
   mimeType: string;
   uploadedBy: number | null;
