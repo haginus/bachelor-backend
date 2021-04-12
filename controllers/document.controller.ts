@@ -1,9 +1,10 @@
-import { Document, Paper, sequelize } from "../models/models";
+import { Committee, Document, Paper, sequelize, Teacher, User } from "../models/models";
 import ejs from 'ejs';
 import HtmlToPdf from 'html-pdf-node';
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
+import { Model } from "sequelize/types";
 
 const HtmlToPdfOptions = { format: 'A4' };
 
@@ -11,19 +12,42 @@ export const getStoragePath = (fileName: string) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
-export const getDocument = async (user, documentId) => {
+export const getDocument = async (user: User, documentId: number) => {
     const document = await Document.findOne({
         where: { id: documentId },
         include: [{
-            model: sequelize.model('paper'),
+            association: Document.associations.paper,
             required: true
         }]
     });
     if(!document) {
         throw "NOT_FOUND";
     }
-    if(!(document.paper.studentId == user.student?.id || user.type == 'admin')) {
-        throw "NOT_AUTHORIZED";
+
+    // Admin and student can view all documents, teacher can only view 'paper_files' category
+    const canViewAsOwner = user.type == 'admin' || (user.type == 'student' && document.paper.studentId == user.student.id)
+            || (user.type == 'teacher' && document.category == 'paper_files' && document.paper.teacherId == user.teacher.id)
+    
+    if(!canViewAsOwner) {
+        // If user is not admin or owner of the paper, there is still a chance user's part of the committee reviewing the paper
+        // committee members can only view 'paper_files'
+        if(user.type == 'teacher' && document.category == 'paper_files') {
+            let isInCommittee: boolean = (await user.teacher.getCommittees({
+                include: [{
+                    model: Paper as typeof Model,
+                    required: true,
+                    where: {
+                        id: document.paper.id
+                    }
+                }]
+            })).length > 0;
+            // If user is not in committee, it means they don't have access to the file
+            if(!isInCommittee) {
+                throw "NOT_AUTHORIZED";
+            }
+        } else {
+            throw "NOT_AUTHORIZED";
+        }
     }
     const extension = mime.extension(document.mimeType);
     try {

@@ -155,11 +155,14 @@ export class Teacher extends Model<TeacherAttributes, TeacherCreationAttributes>
   public createPaper!: HasManyCreateAssociationMixin<Paper>;
 
   public getOffers!: HasManyGetAssociationsMixin<Offer>;
+  public getCommittees!: HasManyGetAssociationsMixin<Committee>;
+  public countCommittees!: HasManyCountAssociationsMixin;
 
   public static associations: {
     user: Association<Teacher, User>;
     papers: Association<Teacher, Paper>;
     offers: Association<Teacher, Offer>;
+    committees: Association<Teacher, Committee>;
   };
 }
 
@@ -434,7 +437,7 @@ export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttri
   setMembers: HasManySetAssociationsMixin<Committee, Teacher>;
 
   public static associations: {
-    paper: Association<Committee, Paper>;
+    papers: Association<Committee, Paper>;
     domains: Association<Committee, Domain>;
     members: Association<Committee, Teacher>;
   }
