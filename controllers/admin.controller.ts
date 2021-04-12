@@ -1,45 +1,52 @@
-const { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMembers, sequelize, Paper } = require("../models/models.js");
-const UserController = require('./user.controller')
-const Mailer = require('../alerts/mailer')
-const crypto = require('crypto');
-const { config } = require("../config/config");
-const { Op } = require("sequelize");
-const csv = require('csv-parser')
-const fs = require('fs')
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper } from "../models/models";
+import * as UserController from './user.controller';
+import * as Mailer from '../alerts/mailer';
+import crypto from 'crypto';
+import { config } from "../config/config";
+import { Op, OrderItem, Sequelize } from "sequelize";
+import csv from 'csv-parser';
+import fs from 'fs';
 var stream = require('stream');
 
 
 // Students
 
-exports.getStudents = async (sort, order, filter, page, pageSize) => {
+export const getStudents = async (sort, order, filter, page, pageSize) => {
     const limit = pageSize;
     const offset = page * pageSize;
     if (limit <= 0 || offset < 0) {
         throw "INVALID_PARAMETERS";
     }
 
-    let sortArray = [['id', 'ASC']]
+    let sortArray: OrderItem = ['id', 'ASC']
     if (['id', 'firstName', 'lastName', 'CNP', 'email', 'group', 'domain'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
         if (sort == 'group')
-            sortArray = [['student', 'group', order]];
+            sortArray = ['student', 'group', order];
         else if (sort == 'domain')
-            sortArray = [['student', 'domain', 'name', order]];
+            sortArray = ['student', 'domain', 'name', order];
         else
-            sortArray = [[sort, order]];
+            sortArray = [sort, order];
     }
 
     let query = await User.findAndCountAll({
         //where,
         attributes: { exclude: ['password'] },
-        include: [{ model: Student, required: true, include: [{ model: Domain }, { model: Specialization }] }],
+        include: [
+            {
+                model: sequelize.model('student'), required: true,
+                include: [
+                    sequelize.model('domain'),
+                    sequelize.model('specialization')
+                ]
+            }],
         limit,
         offset,
-        order: sortArray
+        order: [sortArray]
     });
     return query;
 }
 
-exports.addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
+export const addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
     studyForm, fundingForm, matriculationYear) => {
     let specialization = await Specialization.findOne({ where: { id: specializationId } });
     if (!specialization) {
@@ -64,7 +71,7 @@ exports.addStudent = async (firstName, lastName, CNP, email, group, specializati
     }
 }
 
-exports.editStudent = async (id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
+export const editStudent = async (id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
     studyForm, fundingForm, matriculationYear) => {
     let specialization = await Specialization.findOne({ where: { id: specializationId } });
     if (!specialization) {
@@ -89,12 +96,13 @@ exports.editStudent = async (id, firstName, lastName, CNP, group, specialization
     return UserController.getUserData(id);
 }
 
-exports.deleteUser = async (id) => {
+export const deleteUser = async (id) => {
     let result = await User.destroy({ where: { id } });
     return result;
 }
 
-exports.addStudentBulk = async (file) => {
+export const addStudentBulk = async (file) => {
+    /*
     let users = []
     await new Promise((resolve, reject) => {
         try {
@@ -104,7 +112,7 @@ exports.addStudentBulk = async (file) => {
                 .pipe(csv(["firstName", "lastName", "CNP", "email", "domain", "domain_type", "group"]))
                 .on('data', (data) => users.push(data))
                 .on('end', () => {
-                    resolve();
+                    resolve(null);
                 });
         } catch (err) {
             console.log(err)
@@ -172,34 +180,36 @@ exports.addStudentBulk = async (file) => {
     });
 
     return response;
+    */
+   return null;
 }
 
 // Teachers
 
-exports.getTeachers = async (sort, order, filter, page, pageSize) => {
+export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, page: number, pageSize: number) => {
     const limit = pageSize;
     const offset = page * pageSize;
     if (limit <= 0 || offset < 0) {
         throw "INVALID_PARAMETERS";
     }
 
-    let sortArray = [['id', 'ASC']]
+    let sortArray: OrderItem = [ 'id', 'ASC'];
     if (['id', 'firstName', 'lastName', 'CNP', 'email'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
-        sortArray = [[sort, order]];
+        sortArray = [ 'id', 'ASC'];
     }
 
     let query = await User.findAndCountAll({
         where: { type: "teacher" },
-        include: Teacher,
+        include: sequelize.model('teacher'),
         attributes: { exclude: ['password'] },
         limit,
         offset,
-        order: sortArray
+        order: [sortArray]
     });
     return query;
 }
 
-exports.addTeacher = async (firstName, lastName, CNP, email) => {
+export const addTeacher = async (firstName, lastName, CNP, email) => {
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'teacher' });
         let teacher = await Teacher.create({ userId: user.id });
@@ -212,14 +222,14 @@ exports.addTeacher = async (firstName, lastName, CNP, email) => {
     }
 }
 
-exports.editTeacher = async (id, firstName, lastName, CNP) => {
+export const editTeacher = async (id, firstName, lastName, CNP) => {
     let userUpdate = await User.update({ firstName, lastName, CNP }, {
         where: { id }
     });
     return UserController.getUserData(id);
 }
 
-exports.addTeacherBulk = async (file) => {
+export const addTeacherBulk = async (file) => {
     let users = []
     await new Promise((resolve, reject) => {
         try {
@@ -229,7 +239,7 @@ exports.addTeacherBulk = async (file) => {
                 .pipe(csv(["firstName", "lastName", "CNP", "email"]))
                 .on('data', (data) => users.push(data))
                 .on('end', () => {
-                    resolve();
+                    resolve(null);
                 });
         } catch (err) {
             console.log(err)
@@ -240,7 +250,7 @@ exports.addTeacherBulk = async (file) => {
     let promises = []
     users.forEach(user => {
         const { firstName, lastName, CNP, email } = user;
-        promises.push(this.addTeacher(firstName, lastName, CNP, email));
+        promises.push(addTeacher(firstName, lastName, CNP, email));
     });
 
     let results = await Promise.allSettled(promises);
@@ -257,11 +267,11 @@ exports.addTeacherBulk = async (file) => {
     return response;
 }
 
-exports.getDomains = () => {
+export const getDomains = () => {
     return Domain.scope("specializations").findAll();
 }
 
-exports.getDomainsExtra = () => {
+export const getDomainsExtra = () => {
     return Domain.scope("specializations").findAll({
         attributes: {
             include: [
@@ -272,7 +282,7 @@ exports.getDomainsExtra = () => {
     })
 }
 
-exports.getDomain = (id) => {
+export const getDomain = (id) => {
     return Domain.scope("specializations").findOne({
         attributes: {
             include: [
@@ -284,17 +294,17 @@ exports.getDomain = (id) => {
     })
 }
 
-exports.addDomain = (name, type, specializations) => {
+export const addDomain = (name, type, specializations) => {
     return Domain.create(
         { name, type, specializations },
         {
-            include: [ Specialization ]
+            include: [ sequelize.model('specialization') ]
         }
     );
 }
 
-exports.editDomain = async (id, name, type, specializations) => {
-    const oldDomain = await this.getDomain(id); // get old domain data
+export const editDomain = async (id, name, type, specializations) => {
+    const oldDomain = await getDomain(id); // get old domain data
     if(!oldDomain) {
         throw "BAD_REQUEST";
     }
@@ -302,7 +312,7 @@ exports.editDomain = async (id, name, type, specializations) => {
     const transaction = await sequelize.transaction(); // start transaction
     try {
         await Domain.update({ name, type }, { where: { id }, transaction }); // update domain data
-        specs = {
+        let specs = {
             toAdd: specializations.filter(spec => !spec.id), // specs that do not have an id will be added,
             toEdit: specializations.filter(spec => specIds.includes(spec.id)), // specs that have ids in specIds
             toDelete: specIds.filter(specId => !specializations.map(spec => spec.id).includes(specId)) // specs int specIds but not in the new array
@@ -313,7 +323,7 @@ exports.editDomain = async (id, name, type, specializations) => {
             });
             await Specialization.bulkCreate(specs.toAdd, { transaction });
         }
-        for(spec of specs.toEdit) {
+        for(let spec of specs.toEdit) {
             await Specialization.update({ name: spec.name, studyYears: spec.studyYears }, { where: { id: spec.id }, transaction });
         }
         if(specs.toDelete.length > 0) {
@@ -335,11 +345,11 @@ exports.editDomain = async (id, name, type, specializations) => {
         await transaction.rollback();
         throw "BAD_REQUEST";
     }
-    return this.getDomain(id);
+    return getDomain(id);
 }
 
-exports.deleteDomain = async (id) => {
-    const domain = await this.getDomain(id);
+export const deleteDomain = async (id) => {
+    const domain = await getDomain(id);
     if(!domain || domain.studentNumber > 0) {
         throw "BAD_REQUEST";
     }
@@ -348,35 +358,35 @@ exports.deleteDomain = async (id) => {
 
 // TOPICS
 
-exports.getTopics = async (sort, order, filter, page, pageSize) => {
+export const getTopics = async (sort, order, filter, page, pageSize) => {
     const limit = pageSize;
     const offset = page * pageSize;
     if (limit <= 0 || offset < 0) {
         throw "INVALID_PARAMETERS";
     }
 
-    let sortArray = [['id', 'ASC']]
+    let sortArray: OrderItem = ['id', 'ASC']
     if (['id', 'name'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
-        sortArray = [[sort, order]];
+        sortArray = [sort, order];
     }
 
     let query = await Topic.findAndCountAll({
         limit,
         offset,
-        order: sortArray
+        order: [sortArray]
     });
     return query;
 }
 
-exports.addTopic = (name) => {
+export const addTopic = (name) => {
     return Topic.create({ name });
 }
 
-exports.editTopic = (id, name) => {
+export const editTopic = (id, name) => {
     return Topic.update({ name }, { where: { id } });
 }
 
-exports.deleteTopic = async (id, moveId) => {
+export const deleteTopic = async (id, moveId) => {
     if(id == moveId) {
         throw "BAD_REQUEST"
     }
@@ -386,18 +396,18 @@ exports.deleteTopic = async (id, moveId) => {
         throw "BAD_REQUEST"
     }
 
-    await Offer.update({ topicId: moveId }, { where: { topicId: id } });
+    //await Offer.update({ topicId: moveId }, { where: { topicId: id } });
     return Topic.destroy({ where: id });
 }
 
 // COMMITTEES
 
-exports.getCommittees = async () => {
+export const getCommittees = async () => {
     let committees = await Committee.findAll();
-    return JSON.parse(JSON.stringify(committees)).map(committee => {
+    return JSON.parse(JSON.stringify(committees)).map(committee=> {
         committee.members = committee.members.map(member => {
             member.teacherId = member.id
-            member.role = member.committeeMembers.role;
+            member.role = member.committeeMember.role;
             return member;
         })
         return committee;
@@ -405,18 +415,20 @@ exports.getCommittees = async () => {
 }
 
 // Get Committee by ID
-exports.getCommittee = async (id) => {
+export const getCommittee = async (id: number) => {
     let committee = await Committee.findOne({ where: { id } });
     if(!committee) {
         return null;
     }
-    committee = JSON.parse(JSON.stringify(committee));
-    committee.members = committee.members.map(member => {
-        member.teacherId = member.id
-        member.role = member.committeeMembers.role;
-        return member;
+    let resp: any = JSON.parse(JSON.stringify(committee));
+    resp.members = resp.members.map(member => {
+        let parsedMember: any = { ...member }
+        parsedMember.teacherId = member.id
+        parsedMember.role = member.committeeMember.role;
+        return parsedMember;
     });
-    return committee;
+    console.log(resp)
+    return resp;
 }
 
 // Helper function to check whether the committee is well defined
@@ -436,7 +448,7 @@ const checkCommitteeComponence = (members) => {
     }
 }
 
-exports.addCommittee = async (name, domainsIds, members) => {
+export const addCommittee = async (name, domainsIds, members) => {
     // Will throw if the committee is badly formed
     checkCommitteeComponence(members);
 
@@ -452,7 +464,7 @@ exports.addCommittee = async (name, domainsIds, members) => {
         let committeeMembers = members.map(member => { // add the committee id
             return { ...member, committeeId: committee.id }
         });
-        await CommitteeMembers.bulkCreate(committeeMembers, { transaction });
+        await CommitteeMember.bulkCreate(committeeMembers, { transaction });
         await transaction.commit();
     } catch(err) {
         console.log(err)
@@ -461,7 +473,7 @@ exports.addCommittee = async (name, domainsIds, members) => {
     }
 }
 
-exports.editCommittee = async (id, name, domainsIds, members) => {
+export const editCommittee = async (id, name, domainsIds, members) => {
     // Will throw if the committee is badly formed
     checkCommitteeComponence(members);
     // Find the old committee by ID
@@ -484,7 +496,7 @@ exports.editCommittee = async (id, name, domainsIds, members) => {
         let committeeMembers = members.map(member => { // add the committee id
             return { ...member, committeeId: oldCommittee.id }
         });
-        await CommitteeMembers.bulkCreate(committeeMembers, { transaction });
+        await CommitteeMember.bulkCreate(committeeMembers, { transaction });
         await transaction.commit();
 
     } catch (err) {
@@ -494,11 +506,11 @@ exports.editCommittee = async (id, name, domainsIds, members) => {
     }
 }
 
-exports.deleteCommittee = (id) => {
+export const deleteCommittee = (id) => {
     return Committee.destroy({ where: {id } });
 }
 
-exports.setCommitteePapers = async (id, paperIds) => {
+export const setCommitteePapers = async (id, paperIds) => {
     const committee = await Committee.findOne({ where: { id } }); // get committee
     if(!committee) {
         throw "BAD_REQUEST";
@@ -519,7 +531,7 @@ exports.setCommitteePapers = async (id, paperIds) => {
 
 // PAPERS
 
-exports.getPapers = async (filter) => {
+export const getPapers = async (filter) => {
     let where = filter ? filter : {}
     let papers = await Paper.scope(['teacher', 'student']).findAll({ where });
     return JSON.parse(JSON.stringify(papers)).map(paper => {
@@ -531,7 +543,7 @@ exports.getPapers = async (filter) => {
 
 // SESSION SETTINGS
 
-exports.changeSessionSettings = async (settings) => {
+export const changeSessionSettings = async (settings) => {
     // Get the old settings
     let oldSettings = await SessionSettings.findOne();
     // If settings are set, do update query

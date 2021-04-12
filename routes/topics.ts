@@ -1,7 +1,7 @@
 var express = require('express')
 var router = express.Router()
-const AuthController = require('../controllers/auth.controller')
-const TopicController = require('../controllers/topic.controller')
+import * as AuthController from '../controllers/auth.controller'
+import * as TopicController from '../controllers/topic.controller'
 
 router.use(AuthController.isLoggedIn)
 
@@ -46,4 +46,4 @@ router.post('/add-bulk', async function (req, res) {
     }
 });
 
-module.exports = router
+export default router

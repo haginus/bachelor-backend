@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
-const DocumentController = require('../controllers/document.controller')
-const AuthController = require('../controllers/auth.controller')
+import * as DocumentController from '../controllers/document.controller';
+import * as AuthController from '../controllers/auth.controller';
 
 
 router.use(AuthController.isLoggedIn);
@@ -16,4 +16,4 @@ router.get('/view', async (req, res) => {
     }
 });
 
-module.exports = router
+export default router

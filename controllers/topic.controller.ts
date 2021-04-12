@@ -1,15 +1,15 @@
-const { Topic } = require("../models/models.js");
+import { Topic } from "../models/models";
 
 
-exports.getTopics = () => {
+export function getTopics() {
     return Topic.findAll();
 }
 
-exports.addTopic = (name) => {
+export function addTopic(name) {
     return Topic.create({ name });
 }
 
-exports.addTopics = (names) => {
+export function addTopics(names) {
     const toAdd = []
     names.forEach(name => {
         toAdd.push({ name });

@@ -1,21 +1,20 @@
 "use strict"
-const { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization } = require("../models/models.js");
-const UserController = require('./user.controller')
-const StudentController = require('./student.controller')
-const { Op } = require("sequelize");
-const Mailer = require("../alerts/mailer")
-const paperRequiredDocuments = require('./../json/paper-required-documents.json')
+import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization } from "../models/models";
+import * as UserController from './user.controller';
+import { StudentController } from './student.controller';
+import { Model, Op, Sequelize } from "sequelize";
+import * as Mailer from "../alerts/mailer";
 
 
-exports.validateTeacher = async (uid) => {
+export const validateTeacher = async (uid) => {
     return UserController.validateUser(uid);
 }
 
-exports.getTeacherByUserId = (uid) => {
+export const getTeacherByUserId = (uid) => {
     return Teacher.findOne({ where: { userId: uid } });
 }
 
-exports.getOffers = async (uid) => {
+export const getOffers = async (uid) => {
     const teacher = await Teacher.findOne({ where: { userId: uid } });
     const offers = Offer.findAll({
         where: {
@@ -29,10 +28,10 @@ exports.getOffers = async (uid) => {
         },
         include: [
             {
-                model: Domain,
+                model: Domain as typeof Model,
             },
             {
-                model: Topic,
+                model: Topic as typeof Model,
                 through: {
                     attributes: []
                 }
@@ -42,7 +41,7 @@ exports.getOffers = async (uid) => {
     return offers
 }
 
-exports.editOffer = async (uid, offerId, domainId, topicIds, limit) => {
+export const editOffer = async (uid, offerId, domainId, topicIds, limit) => {
     let offer = await Offer.findOne({
         where: { id: offerId },
         attributes: {
@@ -52,7 +51,7 @@ exports.editOffer = async (uid, offerId, domainId, topicIds, limit) => {
         }
     });
 
-    const teacher = await this.getTeacherByUserId(uid);
+    const teacher = await getTeacherByUserId(uid);
 
     if(offer.teacherId != teacher.id) {
         throw "UNAUTHORIZED"
@@ -82,13 +81,13 @@ exports.editOffer = async (uid, offerId, domainId, topicIds, limit) => {
     return offer;
 }
 
-exports.addOffer = async (uid, domainId, topicIds, limit) => {
+export const addOffer = async (uid, domainId, topicIds, limit) => {
 
     if(limit < 1) {
         throw "LIMIT_LOWER_THAN_1";
     }
 
-    const teacher = await this.getTeacherByUserId(uid);
+    const teacher = await getTeacherByUserId(uid);
 
     let topics = await Topic.findAll({
         where: {
@@ -108,8 +107,8 @@ exports.addOffer = async (uid, domainId, topicIds, limit) => {
     }
 }
 
-exports.getApplications = async (uid, offerId, state) => {
-    const teacher = await this.getTeacherByUserId(uid);
+export const getApplications = async (uid, offerId, state) => {
+    const teacher = await getTeacherByUserId(uid);
     const offerIdFilter = offerId ? { id: offerId } : {}
     let stateFilter;
     switch(state) {
@@ -133,17 +132,17 @@ exports.getApplications = async (uid, offerId, state) => {
         include: [
             {
                 required: true,
-                model: Offer,
+                model: Offer as typeof Model,
                 where: {
                     teacherId: teacher.id,
                     ...offerIdFilter
                 },
                 include: [
                     {
-                        model: Domain
+                        model: Domain as typeof Model
                     },
                     {
-                        model: Topic
+                        model: Topic as typeof Model
                     }
                 ],
                 attributes: {
@@ -153,11 +152,11 @@ exports.getApplications = async (uid, offerId, state) => {
                 }
             },
             {
-                model: Student,
-                include: {
-                    model: User,
+                model: Student as typeof Model,
+                include: [{
+                    model: User as typeof Model,
                     attributes: ["id", "firstName", "lastName"]
-                }
+                }]
             },
         ],
         order: [
@@ -173,17 +172,17 @@ exports.getApplications = async (uid, offerId, state) => {
     return result;
 }
 
-exports.getApplication = (id) => {
+export const getApplication = (id) => {
     return Application.findOne({ 
         where: { id },
         include: [{
-            model: Offer
+            model: Offer as typeof Model
         },
         {
-            model: Student,
+            model: Student as typeof Model,
             include: [
                 {
-                    model: User,
+                    model: User as typeof Model,
                     attributes: ["id", "firstName", "lastName", "email"]
                 }
             ]
@@ -191,10 +190,10 @@ exports.getApplication = (id) => {
     });
 }
 
-exports.declineApplication = async (user, applicationId) => {
-    const teacher = await this.getTeacherByUserId(user.id);
+export const declineApplication = async (user, applicationId) => {
+    const teacher = await getTeacherByUserId(user.id);
 
-    let application = await this.getApplication(applicationId);
+    let application = await getApplication(applicationId);
     if(!application) {
         throw "MISSING_APPLICATION"
     }
@@ -214,10 +213,10 @@ exports.declineApplication = async (user, applicationId) => {
     return { success: true }
 }
 
-exports.acceptApplication = async (user, applicationId) => {
-    const teacher = await this.getTeacherByUserId(user.id);
+export const acceptApplication = async (user, applicationId) => {
+    const teacher = await getTeacherByUserId(user.id);
 
-    let application = await this.getApplication(applicationId);
+    let application = await getApplication(applicationId);
     if(!application) {
         throw "MISSING_APPLICATION"
     }
@@ -262,11 +261,11 @@ exports.acceptApplication = async (user, applicationId) => {
     return { success: true }
 }
 
-exports.getDomains = () => {
+export const getDomains = () => {
     return Domain.findAll();
 }
 
-exports.getStudentPapers = async (user) => {
+export const getStudentPapers = async (user) => {
     let papers = await user.teacher.getPapers({
         scope: ['committee'],
         include: [
@@ -303,7 +302,7 @@ exports.getStudentPapers = async (user) => {
 
 
 const literals = {
-    countOfferAcceptedApplications: sequelize.literal(`(
+    countOfferAcceptedApplications: Sequelize.literal(`(
         SELECT COUNT(*)
         FROM applications AS application
         WHERE
@@ -311,7 +310,7 @@ const literals = {
             AND
             application.accepted = 1
     )`),
-    countOfferApplications: sequelize.literal(`(
+    countOfferApplications: Sequelize.literal(`(
         SELECT COUNT(*)
         FROM applications AS application
         WHERE

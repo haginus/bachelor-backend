@@ -4,6 +4,9 @@
 # storage
 /storage
 
+# tsc build
+/build
+
 # dependencies
 /node_modules
 

@@ -1,11 +1,11 @@
-var express = require('express')
-var router = express.Router()
-const fileUpload = require('express-fileupload');
-const AuthController = require('../controllers/auth.controller')
-const AdminController = require('../controllers/admin.controller')
+import { Router } from 'express';
+var router = Router()
+import fileUpload, { UploadedFile } from 'express-fileupload';
+import { isLoggedIn, isAdmin } from '../controllers/auth.controller';
+import * as AdminController from '../controllers/admin.controller';
 
-router.use(AuthController.isLoggedIn);
-router.use(AuthController.isAdmin);
+router.use(isLoggedIn);
+router.use(isAdmin);
 
 
 // STUDENTS
@@ -13,9 +13,9 @@ router.use(AuthController.isAdmin);
 router.get('/students', async function (req, res) {
     try {
         let { sort, order, page, pageSize } = req.query;
-        page = parseInt(page);
-        pageSize = parseInt(pageSize);
-        const students = await AdminController.getStudents(sort, order, null, page, pageSize);
+        let pageAsNumber = Number(page);
+        let pageSizeAsNumber = Number(pageSize); 
+        const students = await AdminController.getStudents(sort, order, null, pageAsNumber, pageSizeAsNumber);
         res.json(students);
     } catch (err) {
         console.log(err)
@@ -53,7 +53,7 @@ router.post('/students/add-bulk', fileUpload({
     limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
 }), async function(req, res) {
     try {
-        let result = await AdminController.addStudentBulk(req.files.file.data);
+        let result = await AdminController.addStudentBulk((req.files.file as UploadedFile).data);
         res.json(result);
     } catch(err) {
         res.status(400).json(err);
@@ -78,9 +78,9 @@ router.post('/users/delete', async function (req, res) {
 router.get('/teachers', async function (req, res) {
     try {
         let { sort, order, page, pageSize } = req.query;
-        page = parseInt(page);
-        pageSize = parseInt(pageSize);
-        const teachers = await AdminController.getTeachers(sort, order, null, page, pageSize);
+        let pageAsNumber = Number(page);
+        let pageSizeAsNumber = Number(pageSize); 
+        const teachers = await AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', null, pageAsNumber, pageSizeAsNumber);
         res.json(teachers);
     } catch (err) {
         console.log(err)
@@ -114,7 +114,7 @@ router.post('/teachers/add-bulk', fileUpload({
     limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
 }), async function(req, res) {
     try {
-        let result = await AdminController.addTeacherBulk(req.files.file.data);
+        let result = await AdminController.addTeacherBulk((req.files.file as UploadedFile).data);
         res.json(result);
     } catch(err) {
         res.status(400).json(err);
@@ -173,9 +173,9 @@ router.post('/domains/delete', async (req, res) => {
 router.get('/topics', async function (req, res) {
     try {
         let { sort, order, page, pageSize } = req.query;
-        page = parseInt(page);
-        pageSize = parseInt(pageSize);
-        const topics = await AdminController.getTopics(sort, order, null, page, pageSize);
+        let pageAsNumber = Number(page);
+        let pageSizeAsNumber = Number(pageSize); 
+        const topics = await AdminController.getTopics(sort, order, null, pageAsNumber, pageSizeAsNumber);
         res.json(topics);
     } catch (err) {
         console.log(err)
@@ -235,7 +235,7 @@ router.get('/committees', async function (req, res) {
 router.get('/committees/:id', async function (req, res) {
     try {
         const { id } = req.params;
-        const committee = await AdminController.getCommittee(id);
+        const committee = await AdminController.getCommittee(+id);
         res.json(committee);
     } catch (err) {
         console.log(err)
@@ -316,4 +316,4 @@ router.post('/session', async (req, res) => {
     }
 })
 
-module.exports = router
+export default router;

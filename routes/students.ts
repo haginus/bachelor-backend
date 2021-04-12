@@ -1,8 +1,8 @@
-var express = require('express')
-var router = express.Router()
-const AuthController = require('../controllers/auth.controller')
-const StudentController = require('../controllers/student.controller')
-const fileUpload = require('express-fileupload');
+import express from 'express'
+const router = express.Router()
+import * as AuthController from '../controllers/auth.controller';
+import {StudentController} from '../controllers/student.controller';
+import fileUpload from 'express-fileupload';
 
 router.use(AuthController.isLoggedIn);
 router.use(AuthController.isStudent);
@@ -30,21 +30,16 @@ router.get('/info', async function (req, res) {
 router.get('/teacher-offers', async function (req, res) {
     let { topicIds, teacherName, onlyFree } = req.query
     try {
-        topicIds = topicIds?.split(',').map(id => {
+        let topicIdsArray = (topicIds as string)?.split(',').map(id => {
             let x = parseInt(id);
             if(isNaN(x) || !isFinite(x))
                 throw "PARSE_ERROR";
             return x;
         });
-        if(onlyFree == 'true') {
-            onlyFree = true
-        } else {
-            onlyFree = false
-        }
         let filters = {
             teacherName,
-            topicIds,
-            onlyFree
+            topicIds: topicIdsArray,
+            onlyFree: onlyFree == 'true'
         }
         let teacherOffers = await StudentController.getTeacherOffers(req._user.id, filters);
         res.json(teacherOffers);
@@ -81,7 +76,7 @@ router.post('/teacher-offers/apply', async function (req, res) {
 
 router.get('/applications', async (req, res) => {
     let { state } = req.query;
-    if(!['accepted', 'declined', 'pending'].includes(state)) {
+    if(!['accepted', 'declined', 'pending'].includes(state as string)) {
         state = null;
     }
     try {
@@ -135,7 +130,7 @@ router.post('/extra-data/set', async (req, res) => {
 
 router.get('/paper/documents/get-required', async (req, res) => {
     try {
-        let documents = await StudentController.getPaperRequiredDocuments(req._user, null);
+        let documents = await StudentController.getPaperRequiredDocuments(req._user, null, null);
         res.json(documents);
     } catch(err) {
         res.status(400).json(err);
@@ -154,14 +149,4 @@ router.post('/paper/documents/upload', fileUpload({
     }
 });
 
-router.post('/test-gen', async (req, res) => {
-    try {
-        const data = await StudentController.testGen(req._user.id, req.body);
-        res.json("data")
-    } catch(err) {
-        console.log(err)
-        res.status(500).json("");
-    }
-});
-
-module.exports = router
+export default router;

@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "resolveJsonModule": true,
+      "module": "commonjs",
+      "rootDir": "./",
+      "outDir": "./build",
+      "esModuleInterop": true,
+      "strict": false
+    }
+}

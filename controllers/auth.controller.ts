@@ -1,19 +1,26 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher} = require("../models/models.js");
-const { config } = require("../config/config");
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize } from "../models/models";
+import { config } from "../config/config";
 
 const getUser = async (where) => {
     return User.findOne({ 
         where, 
         include: [
-            { model: Student, include: [ Domain, Paper ] },
-            Teacher
+            { 
+                association: User.associations.student,
+                include: [
+                    Student.associations.domain,
+                    Student.associations.specialization,
+                    Student.associations.paper
+                ]
+            },
+            User.associations.teacher
         ]
     });
 }
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
     const { email, password } = req.body;
     const user = await getUser({ email });
     if (user) {
@@ -35,7 +42,7 @@ exports.login = async (req, res) => {
     }
 }
 
-exports.changePasswordWithActivationCode = async (req, res) => {
+export const changePasswordWithActivationCode = async (req, res) => {
     const { token, password, confirmPassword } = req.body;
     if(password !== confirmPassword && password.length < 6) {
         return res.status(400).json({ "error": "BAD_PASSWORD" });
@@ -60,7 +67,7 @@ exports.changePasswordWithActivationCode = async (req, res) => {
     }
 }
 
-exports.isLoggedIn = async (req, res, next) => {
+export const isLoggedIn = async (req, res, next) => {
     let token = req.header('Authorization');
     if (!token || !token.startsWith('Bearer ')) {
         return res.status(403).json({ "error": "NOT_LOGGED_IN" });
@@ -69,7 +76,7 @@ exports.isLoggedIn = async (req, res, next) => {
     token = token.slice(7).trimStart();  // get the value of the token
     try {
         const payload = jwt.verify(token, config.SECRET_KEY);
-        const { id } = payload; 
+        const { id } = <any> payload; 
         let user = await getUser({ id });
         req._user = user;
         next();
@@ -78,7 +85,7 @@ exports.isLoggedIn = async (req, res, next) => {
     }
 }
 
-exports.isAdmin = async (req, res, next) => {
+export const isAdmin = async (req, res, next) => {
     if(req._user.type !== "admin") {
         res.status(403).json({ "error": "NOT_AUTHORIZED" });
     } else {
@@ -86,7 +93,7 @@ exports.isAdmin = async (req, res, next) => {
     }
 }
 
-exports.isStudent = async (req, res, next) => {
+export const isStudent = async (req, res, next) => {
     if(req._user.type !== "student") {
         res.status(403).json({ "error": "NOT_AUTHORIZED" });
     } else {
@@ -94,7 +101,7 @@ exports.isStudent = async (req, res, next) => {
     }
 }
 
-exports.isTeacher = async (req, res, next) => {
+export const isTeacher = async (req, res, next) => {
     if(req._user.type !== "teacher") {
         res.status(403).json({ "error": "NOT_AUTHORIZED" });
     } else {
@@ -102,6 +109,6 @@ exports.isTeacher = async (req, res, next) => {
     }
 }
 
-exports.getSessionSettings = () => {
+export const getSessionSettings = () => {
     return SessionSettings.findOne();
 }

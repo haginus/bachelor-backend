@@ -1,7 +1,7 @@
 var express = require('express')
 var router = express.Router()
-const AuthController = require('../controllers/auth.controller')
-const TeacherController = require('../controllers/teacher.controller')
+import * as AuthController from '../controllers/auth.controller';
+import * as TeacherController from '../controllers/teacher.controller';
 
 router.use(AuthController.isLoggedIn);
 router.use(AuthController.isTeacher);
@@ -98,4 +98,4 @@ router.get('/papers', async function (req, res) {
     res.json(papers);
 });
 
-module.exports = router;
+export default router;
