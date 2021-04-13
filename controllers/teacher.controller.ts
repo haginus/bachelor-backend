@@ -1,10 +1,10 @@
 "use strict"
-import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization } from "../models/models";
+import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
-import { StudentController } from './student.controller';
 import { Model, Op, Sequelize } from "sequelize";
 import * as Mailer from "../alerts/mailer";
+import { UploadedFile } from "express-fileupload";
 
 
 export const validateTeacher = async (uid) => {
@@ -293,6 +293,35 @@ export const getStudentPapers = async (user: User) => {
         paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
         return paper;
     }));
+}
+
+export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType,
+    perspective: UploadPerspective, paperId: number) => {
+    return DocumentController.uploadPaperDocument(user, documentFile, name, type, perspective, paperId);
+}
+
+/** Remove association with a student by deleting their paper and allowing them to look for other teacher. */
+export const removePaper = async (user: User, paperId: number): Promise<boolean> => {
+    const paper = await Paper.findOne({ where: { id: paperId } });
+    if(!paper) {
+        throw "PAPER_NOT_FOUND";
+    }
+    if(paper.teacherId != user.teacher.id) {
+        throw "UNAUTHORIZED";
+    }
+    const studentId = paper.studentId;
+    const transaction = await sequelize.transaction();
+    try { 
+        await StudentExtraData.destroy({ where: { studentId }, transaction });
+        await Paper.destroy({ where: { studentId }, transaction });
+        // Change application status to declined so that student can't apply to the same offer again
+        await Application.update({ accepted: false }, { where: { studentId }, transaction });
+        await transaction.commit();
+    } catch(err) {
+        await transaction.rollback();
+        throw "INTERNAL_ERROR";
+    }
+    return true;
 }
 
 

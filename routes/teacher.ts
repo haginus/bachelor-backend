@@ -1,5 +1,6 @@
 var express = require('express')
 var router = express.Router()
+import fileUpload, { UploadedFile } from 'express-fileupload';
 import * as AuthController from '../controllers/auth.controller';
 import * as TeacherController from '../controllers/teacher.controller';
 
@@ -96,6 +97,29 @@ router.get('/domains', async function (req, res) {
 router.get('/papers', async function (req, res) {
     let papers = await TeacherController.getStudentPapers(req._user);
     res.json(papers);
+});
+
+router.post('/papers/documents/upload', fileUpload(), async function (req, res) {
+    const { paperId, perspective, name, type } = req.body;
+    try {
+        let docuemnt = await TeacherController.uploadPaperDocument(req._user, req.files.file as UploadedFile,
+            name, type, perspective, +paperId);
+        res.json(docuemnt);
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.post('/papers/remove', fileUpload(), async function (req, res) {
+    const { paperId } = req.body;
+    try {
+        await TeacherController.removePaper(req._user, +paperId);
+        res.json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
 });
 
 export default router;

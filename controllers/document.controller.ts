@@ -212,7 +212,6 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
     isPreviousPromotion = sessionSettings?.currentPromotion != paper.student.promotion; // check if student is in different promotion
     paperType = paper.student.domain.type; // paper type is the same as student domain type
 
-    console.log(paperRequiredDocuments)
     return paperRequiredDocuments.filter(doc => {
         if (!doc.onlyFor) { // if document is required for everyone
             return true;
