@@ -17,4 +17,14 @@ router.get('/view', async (req, res) => {
     }
 });
 
+router.post('/delete', async (req, res) => {
+    let { id } = req.body;
+    try {
+        await DocumentController.deleteDocument(req._user, +id);
+        res.json({ success: true });
+    } catch(err) {
+        res.status(400).json(err);
+    }
+});
+
 export default router

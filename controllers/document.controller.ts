@@ -16,6 +16,19 @@ export const getStoragePath = (fileName: string) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
+/** Delete a document by ID. Only the person that uploaded the document can delete it. */
+export const deleteDocument = async (user: User, documentId: number): Promise<boolean> => {
+    const document = await Document.findOne({ where: { id: documentId } });
+    if(!document) {
+        throw "NOT_FOUND";
+    }
+    if(document.uploadedBy != user.id) {
+        throw "UNAUTHORIZED";
+    }
+    await document.destroy();
+    return true;
+}
+
 export const getDocument = async (user: User, documentId: number) => {
     const document = await Document.findOne({
         where: { id: documentId },
