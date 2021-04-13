@@ -1,0 +1,25 @@
+<html>
+    <body>
+        <div class="card">
+            <div class="card-image centered">
+                <img src="https://fmi.unibuc.ro/wp-content/uploads/2020/05/sigla-fmi-1.png">
+            </div>
+            <div class="card-content">
+                <h2>Salutare, <%= studentUser.firstName %> <%= studentUser.lastName %>!</h2>
+                <p>
+                    Din păcate, profesorul <%= teacherUser.firstName %> <%= teacherUser.lastName %> 
+                    a rupt asocierea cu dumneavoastră. <br><br>
+                    Vizualizați alte oferte accesând link-ul de mai jos:
+                </p>
+            </div>
+
+            <div class="card-actions">
+                <div class="centered">
+                    <a class="button" target="_blank" href="<%= url %>">Găsiți alt profesor</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <%- include('./partials/footer.ejs') %>
+</html>
+<%- include('./styles/main.ejs') %>

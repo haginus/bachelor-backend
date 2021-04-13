@@ -1,6 +1,7 @@
 import { createTransport } from "nodemailer";
 import { config } from '../config/config';
 import { renderFile } from 'ejs';
+import { User } from "../models/models";
 
 const transporter = createTransport(config.mailer);
 
@@ -35,4 +36,19 @@ export async function sendAcceptedApplicationEmail(studentUser, teacherUser, app
     subject: "Cerere de asociere acceptată",
     html
   });
+}
+
+export const sendRemovedPaperNotice = async (studentUser: User, teacherUser: User) => {
+  try {
+    const url = `${config.WEBSITE_URL}/student/teachers`;
+    const html = await renderFile("./alerts/mail-templates/removed-paper-notice.ejs", { studentUser, teacherUser, url } );
+    let info = await transporter.sendMail({
+      from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
+      to: studentUser.email,
+      subject: "Asociere ruptă - Găsiți alt profesor",
+      html
+    });
+  } catch (err) {
+    console.log(err);
+  }
 }

@@ -316,6 +316,11 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
         await Paper.destroy({ where: { studentId }, transaction });
         // Change application status to declined so that student can't apply to the same offer again
         await Application.update({ accepted: false }, { where: { studentId }, transaction });
+        // Get student data to send email
+        let student = await User.findOne({
+            include: [{ association: User.associations.student, required: true, where: { id: studentId } }]
+        })
+        Mailer.sendRemovedPaperNotice(student, user);
         await transaction.commit();
     } catch(err) {
         await transaction.rollback();
