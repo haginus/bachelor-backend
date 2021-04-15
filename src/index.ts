@@ -4,12 +4,12 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as AuthController from './controllers/auth.controller';
 import * as UserController from './controllers/user.controller';
-import authRoutes from './routes/auth';
-import studentRoutes from './routes/students';
-import teacherRoutes from './routes/teacher';
-import topicsRoutes from './routes/topics';
-import adminRoutes from './routes/admin';
-import documentsRoutes from './routes/documents';
+import authRoutes from './routes/auth.route';
+import studentRoutes from './routes/students.route';
+import teacherRoutes from './routes/teacher.route';
+import topicsRoutes from './routes/topics.route';
+import adminRoutes from './routes/admin.route';
+import documentsRoutes from './routes/documents.route';
 import { config } from './config/config';
 import * as Mailer from './alerts/mailer';
 
