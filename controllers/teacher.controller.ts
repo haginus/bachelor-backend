@@ -329,6 +329,18 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
     return true;
 }
 
+export const getCommittees = async (user: User) => {
+    const committees = await user.teacher.getCommittees();
+    return JSON.parse(JSON.stringify(committees)).map(committee => {
+        committee.members = committee.members.map(member => {
+            member.teacherId = member.id
+            member.role = member.committeeMember.role;
+            return member;
+        })
+        return committee;
+    });
+}
+
 
 const literals = {
     countOfferAcceptedApplications: Sequelize.literal(`(

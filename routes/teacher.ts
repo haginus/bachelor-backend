@@ -111,11 +111,21 @@ router.post('/papers/documents/upload', fileUpload(), async function (req, res) 
     }
 });
 
-router.post('/papers/remove', fileUpload(), async function (req, res) {
+router.post('/papers/remove', async function (req, res) {
     const { paperId } = req.body;
     try {
         await TeacherController.removePaper(req._user, +paperId);
         res.json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.get('/committees', async function (req, res) {
+    try {
+        let committees = await TeacherController.getCommittees(req._user);
+        res.json(committees);
     } catch(err) {
         console.log(err);
         res.status(400).json(err);
