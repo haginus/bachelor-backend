@@ -19,7 +19,9 @@
     "sequelize": "^6.5.0"
   },
   "scripts": {
-    "start": "nodemon src/index.ts"
+    "start:dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node build/index.js"
   },
   "repository": {
     "type": "git",
