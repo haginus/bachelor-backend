@@ -23,7 +23,7 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       title: 'Cerere de înscriere',
       name: 'sign_up_form',
       category: 'secretary_files',
-      types: { generated: true,  },
+      types: { generated: true, signed: true },
       acceptedMimeTypes: 'application/pdf',
       uploadBy: 'student'
     },
