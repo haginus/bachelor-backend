@@ -1,7 +1,7 @@
 "use strict"
 import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective } from "../models/models";
 import * as UserController from './user.controller';
-import * as DocumentController from './document.controller';
+import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
