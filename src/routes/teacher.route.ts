@@ -1,5 +1,5 @@
-var express = require('express')
-var router = express.Router()
+import express from 'express'
+const router = express.Router()
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import * as AuthController from '../controllers/auth.controller';
 import * as TeacherController from '../controllers/teacher.controller';
@@ -48,7 +48,8 @@ router.post('/offers/add', async (req, res) => {
 });
 
 router.get('/applications', async (req, res) => {
-    let { offerId, state } = req.query;
+    let offerId: string | number = <string>req.query.offerId;
+    let state: string = <string>req.query.state;
     if(offerId) {
         offerId = parseInt(offerId);
         if(!isFinite(offerId)) {
