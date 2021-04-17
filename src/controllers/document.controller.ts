@@ -16,6 +16,11 @@ export const getStoragePath = (fileName: string) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
+const getDocumentTemplatePath = (docName: string) => {
+    let fileName: string = docName + '.ejs';
+    return path.resolve(process.env.PWD, 'src', 'document-templates', fileName);
+}
+
 /** Delete a document by ID. Only the person that uploaded the document can delete it. */
 export const deleteDocument = async (user: User, documentId: number): Promise<boolean> => {
     const document = await Document.findOne({ where: { id: documentId } });
@@ -97,7 +102,7 @@ const generateSignUpForm = async (student) => {
     const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
     const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
 
-    const content = await ejs.renderFile("./document-templates/sign_up_form.ejs", { student, date, birthDate } );
+    const content = await ejs.renderFile(getDocumentTemplatePath("sign_up_form"), { student, date, birthDate } );
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
 }
@@ -106,7 +111,7 @@ const generateStatutoryDeclaration = async (student) => {
     const today = new Date();
 
     const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-    const content = await ejs.renderFile("./document-templates/statutory_declaration.ejs", { student, date } );
+    const content = await ejs.renderFile(getDocumentTemplatePath("statutory_declaration"), { student, date } );
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
 }
@@ -117,7 +122,7 @@ const generateLiquidationForm = async (student) => {
     
     const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
     const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-    const content = await ejs.renderFile("./document-templates/liquidation_form.ejs", { student, date, birthDate } );
+    const content = await ejs.renderFile(getDocumentTemplatePath("liquidation_form"), { student, date, birthDate } );
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
 }
