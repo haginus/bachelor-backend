@@ -1,4 +1,4 @@
-import { DomainType, UploadPerspective } from "./models/models"
+import { DocumentCategory, DomainType, UploadPerspective } from "./models/models"
 
 // 'signed' cannot exist without 'generated', 'copy' is exclusive
 export type PaperRequiredDocumentTypes = { generated: true, signed?: boolean } | { copy: true } 
@@ -6,7 +6,7 @@ export type PaperRequiredDocumentTypes = { generated: true, signed?: boolean } |
 export interface PaperRequiredDocument {
     title: string;
     name: string;
-    category: string;
+    category: DocumentCategory;
     types: PaperRequiredDocumentTypes;
     acceptedMimeTypes: string;
     acceptedExtensions?: string[]; // will be calculated using mime
