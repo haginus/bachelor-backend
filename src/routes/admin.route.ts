@@ -291,14 +291,24 @@ router.post('/committees/assign-papers', async (req, res) => {
 });
 
 // PAPERS
-router.post('/papers', async function (req, res) {
+router.get('/papers', async function (req, res) {
     try {
-        const { filter } = req.body;
-        const papers = await AdminController.getPapers(filter);
+        let { sort, order, page, pageSize, assigned, assignedTo } = req.query;
+        let filter = {
+            assigned: assigned != undefined ? Boolean(assigned) : null,
+            assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
+        }
+        let pageAsNumber = Number(page);
+        let pageSizeAsNumber = Number(pageSize);
+        if(isNaN(pageAsNumber) || isNaN(pageSizeAsNumber) || pageAsNumber < 0 || pageSizeAsNumber < 0) {
+            pageSizeAsNumber = null;
+            pageAsNumber = null;
+        }
+        const papers = await AdminController.getPapers(<string>sort, <'ASC' | 'DESC'>order, filter, pageAsNumber, pageSizeAsNumber);
         res.json(papers);
     } catch (err) {
         console.log(err)
-        return res.status(500).json("INTERNAL_ERROR");
+        return res.status(400).json(err);
     }
 });
 

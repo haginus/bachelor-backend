@@ -11,6 +11,9 @@ var stream = require('stream');
 
 // Students
 
+type SortOrder = 'ASC' | 'DESC';
+type Pagination = { limit?: number, offset?: number };
+
 export const getStudents = async (sort, order, filter, page, pageSize) => {
     const limit = pageSize;
     const offset = page * pageSize;
@@ -531,14 +534,38 @@ export const setCommitteePapers = async (id, paperIds) => {
 
 // PAPERS
 
-export const getPapers = async (filter) => {
-    let where = filter ? filter : {}
-    let papers = await Paper.scope(['teacher', 'student']).findAll({ where });
-    return JSON.parse(JSON.stringify(papers)).map(paper => {
-        paper.teacher = paper.teacher.user;
-        paper.student = paper.student.user;
-        return paper;
+export interface GetPapersFilter {
+    /** If paper is assigned to any committee */
+    assigned: boolean;
+    /** ID of committee where the paper has been assigned */
+    assignedTo: number
+}
+
+export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter, page?: number, pageSize?: number) => {
+    let sortArray: OrderItem = ['id', 'ASC']
+    if (['id', 'title', 'type'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+        sortArray = [sort, order];
+    }
+
+    let pagination: Pagination = {}
+    if(page != undefined) {
+        pagination.limit = pageSize;
+        pagination.offset = page * pageSize;
+    }
+    let where: any = { };
+    if(filter?.assigned != null) {
+        where.committeeId = filter.assigned ? { [Op.ne]: null } : null;
+    }
+    if(filter?.assignedTo != null) {
+        where.committeeId = filter.assignedTo;
+    }
+
+    let query = await Paper.findAndCountAll({
+        ...pagination,
+        where,
+        order: [sortArray]
     });
+    return query;
 }
 
 // SESSION SETTINGS
