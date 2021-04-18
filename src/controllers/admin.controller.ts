@@ -1,9 +1,10 @@
 import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper } from "../models/models";
 import * as UserController from './user.controller';
+import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
 import { config } from "../config/config";
-import { Op, OrderItem, Sequelize } from "sequelize";
+import { Model, Op, OrderItem, Sequelize } from "sequelize";
 import csv from 'csv-parser';
 import fs from 'fs';
 var stream = require('stream');
@@ -541,7 +542,8 @@ export interface GetPapersFilter {
     assignedTo: number
 }
 
-export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter, page?: number, pageSize?: number) => {
+export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
+    page?: number, pageSize?: number, minified?: boolean) => {
     let sortArray: OrderItem = ['id', 'ASC']
     if (['id', 'title', 'type'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
         sortArray = [sort, order];
@@ -560,12 +562,30 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         where.committeeId = filter.assignedTo;
     }
 
-    let query = await Paper.findAndCountAll({
+    let count = await Paper.count({where});
+
+    let scopes = ['student', 'teacher'];
+    if(!minified) {
+        scopes.push('documents');
+        scopes.push('committee');
+    }
+
+    let rows = await Paper.scope(scopes).findAll({
         ...pagination,
         where,
         order: [sortArray]
     });
-    return query;
+    const sessionSettings = await SessionSettings.findOne();
+    rows = await Promise.all(JSON.parse(JSON.stringify(rows)).map(async paper  => {
+        let newPaper = JSON.parse(JSON.stringify(paper));
+        newPaper.student = paper.student.user;
+        newPaper.teacher = paper.teacher.user;
+        if(!minified) {
+            newPaper.requiredDocuments = await DocumentController.getPaperRequiredDocuments(paper.id, sessionSettings);
+        }
+        return newPaper;
+    }))
+    return { count, rows };
 }
 
 // SESSION SETTINGS

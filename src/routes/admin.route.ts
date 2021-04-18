@@ -293,7 +293,7 @@ router.post('/committees/assign-papers', async (req, res) => {
 // PAPERS
 router.get('/papers', async function (req, res) {
     try {
-        let { sort, order, page, pageSize, assigned, assignedTo } = req.query;
+        let { sort, order, page, pageSize, assigned, assignedTo, minified } = req.query;
         let filter = {
             assigned: assigned != undefined ? Boolean(assigned) : null,
             assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
@@ -304,7 +304,7 @@ router.get('/papers', async function (req, res) {
             pageSizeAsNumber = null;
             pageAsNumber = null;
         }
-        const papers = await AdminController.getPapers(<string>sort, <'ASC' | 'DESC'>order, filter, pageAsNumber, pageSizeAsNumber);
+        const papers = await AdminController.getPapers(<string>sort, <'ASC' | 'DESC'>order, filter, pageAsNumber, pageSizeAsNumber, Boolean(minified));
         res.json(papers);
     } catch (err) {
         console.log(err)
