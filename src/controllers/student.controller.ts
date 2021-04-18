@@ -307,7 +307,7 @@ export class StudentController {
         if (paper) {
             paperRes.teacher = paper.teacher.user;
         }
-        return paper;
+        return paperRes;
     }
 
     public static getExtraData = async (uid) => {
