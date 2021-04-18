@@ -260,9 +260,9 @@ export const checkFileSubmissionPeriod = async (sessionSettings?: SessionSetting
     if (sessionSettings == null) { // settings not set
         return false;
     }
-    const today = new Date().getTime();
-    const start = new Date(sessionSettings.fileSubmissionStartDate).getTime();
-    const end = new Date(sessionSettings.fileSubmissionEndDate).getTime();
+    const today = new Date().setHours(0, 0, 0, 0);
+    const start = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
+    const end = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
 
     return start <= today && today <= end;
 }
