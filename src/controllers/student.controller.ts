@@ -317,7 +317,7 @@ export class StudentController {
 
     public static setExtraData = async (uid, data) => {  // sets the new extra data and triggers document generation
         const sessionSettings = await SessionSettings.findOne();
-        if (!(await DocumentController.checkFileSubmissionPeriod(sessionSettings))) {
+        if (!(await DocumentController.checkFileSubmissionPeriod('secretary_files', sessionSettings))) {
             throw "NOT_IN_FILE_SUBMISSION_PERIOD";
         }
         const student = await StudentController.getStudentByUid(uid);

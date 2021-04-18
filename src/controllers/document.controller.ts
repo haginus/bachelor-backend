@@ -30,6 +30,10 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
     if(document.uploadedBy != user.id) {
         throw "UNAUTHORIZED";
     }
+    // Check if document category can be modified
+    if (user.type == 'student' && !(await checkFileSubmissionPeriod(document.category))) {
+        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    }
     await document.destroy();
     return true;
 }
@@ -132,10 +136,6 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     
     const sessionSettings = await SessionSettings.findOne();
 
-    if (!(await checkFileSubmissionPeriod(sessionSettings))) {
-        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
-    }
-
     if (type == 'generated') { // do not allow "uploading" generated files
         throw "BAD_REQUEST";
     }
@@ -156,8 +156,14 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
         throw "INVALID_DOCUMENT_MIMETYPE";
     }
 
+    const category = requiredDoc.category;
+
+    // Check if document category can be uploaded
+    if (!(await checkFileSubmissionPeriod(category, sessionSettings))) {
+        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    }
+
     const fileExtension = mime.extension(mimeType); // get the file extension
-    const category = requiredDoc.category as DocumentCategory;
 
     const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
 
@@ -253,7 +259,7 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
     });
 }
 
-export const checkFileSubmissionPeriod = async (sessionSettings?: SessionSettings) => {
+export const checkFileSubmissionPeriod = async (category: DocumentCategory, sessionSettings?: SessionSettings) => {
     if (!sessionSettings) {
         sessionSettings = await SessionSettings.findOne();
     }
@@ -261,8 +267,13 @@ export const checkFileSubmissionPeriod = async (sessionSettings?: SessionSetting
         return false;
     }
     const today = new Date().setHours(0, 0, 0, 0);
-    const start = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
-    const end = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
-
-    return start <= today && today <= end;
+    let startDate: number, endDate: number;
+    if(category == 'secretary_files') {
+      startDate = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
+      endDate = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
+    } else if(category == 'paper_files') {
+      startDate = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
+      endDate = new Date(sessionSettings.paperSubmissionEndDate).setHours(0, 0, 0, 0);
+    }
+    return startDate <= today && today <= endDate;
 }
