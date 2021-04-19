@@ -108,14 +108,14 @@ interface UserMinAttributes {
   email: string;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "fullName" | "validated" | "password"> {}
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "fullName" | "validated" | "password" | "CNP"> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public firstName!: string;
   public lastName!: string;
   public fullName!: string;
-  public CNP!: string;
+  public CNP!: string | null;
   public email!: string;
   public password!: string;
   public validated!: boolean;
@@ -693,8 +693,7 @@ User.init({
     },
   },
   CNP: {
-    type: DataTypes.STRING(13),
-    allowNull: false
+    type: DataTypes.STRING(13)
   },
   email: {
     type: DataTypes.STRING,
