@@ -366,9 +366,10 @@ interface PaperAttributes {
   type: DomainType;
   title: string;
   description: string;
+  isValid: boolean | null;
 }
 
-interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId"> {}
+interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid"> {}
 
 export class Paper extends Model<PaperAttributes, PaperCreationAttributes> implements PaperAttributes {
   public id: number;
@@ -378,6 +379,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public type: DomainType;
   public title: string;
   public description: string;
+  public isValid: boolean | null;
 
   public student?: Student;
   public teacher?: Teacher;
@@ -944,6 +946,9 @@ Paper.init({
     validate: {
       isIn: [['bachelor', 'master']]
     }
+  },
+  isValid: {
+    type: DataTypes.BOOLEAN
   },
   // documents
 }, {
