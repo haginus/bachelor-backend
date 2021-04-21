@@ -313,6 +313,16 @@ router.get('/papers', async function (req, res) {
     }
 });
 
+router.post('/papers/validate', async (req, res) => {
+    const { paperId, validate } = req.body;
+    try {
+        await AdminController.validatePaper(paperId, validate);
+        res.json({ success: true });
+    } catch(err) {
+        console.log(err)
+        res.status(400).json(err);
+    }
+})
 
 // SESSION SETTINGS
 

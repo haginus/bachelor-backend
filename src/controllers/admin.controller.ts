@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -7,6 +7,7 @@ import { config } from "../config/config";
 import { Model, Op, OrderItem, Sequelize } from "sequelize";
 import csv from 'csv-parser';
 import fs from 'fs';
+import { PaperRequiredDocument } from "../paper-required-documents";
 var stream = require('stream');
 
 
@@ -586,6 +587,44 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         return newPaper;
     }))
     return { count, rows };
+}
+
+const checkRequiredDocuments = (requiredDocs: PaperRequiredDocument[], documents: Document[]): boolean => {
+    try {
+        requiredDocs.forEach(requiredDoc => {
+            let requiredTypes = Object.keys(requiredDoc.types);
+            requiredTypes.forEach(requiredType => {
+                let document = documents.find(doc => doc.name == requiredDoc.name && doc.type == requiredType);
+                if(!document) {
+                    throw "missing_doc";
+                }
+            });
+        });
+        return true;
+    } catch(_) {
+        return false;
+    }
+}
+
+/** Validate/Invalidate a paper by its ID. */
+export const validatePaper = async (paperId: number, validate: boolean) => {
+    const paper = await Paper.scope('documents').findOne({ where: { id: paperId } });
+    if(!paper) {
+        throw "NOT_FOUND";
+    }
+    if(paper.isValid != null) {
+        throw "ALREADY_VALIDATED";
+    }
+    paper.isValid = validate;
+    if(validate) {
+        const requiredDocs = (await DocumentController.getPaperRequiredDocuments(paperId, null))
+            .filter(doc => doc.uploadBy == 'student');
+        if(!checkRequiredDocuments(requiredDocs, paper.documents)) {
+            throw "MISSING_DOCUMENTS"
+        }
+    }
+    await paper.save();
+    return true;
 }
 
 // SESSION SETTINGS
