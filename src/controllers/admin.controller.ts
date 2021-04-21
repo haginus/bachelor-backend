@@ -51,6 +51,22 @@ export const getStudents = async (sort, order, filter, page, pageSize) => {
     return query;
 }
 
+/** Get student by user ID. */
+export const getStudent = (id: number) => {
+    return User.findOne({
+        where: { id },
+        attributes: { exclude: ['password'] },
+        include: [{
+            model: sequelize.model('student'),
+            required: true,
+            include: [
+                sequelize.model('domain'),
+                sequelize.model('specialization')
+            ]
+        }]
+    });
+}
+
 export const addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
     studyForm, fundingForm, matriculationYear) => {
     let specialization = await Specialization.findOne({ where: { id: specializationId } });

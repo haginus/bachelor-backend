@@ -23,6 +23,17 @@ router.get('/students', async function (req, res) {
     }
 });
 
+router.get('/student', async function (req, res) {
+    try {
+        let { id } = req.query;
+        const student = await AdminController.getStudent(Number(id));
+        res.json(student);
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json("INTERNAL_ERROR");
+    }
+});
+
 router.post('/students/add', async function (req, res) {
     try {
         let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
