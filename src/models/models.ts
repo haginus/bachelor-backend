@@ -1,5 +1,5 @@
-const bcrypt = require('bcrypt');
-const { config } = require('../config/config');
+import bcrypt from 'bcrypt';
+import { config } from '../config/config';
 import {
   Sequelize,
   Model,
