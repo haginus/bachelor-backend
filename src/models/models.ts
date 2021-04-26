@@ -423,6 +423,10 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   public readonly updatedAt!: Date;
 
   paper?: Paper;
+
+  public static associations: {
+    paper: Association<Document, Paper>;
+  }
 }
 
 interface CommitteeAttributes {
