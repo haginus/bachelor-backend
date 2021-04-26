@@ -23,12 +23,18 @@ const getDocumentTemplatePath = (docName: string) => {
 
 /** Delete a document by ID. Only the person that uploaded the document can delete it. */
 export const deleteDocument = async (user: User, documentId: number): Promise<boolean> => {
-    const document = await Document.findOne({ where: { id: documentId } });
+    const document = await Document.findOne({ 
+        where: { id: documentId },
+        include: [ Document.associations.paper ]
+    });
     if(!document) {
         throw "NOT_FOUND";
     }
     if(document.uploadedBy != user.id) {
         throw "UNAUTHORIZED";
+    }
+    if(document.paper.isValid != null && user.type != 'teacher') {
+        throw "PAPER_CANNOT_CHANGE";
     }
     // Check if document category can be modified
     if (user.type == 'student' && !(await checkFileSubmissionPeriod(document.category))) {
@@ -139,7 +145,11 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     if (type == 'generated') { // do not allow "uploading" generated files
         throw "BAD_REQUEST";
     }
-
+    // Find the paper and check if it is valid
+    const paper = await Paper.findOne({ where: { id: paperId } });
+    if(paper.isValid != null && perspective != 'committee') {
+        throw "PAPER_CANNOT_CHANGE";
+    }
     const requiredDocuments = await getPaperRequiredDocuments(paperId, sessionSettings);
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
     const uploadedBy = user.id;
