@@ -367,9 +367,10 @@ interface PaperAttributes {
   title: string;
   description: string;
   isValid: boolean | null;
+  gradeAverage: number | null;
 }
 
-interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid"> {}
+interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid" | "gradeAverage"> {}
 
 export class Paper extends Model<PaperAttributes, PaperCreationAttributes> implements PaperAttributes {
   public id: number;
@@ -380,17 +381,20 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public title: string;
   public description: string;
   public isValid: boolean | null;
+  public gradeAverage: number | null;
 
   public student?: Student;
   public teacher?: Teacher;
 
   public documents?: Document[];
+  public grades?: PaperGrade[];
 
   public static associations: {
     student: Association<Paper, Student>;
     teacher: Association<Paper, Teacher>;
     documents: Association<Paper, Document>;
     committee: Association<Paper, Committee>;
+    grades: Association<Paper, PaperGrade>;
   };
 }
 
@@ -470,6 +474,23 @@ export class CommitteeMember extends Model<CommitteeMemberAttributes> implements
 
   teacher?: Teacher;
   committee?: Committee;
+}
+
+interface PaperGradeAttributes {
+  paperId: number;
+  teacherId: number;
+  forPaper: number;
+  forPresentation: number;
+}
+
+export class PaperGrade extends Model<PaperGradeAttributes> implements PaperGradeAttributes {
+  public paperId: number;
+  public teacherId: number;
+  public forPaper: number;
+  public forPresentation: number;
+
+  public teacher?: Teacher;
+  public paper?: Paper;
 }
 
 interface SessionSettingsAttributes {
@@ -955,6 +976,20 @@ Paper.init({
   isValid: {
     type: DataTypes.BOOLEAN
   },
+  gradeAverage: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      const grades = this.grades;
+      if(grades) {
+        let sum = 0;
+        grades.forEach(grade => {
+          sum += (grade.forPaper + grade.forPresentation) / 2;
+        });
+        return sum / grades.length;
+      }
+      return null;
+    }
+  }
   // documents
 }, {
   timestamps: false,
@@ -1237,6 +1272,43 @@ CommitteeMember.init({
   modelName: "committeeMember"
 });
 
+PaperGrade.init({
+  paperId: {
+    type: DataTypes.INTEGER,
+    primaryKey: true
+  },
+  teacherId: {
+    type: DataTypes.INTEGER,
+    primaryKey: true
+  },
+  forPaper: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: 1,
+      max: 10
+    }
+  },
+  forPresentation: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: 1,
+      max: 10
+    }
+  }
+}, {
+  timestamps: false,
+  sequelize,
+  modelName: "paperGrade",
+  defaultScope: {
+    include: [{
+      model: <typeof Model>Teacher,
+      include: [User.scope("min")]
+    }]
+  }
+});
+
 Committee.belongsToMany(Teacher, { through: sequelize.model('committeeMember'), as: 'members' });
 Teacher.belongsToMany(Committee, { through: sequelize.model('committeeMember') });
 
@@ -1248,6 +1320,18 @@ Paper.belongsTo(Committee);
 
 Paper.addScope('committee', {
   include: [ Committee.scope("min") ]
+});
+
+Paper.hasMany(PaperGrade, { as: 'grades'} );
+PaperGrade.belongsTo(Paper);
+
+Teacher.hasMany(PaperGrade, { as: 'givenGrades'} );
+PaperGrade.belongsTo(Teacher);
+
+Paper.addScope('grades', {
+  include: [{
+    association: Paper.associations.grades
+  }]
 });
 
 sequelize.sync()
