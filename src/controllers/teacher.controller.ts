@@ -1,5 +1,5 @@
 "use strict"
-import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective } from "../models/models";
+import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize } from "sequelize";
@@ -341,6 +341,36 @@ export const getCommittees = async (user: User) => {
     });
 }
 
+export const getCommitteee = async (user: User, committeeId: number) => {
+    const committee = await Committee.findOne({
+        where: { id: committeeId },
+        include: [Paper.scope(['student', 'teacher', 'documents', 'grades'])]
+    });
+    if(!committee) {
+        throw "NOT_FOUND";
+    }
+    if(committee.members.findIndex(member => member.id == user.teacher?.id) < 0) {
+        throw "TEACHER_NOT_IN_COMMITTEE";
+    }
+    let resp: any = JSON.parse(JSON.stringify(committee));
+    
+    resp.members = resp.members.map(member => {
+        let parsedMember: any = { ...member }
+        parsedMember.teacherId = member.id
+        parsedMember.role = member.committeeMember.role;
+        return parsedMember;
+    });
+
+    resp.papers = await Promise.all(resp.papers.map(async paper => {
+        let parsedPaper: any = { ...paper }
+        parsedPaper.student = paper.student?.user;
+        parsedPaper.teacher = paper.teacher?.user;
+        let required = await DocumentController.getPaperRequiredDocuments(paper.id);
+        parsedPaper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
+        return parsedPaper;
+    }));
+    return resp;
+}
 
 const literals = {
     countOfferAcceptedApplications: Sequelize.literal(`(

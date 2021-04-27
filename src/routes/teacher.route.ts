@@ -133,4 +133,15 @@ router.get('/committees', async function (req, res) {
     }
 });
 
+router.get('/committees/:id', async function (req, res) {
+    try {
+        const { id } = req.params;
+        let committee = await TeacherController.getCommitteee(req._user, +id);
+        res.json(committee);
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
 export default router;
