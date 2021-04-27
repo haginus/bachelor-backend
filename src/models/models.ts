@@ -502,6 +502,7 @@ interface SessionSettingsAttributes {
   fileSubmissionStartDate: Date;
   fileSubmissionEndDate: Date;
   paperSubmissionEndDate: Date;
+  allowGrading: boolean;
 }
 
 interface SessionSettingsCreationAttributes extends Optional<SessionSettingsAttributes, "lock"> {} 
@@ -515,6 +516,7 @@ export class SessionSettings extends Model<SessionSettingsAttributes, SessionSet
   fileSubmissionStartDate: Date;
   fileSubmissionEndDate: Date;
   paperSubmissionEndDate: Date;
+  allowGrading: boolean;
 }
 
 
@@ -582,6 +584,10 @@ SessionSettings.init({
         }
       }
     }
+  },
+  allowGrading: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 },
 {
