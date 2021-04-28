@@ -123,6 +123,17 @@ router.post('/papers/remove', async function (req, res) {
     }
 });
 
+router.post('/papers/grade', async function (req, res) {
+    try {
+        const { paperId, forPaper, forPresentation } = req.body;
+        await TeacherController.gradePaper(req._user, +paperId, +forPaper, +forPresentation);
+        res.json({ success: true });
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
 router.get('/committees', async function (req, res) {
     try {
         let committees = await TeacherController.getCommittees(req._user);

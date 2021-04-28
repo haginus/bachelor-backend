@@ -387,6 +387,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public teacher?: Teacher;
 
   public documents?: Document[];
+  public committee: Committee;
   public grades?: PaperGrade[];
 
   public static associations: {

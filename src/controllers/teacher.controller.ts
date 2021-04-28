@@ -1,8 +1,8 @@
 "use strict"
-import { User, Teacher, Offer, Paper, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
+import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './/document.controller';
-import { Model, Op, Sequelize } from "sequelize";
+import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
 
@@ -370,6 +370,34 @@ export const getCommitteee = async (user: User, committeeId: number) => {
         return parsedPaper;
     }));
     return resp;
+}
+
+export const gradePaper = async (user: User, paperId: number, forPaper: number, forPresentation: number) => {
+    const paper = await Paper.findOne(
+        { where: { id: paperId },
+        include: [{
+            model: Committee.scope("min")
+        }]
+    });
+    if(!paper) {
+        throw "PAPER_NOT_FOUND";
+    }
+    // Check if teacher is in the committee the paper is assigned to and they have right to grade
+    if(paper.committee.members.findIndex(member => 
+        member.id == user.teacher.id && member.committeeMember.role != 'secretary') < 0) {
+        throw "NOT_ALLOWED";
+    }
+    try {
+        await PaperGrade.create({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
+        return true;
+    } catch(err) {
+        // Check if error was caused due to double grading
+        if(err.original?.code == 'ER_DUP_ENTRY') {
+            throw "ALREADY_GRADED";
+        }
+        // Else throw a generic error
+        throw "BAD_REQUEST";
+    }
 }
 
 const literals = {
