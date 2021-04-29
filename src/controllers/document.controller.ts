@@ -301,12 +301,13 @@ const equalGroups = (first: Group, second: Group) => {
     return true;
 }
 
-/** Checks if user is the president of the committee. 
+/** Checks if user is the president or the secretary of the committee. 
  * @Throws "NOT_AUTHORIZED"
 */
-const checkPresidentInCommittee = (user: User, committee: Committee) => {
+const checkCommitteeDocumentGenerationRight = (user: User, committee: Committee) => {
     let president = committee.members.find(member => member.committeeMember.role == 'president');
-    if(president.id != user.teacher.id) {
+    let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
+    if(president.id != user.teacher.id || secretary.id != user.teacher.id) {
         throw "NOT_AUTHORIZED";
     }
     return true;
@@ -327,7 +328,7 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
         ]
     });
     if(user.type == 'teacher') {
-        checkPresidentInCommittee(user, committee);
+        checkCommitteeDocumentGenerationRight(user, committee);
     }
     let groupArr: Group[] = committee.papers.map(paper => {
         return [ paper.student.promotion, paper.student.studyForm, paper.student.specialization.name ];
@@ -373,7 +374,7 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
         ]
     });
     if(user.type == 'teacher') {
-        checkPresidentInCommittee(user, committee);
+        checkCommitteeDocumentGenerationRight(user, committee);
     }
     let groupArr: Group[] = committee.papers.map(paper => {
         return [ null, paper.student.studyForm, paper.student.specialization.name ];
