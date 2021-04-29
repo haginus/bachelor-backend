@@ -132,29 +132,6 @@
                     </tr>
                 <% } %>
             </table>
-            <div class="footer-container" id="pageFooter">
-                <% 
-                    let president = committee.members.find(member => member.committeeMember.role == 'president');
-                    let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
-                    let members = committee.members.filter(member => member.committeeMember.role == 'member');
-                %>
-                <p class="col">
-                    <%= committee.name %> <br>
-                    <br>
-                    Președinte, <br>
-                    <%= president.user.fullName %>
-                </p>
-                <p class="col center">
-                    Membri, <br>
-                    <% for(let i = 0; i < members.length; i++) { %>
-                        <%= members[i].user.fullName %><br>
-                    <% } %>
-                    <br>
-                    Secretar, <br>
-                    <%= secretary.user.fullName %>
-                    <br>
-                </p>
-            </div>
             <div class="page-break"></div>
         <% } %>
     </body>
@@ -187,7 +164,6 @@
         .header-container {
             font-weight: bold;
             align-items: flex-end;
-            padding-top: 1cm;
         }
 
         .header-container .col,
@@ -239,6 +215,15 @@
 
         table, th, td {
             border: 1px solid black;
+        }
+
+        table { 
+            page-break-inside: auto
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto
         }
 
     </style>

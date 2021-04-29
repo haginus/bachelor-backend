@@ -348,9 +348,12 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
     const sessionSettings = await SessionSettings.findOne();
 
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_catalog"), { committee, paperGroups, sessionSettings } );
-    // Set to landscape orientation
-    //const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee } );
-    let renderSettings = { ...HtmlToPdfOptions, landscape: true }
+    const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee } );
+    // Set orientation, margins and footer
+    let renderSettings = { ...HtmlToPdfOptions, landscape: true, 
+        margin: { bottom: '5cm', top: '2cm' },
+        displayHeaderFooter: true,
+        headerTemplate: '<div></div>', footerTemplate }
     let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
     return fileBuffer as Buffer;
 }
@@ -404,8 +407,10 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     const sessionSettings = await SessionSettings.findOne();
 
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_final_catalog"), { committee, paperPromotionGroups, sessionSettings } );
-    // Set to margins
-    let renderSettings = { ...HtmlToPdfOptions, margin: { top: '1cm', bottom: '1cm' } };
+    const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee, minified: true } );
+    // Set margins and footer
+    let renderSettings = { ...HtmlToPdfOptions, margin: { bottom: '2cm', top: '1cm' },
+        displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate }
     let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
     return fileBuffer as Buffer;
 }

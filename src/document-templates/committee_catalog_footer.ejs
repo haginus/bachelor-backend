@@ -1,0 +1,26 @@
+<div style="display: flex; width: 30cm; font-size: 12px;">
+    <% 
+        let president = committee.members.find(member => member.committeeMember.role == 'president');
+        let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
+        let members = committee.members.filter(member => member.committeeMember.role == 'member');
+    %>
+    <p style="flex: 1; text-align: center;">
+        <% if(typeof minified == 'undefined') { %> 
+            <%= committee.name %> <br>
+            <br>
+        <% } %> 
+        Președinte, <br>
+        <%= president.user.fullName %>
+    </p>
+    <p style="flex: 1; text-align: center;">
+        <% if(typeof minified == 'undefined') { %> 
+            Membri, <br>
+            <% for(let i = 0; i < members.length; i++) { %>
+                <%= members[i].user.fullName %><br>
+            <% } %>
+            <br>
+        <% } %> 
+        Secretar, <br>
+        <%= secretary.user.fullName %>
+    </p>
+</div>
