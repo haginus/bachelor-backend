@@ -1,5 +1,5 @@
 import { Document, DocumentCategory, DomainType, DocumentType, Paper, sequelize, SessionSettings,
-    StudentExtraData, Domain, UploadPerspective, User, Student } from "../models/models";
+    StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization } from "../models/models";
 import ejs from 'ejs';
 import HtmlToPdf from 'html-pdf-node';
 import fs from 'fs';
@@ -10,7 +10,7 @@ import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
 
-const HtmlToPdfOptions = { format: 'A4' };
+const HtmlToPdfOptions = { format: 'A4', printBackground: true };
 
 export const getStoragePath = (fileName: string) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
@@ -286,4 +286,126 @@ export const checkFileSubmissionPeriod = async (category: DocumentCategory, sess
       endDate = new Date(sessionSettings.paperSubmissionEndDate).setHours(0, 0, 0, 0);
     }
     return startDate <= today && today <= endDate;
+}
+
+/** [ promotion, studyForm, specialization ] */
+type Group = [string, string, string];
+
+/** Function used to check if two groups are equal. */
+const equalGroups = (first: Group, second: Group) => {
+    for(let i = 0; i < first.length; i++) {
+        if(first[i] != second[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** Checks if user is the president of the committee. 
+ * @Throws "NOT_AUTHORIZED"
+*/
+const checkPresidentInCommittee = (user: User, committee: Committee) => {
+    let president = committee.members.find(member => member.committeeMember.role == 'president');
+    if(president.id != user.teacher.id) {
+        throw "NOT_AUTHORIZED";
+    }
+    return true;
+}
+
+export const generateCommitteeCatalog = async (user: User, committeId: number): Promise<Buffer> => {
+    const committee = await Committee.findOne({
+        where: { id: committeId },
+        include: [
+            {
+                model: Paper.scope(['teacher', 'grades']),
+                include: [{
+                    association: Paper.associations.student,
+                    include: [User.scope('min'), <typeof Model>StudentExtraData,
+                    <typeof Model>Specialization, <typeof Model>Domain]
+                }]
+            }
+        ]
+    });
+    if(user.type == 'teacher') {
+        checkPresidentInCommittee(user, committee);
+    }
+    let groupArr: Group[] = committee.papers.map(paper => {
+        return [ paper.student.promotion, paper.student.studyForm, paper.student.specialization.name ];
+    });
+    // Get unique values of groupArr
+    groupArr = groupArr.filter((firstGroup, i, arr) =>
+        arr.findIndex(secondGroup => equalGroups(firstGroup, secondGroup)) == i);
+    
+    // For each group, get the corresponding papers
+    let paperGroups = groupArr.map(group => {
+        return committee.papers.filter(paper => {
+            let paperGroup: Group = [ paper.student.promotion, paper.student.studyForm, paper.student.specialization.name ];
+            return equalGroups(group, paperGroup);
+        });
+    });
+
+    // Get session settings
+    const sessionSettings = await SessionSettings.findOne();
+
+    const content = await ejs.renderFile(getDocumentTemplatePath("committee_catalog"), { committee, paperGroups, sessionSettings } );
+    // Set to landscape orientation
+    const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee } );
+    let renderSettings = { ...HtmlToPdfOptions, landscape: true }
+    let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
+    return fileBuffer as Buffer;
+}
+
+export const generateCommitteeFinalCatalog = async (user: User, committeId: number): Promise<Buffer> => {
+    const committee = await Committee.findOne({
+        where: { id: committeId },
+        include: [
+            {
+                model: Paper.scope(['teacher', 'grades']),
+                include: [{
+                    association: Paper.associations.student,
+                    include: [User.scope('min'), <typeof Model>StudentExtraData,
+                    <typeof Model>Specialization, <typeof Model>Domain]
+                }]
+            }
+        ]
+    });
+    if(user.type == 'teacher') {
+        checkPresidentInCommittee(user, committee);
+    }
+    let groupArr: Group[] = committee.papers.map(paper => {
+        return [ null, paper.student.studyForm, paper.student.specialization.name ];
+    });
+    // Get unique values of groupArr
+    groupArr = groupArr.filter((firstGroup, i, arr) =>
+        arr.findIndex(secondGroup => equalGroups(firstGroup, secondGroup)) == i);
+    
+    // For each group, get the corresponding papers
+    let paperGroups = groupArr.map(group => {
+        return committee.papers.filter(paper => {
+            let paperGroup: Group = [ null, paper.student.studyForm, paper.student.specialization.name ];
+            return equalGroups(group, paperGroup);
+        });
+    });
+
+    // Group the previous results by promotion
+    let paperPromotionGroups = paperGroups.map(paperGroup => {
+        // Get unique promotions in group
+        let promotions = new Set(paperGroup.map(paper => paper.student.promotion));
+        let promotionItems = [];
+        // For every promotion, get the papers
+        promotions.forEach(promotion => {
+            let result = { promotion, items: paperGroup.filter((paper => paper.student.promotion == promotion)) };
+            promotionItems.push(result);
+        });
+        return promotionItems;
+    });
+
+    // Get session settings
+    const sessionSettings = await SessionSettings.findOne();
+
+    const content = await ejs.renderFile(getDocumentTemplatePath("committee_final_catalog"), { committee, paperPromotionGroups, sessionSettings } );
+    // Set to margins
+    let renderSettings = { ...HtmlToPdfOptions, margin: { top: '1cm', bottom: '1cm' } };
+    let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
+    return fileBuffer as Buffer;
 }

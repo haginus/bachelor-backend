@@ -1,0 +1,245 @@
+<% function gradeAverageString(grade) {
+    if(grade == null) {
+        return 'ABSENT';
+    }
+    let gradeTwoDecimals = grade.toFixed(2); // grade is of format x.yz
+    let supraunitaryPart = parseInt(grade); // x
+    let subunitaryPart = gradeTwoDecimals - supraunitaryPart; // 0.yz
+    let result = gradeTwoDecimals + ' (';
+    switch (supraunitaryPart) {
+        case 1:
+            result += 'unu';
+            break;
+        case 2:
+            result += 'doi';
+            break;
+        case 3:
+            result += 'trei';
+            break;
+        case 4:
+            result += 'patru';
+            break;
+        case 5:
+            result += 'cinci';
+            break;
+        case 6:
+            result += 'șase';
+            break;
+        case 7:
+            result += 'șapte';
+            break;
+        case 8:
+            result += 'opt';
+            break;
+        case 9:
+            result += 'nouă';
+            break;
+        case 10:
+        default:
+            result += 'zece';
+            break;
+    }
+    if(subunitaryPart) {
+        result += ` ${subunitaryPart * 100}%`;
+    }
+    result += ')';
+    return result;
+} %> 
+
+<html>
+    <head>
+        <title>Catalog examen de licență</title>
+    </head>
+    <body>
+        <% for(let i = 0; i < paperGroups.length; i++) {
+            let group = paperGroups[i];
+            let studyYears = parseInt(group[0].student.specialization.studyYears);
+            let creditNumber = 60 * studyYears;
+            let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`
+            %>
+            <div class="header-container">
+                <p class="col">
+                    UNIVERSITATEA DIN BUCUREȘTI <br>
+                    Facultatea de Matematică și Informatică	<br>
+                    Domeniul de licenţă: <%= group[0].student.domain.name %> <br>
+                    Programul de studii/specializarea: <%= group[0].student.specialization.name %> <br>
+                    Durata studiilor: <%= studyDurationString %> <br>
+                    Număr credite: <%= creditNumber %> <br>
+                    Forma de învățământ: <%= group[0].student.studyForm.toUpperCase() %> <br>
+                    Promoția: <%= group[0].student.promotion %> 
+                </p>
+                <p class="col right">
+                    Examen de licență<br>
+                    Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
+                    Credite licență - 10
+                </p>
+            </div>
+
+            <h1>
+                CATALOG EXAMEN DE LICENȚĂ <br>
+                Prezentarea și susținerea lucrării de licență
+            </h1>
+            <table>
+                <tr>
+                    <th rowspan="2">Nr. crt.</th>
+                    <th rowspan="2">Numele, inițiala tatălui și prenumele absolventului</th>
+                    <th rowspan="2">Titlul lucrării de licență și profesorul coordonator</th>
+                    <% for(let i = 0; i < committee.members.length; i++) {
+                        let member = committee.members[i];
+                        if(member.committeeMember.role == 'secretary') continue;
+                        %>
+                        <th class="upper" colspan="2"><%= member.user.lastName %> <%= member.user.firstName %></th>
+                    <% } %>
+                        <th rowspan="2">Media</th>
+                </tr>
+                <tr>
+                    <% for(let i = 0; i < committee.members.length; i++) {
+                        let member = committee.members[i];
+                        if(member.committeeMember.role == 'secretary') continue;
+                        %>
+                        <th>Notă pentru lucrare</th>
+                        <th>Notă pentru susținerea lucrării</th>
+                    <% } %>
+                </tr>
+                <% for(let i = 0; i < group.length; i++) {
+                    let paper = group[i];
+                %>
+                    <tr>
+                        <td><%= i + 1 %>.</td>
+                        <td class="upper">
+                            <%= paper.student.user.lastName %>
+                            <%= paper.student.studentExtraDatum.parentInitial %>
+                            <%= paper.student.user.firstName %>
+                        </td>
+                        <td class="upper"><%= paper.title %> – <%= paper.teacher.user.lastName %> <%= paper.teacher.user.firstName %></td>
+                        <% for(let i = 0; i < committee.members.length; i++) {
+                            let member = committee.members[i];
+                            if(member.committeeMember.role == 'secretary') continue;
+                            let grade = paper.grades.find(grade => grade.teacherId == member.id);
+                            let forPaper, forPresentation;
+                            if(!grade) {
+                                forPaper = '-';
+                                forPresentation = '-';
+                            } else {
+                                forPaper = grade.forPaper;
+                                forPresentation = grade.forPresentation;
+                            }
+                        %>
+                            <td><%= forPaper %></td>
+                            <td><%= forPresentation %></td>
+                        <% } %>
+                        <td><%= gradeAverageString(paper.gradeAverage) %></td>
+                    </tr>
+                <% } %>
+            </table>
+            <div class="footer-container" id="pageFooter">
+                <% 
+                    let president = committee.members.find(member => member.committeeMember.role == 'president');
+                    let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
+                    let members = committee.members.filter(member => member.committeeMember.role == 'member');
+                %>
+                <p class="col">
+                    <%= committee.name %> <br>
+                    <br>
+                    Președinte, <br>
+                    <%= president.user.fullName %>
+                </p>
+                <p class="col center">
+                    Membri, <br>
+                    <% for(let i = 0; i < members.length; i++) { %>
+                        <%= members[i].user.fullName %><br>
+                    <% } %>
+                    <br>
+                    Secretar, <br>
+                    <%= secretary.user.fullName %>
+                    <br>
+                </p>
+            </div>
+            <div class="page-break"></div>
+        <% } %>
+    </body>
+
+    <style>
+        html {
+            width: 29.7cm;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        body {
+            margin: 0px;
+            padding: 0 1cm;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .upper {
+            text-transform: uppercase;
+        }
+
+        .header-container,
+        .footer-container {
+            display: flex;
+        }
+
+        .header-container {
+            font-weight: bold;
+            align-items: flex-end;
+            padding-top: 1cm;
+        }
+
+        .header-container .col,
+        .footer-container .col {
+            flex: 1;
+        }
+
+        .footer-container {
+            padding-top: 0.5cm;
+        }
+
+        .footer-container .col {
+            text-align: center;
+            font-size: 12pt;
+        }
+
+        .col.right {
+            text-align: right;
+        }
+
+        .col.center {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 18pt;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        th {
+            background-color: #bdbdbd;
+        }
+
+        @media print {
+            th {
+                background-color: #bdbdbd!important;
+            }
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+    </style>
+</html>

@@ -1,0 +1,172 @@
+<html>
+    <head>
+        <title>Catalog examen de licență</title>
+    </head>
+    <body>
+        <% for(let i = 0; i < paperPromotionGroups.length; i++) {
+            let group = paperPromotionGroups[i];
+            let first = group[0].items[0];
+            let studyYears = parseInt(first.student.specialization.studyYears);
+            let creditNumber = 60 * studyYears;
+            let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`
+            %>
+            <div class="header-container">
+                <p class="col">
+                    UNIVERSITATEA DIN BUCUREȘTI <br>
+                    Facultatea de Matematică și Informatică	<br>
+                    Domeniul de licenţă: <%= first.student.domain.name %> <br>
+                    Programul de studii/specializarea: <%= first.student.specialization.name %> <br>
+                    Durata studiilor: <%= studyDurationString %> <br>
+                    Număr credite: <%= creditNumber %> <br>
+                    Forma de învățământ: <%= first.student.studyForm.toUpperCase() %> <br>
+                </p>
+                <p class="col right v-align-b">
+                    Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
+                    Proba: Prezentarea și susținerea<br>lucrării de licență - credite 10
+                </p>
+            </div>
+
+            <h1>
+                CATALOG FINAL <br>
+                EXAMEN DE LICENȚĂ
+            </h1>
+            <% for(let j = 0; j < group.length; j++) {
+                let promotionItem = group[j];
+            %>
+                <div class="promotion-header">Promoția <%= promotionItem.promotion %></div>
+                <table>
+                    <tr>
+                        <th>Nr. crt.</th>
+                        <th>Numele, inițiala tatălui și prenumele absolventului</th>
+                        <th>Anul înmatriculării</th>
+                        <th>Media examenului de licență</th>
+                    </tr>
+                    <% for(let k = 0; k < promotionItem.items.length; k++) {
+                        let paper = promotionItem.items[k];
+                        let gradeAverage = paper.gradeAverage ? paper.gradeAverage.toFixed(2) : 'ABSENT';
+                    %>
+                        <tr>
+                            <td><%= k + 1 %>.</td>
+                            <td class="upper">
+                                <%= paper.student.user.lastName %>
+                                <%= paper.student.studentExtraDatum.parentInitial %>
+                                <%= paper.student.user.firstName %>    
+                            </td>
+                            <td><%= paper.student.matriculationYear %> </td>
+                            <td><%= gradeAverage %> </td>
+                        </tr>
+                    <% } %>
+                    
+                </table>
+            <% } %>
+            <div class="page-break"></div>
+        <% } %>
+        <!--
+        <div class="footer-container">
+            <p class="col">
+                Președinte comisie, <br>
+                Prof. Dr. POPESCU IONEL
+            </p>
+            <p class="col">
+                Secretar comisie, <br>
+                ...
+                <br>
+            </p>
+        </div>
+        -->
+    </body>
+
+    <style>
+        html {
+            width: 21cm;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        body {
+            margin: 0px;
+            padding: 0 1cm;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .upper {
+            text-transform: uppercase;
+        }
+
+        .header-container,
+        .footer-container {
+            display: flex;
+        }
+
+        .header-container {
+            font-weight: bold;
+            align-items: flex-end;
+        }
+
+        .header-container .col,
+        .footer-container .col {
+            flex: 1;
+        }
+
+        .footer-container .col {
+            text-align: center;
+            font-size: 12pt;
+        }
+
+        .col.right {
+            text-align: right;
+        }
+
+        .col.center {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 18pt;
+            text-align: center;
+        }
+
+        .promotion-header {
+            margin-top: 0.5cm;
+            margin-bottom: 0.1cm;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        th {
+            background-color: #bdbdbd;
+        }
+
+        @media print {
+            th {
+                background-color: #bdbdbd!important;
+            }
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        table { 
+            page-break-inside: auto
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto
+        }
+
+    </style>
+</html>
