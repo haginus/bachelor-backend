@@ -349,7 +349,7 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
 
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_catalog"), { committee, paperGroups, sessionSettings } );
     // Set to landscape orientation
-    const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee } );
+    //const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee } );
     let renderSettings = { ...HtmlToPdfOptions, landscape: true }
     let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
     return fileBuffer as Buffer;
