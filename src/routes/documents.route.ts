@@ -56,4 +56,10 @@ router.get('/committee/:document', async (req, res) => {
     }
 });
 
+// router.get('/test', async (req, res) => {
+//     res.contentType("application/pdf");
+//     let r = await DocumentController.generateCommitteeCompositions();
+//     res.send(r);
+// })
+
 export default router

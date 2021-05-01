@@ -415,3 +415,27 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
     return fileBuffer as Buffer;
 }
+
+export const generateCommitteeCompositions = async () => {
+    const committees = await Committee.findAll();
+    let uniqueDomains = new Set();
+    // Sort committes by domain type and name
+    committees.sort((c1, c2) => {
+        return (c1.domains[0].type == 'bachelor' && c2.domains[0].type == 'master') ? -1 :
+            (c1.name < c2.name ? -1 : 1);
+    });
+    // Group committees by domains
+    committees.forEach(committee => {
+        let domainIds = committee.domains.map(domain => domain.id).join('.');
+        uniqueDomains.add(domainIds);
+    });
+    let groups = [];
+    uniqueDomains.forEach(domain => {
+        let group = committees.filter(committee => committee.domains.map(domain => domain.id).join('.') == domain);
+        groups.push(group);
+    });
+    const sessionSettings = await SessionSettings.findOne();
+    const content = await ejs.renderFile(getDocumentTemplatePath("committee_compositions"), { groups, sessionSettings } );
+    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    return fileBuffer as Buffer;
+}

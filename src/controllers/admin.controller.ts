@@ -550,6 +550,10 @@ export const setCommitteePapers = async (id, paperIds) => {
     return committee.setPapers(papers);
 }
 
+export const generateCommitteeCompositions = () => {
+    return DocumentController.generateCommitteeCompositions();
+}
+
 // PAPERS
 
 export interface GetPapersFilter {

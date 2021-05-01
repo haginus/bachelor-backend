@@ -447,6 +447,7 @@ export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttri
 
   members: Teacher[];
   papers?: Paper[]
+  domains: Domain[];
 
   setDomains: HasManySetAssociationsMixin<Committee, Domain>;
   setPapers: HasManySetAssociationsMixin<Committee, Paper>;

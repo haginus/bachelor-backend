@@ -301,6 +301,23 @@ router.post('/committees/assign-papers', async (req, res) => {
     }
 });
 
+router.get('/committees/documents/:documentName', async (req, res) => {
+    const { documentName } = req.params;
+    try {
+        let result: Buffer;
+        if(documentName == 'committee_compositions') {
+            result = await AdminController.generateCommitteeCompositions();
+        } else {
+            throw "BAD_REQUEST";
+        }
+        res.contentType("application/pdf");
+        res.send(result);
+    } catch(err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
 // PAPERS
 router.get('/papers', async function (req, res) {
     try {
