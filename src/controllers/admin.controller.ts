@@ -589,6 +589,7 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     if(!minified) {
         scopes.push('documents');
         scopes.push('committee');
+        scopes.push('grades');
     }
 
     let rows = await Paper.scope(scopes).findAll({
