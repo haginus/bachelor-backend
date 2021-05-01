@@ -230,7 +230,7 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
     return query;
 }
 
-export const addTeacher = async (firstName, lastName, CNP, email) => {
+export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string) => {
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'teacher' });
         let teacher = await Teacher.create({ userId: user.id });
@@ -243,8 +243,8 @@ export const addTeacher = async (firstName, lastName, CNP, email) => {
     }
 }
 
-export const editTeacher = async (id, firstName, lastName, CNP) => {
-    let userUpdate = await User.update({ firstName, lastName, CNP }, {
+export const editTeacher = async (id: number, title: string, firstName: string, lastName: string, CNP: string) => {
+    let userUpdate = await User.update({ title, firstName, lastName, CNP }, {
         where: { id }
     });
     return UserController.getUserData(id);
@@ -271,7 +271,7 @@ export const addTeacherBulk = async (file) => {
     let promises = []
     users.forEach(user => {
         const { firstName, lastName, CNP, email } = user;
-        promises.push(addTeacher(firstName, lastName, CNP, email));
+        promises.push(addTeacher(null, firstName, lastName, CNP, email));
     });
 
     let results = await Promise.allSettled(promises);

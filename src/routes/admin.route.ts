@@ -101,8 +101,8 @@ router.get('/teachers', async function (req, res) {
 
 router.post('/teachers/add', async function (req, res) {
     try {
-        let { firstName, lastName, CNP, email } = req.body;
-        const teacher = await AdminController.addTeacher(firstName, lastName, CNP, email);
+        let { title, firstName, lastName, CNP, email } = req.body;
+        const teacher = await AdminController.addTeacher(title, firstName, lastName, CNP, email);
         res.json(teacher);
     } catch (err) {
         console.log(err)
@@ -112,8 +112,8 @@ router.post('/teachers/add', async function (req, res) {
 
 router.post('/teachers/edit', async function (req, res) {
     try {
-        let { id, firstName, lastName, CNP } = req.body;
-        const teacher = await AdminController.editTeacher(id, firstName, lastName, CNP);
+        let { id, title, firstName, lastName, CNP } = req.body;
+        const teacher = await AdminController.editTeacher(id, title, firstName, lastName, CNP);
         res.json(teacher);
     } catch (err) {
         console.log(err);

@@ -92,6 +92,7 @@ interface UserAttributes {
   id: number;
   firstName: string;
   lastName: string;
+  title: string | null;
   fullName: string;
   CNP: string;
   email: string;
@@ -104,16 +105,18 @@ interface UserMinAttributes {
   id: number;
   firstName: string;
   lastName: string;
+  title: string | null;
   fullName: string;
   email: string;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "fullName" | "validated" | "password" | "CNP"> {}
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "fullName" | "validated" | "password" | "CNP" | "title"> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public firstName!: string;
   public lastName!: string;
+  public title!: string;
   public fullName!: string;
   public CNP!: string | null;
   public email!: string;
@@ -721,10 +724,14 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false
   },
+  title: {
+    type: DataTypes.STRING
+  },
   fullName: {
     type: DataTypes.VIRTUAL,
     get() {
-      return `${this.firstName} ${this.lastName}`;
+      let title = this.title ? this.title + ' ' : '';
+      return `${title}${this.lastName} ${this.firstName}`;
     },
   },
   CNP: {
@@ -760,7 +767,7 @@ User.init({
 });
 
 User.addScope("min", {
-  attributes: ['id', 'firstName', 'lastName', 'fullName', 'email']
+  attributes: ['id', 'title', 'firstName', 'lastName', 'fullName', 'email']
 });
 
 User.hasMany(ActivationToken);
