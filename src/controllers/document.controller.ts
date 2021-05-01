@@ -307,7 +307,7 @@ const equalGroups = (first: Group, second: Group) => {
 const checkCommitteeDocumentGenerationRight = (user: User, committee: Committee) => {
     let president = committee.members.find(member => member.committeeMember.role == 'president');
     let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
-    if(president.id != user.teacher.id || secretary.id != user.teacher.id) {
+    if(president.id != user.teacher.id && secretary.id != user.teacher.id) {
         throw "NOT_AUTHORIZED";
     }
     return true;
