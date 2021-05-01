@@ -388,14 +388,9 @@ export const gradePaper = async (user: User, paperId: number, forPaper: number, 
         throw "NOT_ALLOWED";
     }
     try {
-        await PaperGrade.create({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
+        await PaperGrade.upsert({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
         return true;
     } catch(err) {
-        // Check if error was caused due to double grading
-        if(err.original?.code == 'ER_DUP_ENTRY') {
-            throw "ALREADY_GRADED";
-        }
-        // Else throw a generic error
         throw "BAD_REQUEST";
     }
 }
