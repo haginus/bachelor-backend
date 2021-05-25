@@ -10,6 +10,28 @@ import fs from 'fs';
 import { PaperRequiredDocument } from "../paper-required-documents";
 var stream = require('stream');
 
+interface Statistic {
+    title: string;
+    content: string | number;
+    extra?: string,
+    sectionPath?: string
+}
+
+export const getStats = async (): Promise<Statistic[]> => {
+    const studentPromise = Student.count();
+    const teacherPromise = Teacher.count();
+    const paperPromise = Paper.count();
+    const assignedPaperPromise = Paper.count({ col: 'committeeId' });
+    const committeePromise = Paper.count();
+    const [studentCount, teacherCount, paperCount, assignedPaperCount, committeeCount] = 
+        await Promise.all([studentPromise, teacherPromise, paperPromise, assignedPaperPromise, committeePromise]);
+    return [
+        { title: 'Studenți', content: studentCount, sectionPath: 'students' },
+        { title: 'Profesori', content: teacherCount, sectionPath: 'teachers' },
+        { title: 'Lucrări', content: paperCount, extra: `din care ${assignedPaperCount} atribuite`, sectionPath: 'papers' },
+        { title: 'Comisii', content: committeeCount, sectionPath: 'committees' },
+    ]
+};
 
 // Students
 

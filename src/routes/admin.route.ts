@@ -8,6 +8,16 @@ router.use(isLoggedIn);
 router.use(isAdmin);
 
 
+router.get('/stats', async function (req, res) {
+    try {
+        const stats = await AdminController.getStats();
+        res.json(stats);
+    } catch (err) {
+        console.log(err)
+        return res.status(500);
+    }
+});
+
 // STUDENTS
 
 router.get('/students', async function (req, res) {
