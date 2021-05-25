@@ -1096,7 +1096,10 @@ StudentExtraData.init({
   },
   parentInitial: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      is: /^[A-Z](a-z)?\.( [A-Z][a-z]?\.){0,2}$/
+    }
   },
   fatherName: {
     type: DataTypes.STRING,
