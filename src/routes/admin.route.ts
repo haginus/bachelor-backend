@@ -331,10 +331,12 @@ router.get('/committees/documents/:documentName', async (req, res) => {
 // PAPERS
 router.get('/papers', async function (req, res) {
     try {
-        let { sort, order, page, pageSize, assigned, assignedTo, minified } = req.query;
+        let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, minified } = req.query;
         let filter = {
             assigned: assigned != undefined ? assigned == 'true' || assigned == '1' : null,
             assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
+            forCommittee: forCommittee != undefined ? Number(forCommittee) : null,
+            isValid: isValid != undefined ? isValid == 'true' || isValid == '1' : null,
         }
         let pageAsNumber = Number(page);
         let pageSizeAsNumber = Number(pageSize);

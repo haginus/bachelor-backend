@@ -580,9 +580,13 @@ export const generateCommitteeCompositions = () => {
 
 export interface GetPapersFilter {
     /** If paper is assigned to any committee */
-    assigned: boolean;
+    assigned?: boolean;
     /** ID of committee where the paper has been assigned */
-    assignedTo: number
+    assignedTo?: number;
+    /** ID of committee that can take the papers for grading. */
+    forCommittee?: number;
+    /** If papers must be valid. */
+    isValid?: boolean;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -604,6 +608,25 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     if(filter?.assignedTo != null) {
         where.committeeId = filter.assignedTo;
     }
+    if(filter?.isValid != null) {
+        where.isValid = filter.isValid;
+    }
+    let studentWhere = {};
+    if(filter.forCommittee != null) {
+        const committee = await Committee.findOne({ 
+            where: { id: filter.forCommittee },
+            include: Committee.associations.domains
+        });
+        if(!committee) {
+            throw "BAD_REQUEST";
+        }
+        const committeeDomainIds = committee.domains.map(domain => domain.id);
+        studentWhere = {
+            domainId: {
+                [Op.in]: committeeDomainIds
+            }
+        }
+    }
 
     let count = await Paper.count({where});
 
@@ -617,7 +640,14 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     let rows = await Paper.scope(scopes).findAll({
         ...pagination,
         where,
-        order: [sortArray]
+        order: [sortArray],
+        include: [
+            {
+                association: Paper.associations.student,
+                where: studentWhere,
+                required: true
+            }
+        ]
     });
     const sessionSettings = await SessionSettings.findOne();
     rows = await Promise.all(JSON.parse(JSON.stringify(rows)).map(async paper  => {
