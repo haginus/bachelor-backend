@@ -994,7 +994,7 @@ Paper.init({
     type: DataTypes.VIRTUAL,
     get() {
       const grades = this.grades;
-      if(grades) {
+      if(grades?.length) {
         let sum = 0;
         grades.forEach(grade => {
           sum += (grade.forPaper + grade.forPresentation) / 2;
