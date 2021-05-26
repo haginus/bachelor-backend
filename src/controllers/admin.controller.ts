@@ -101,7 +101,7 @@ export const addStudent = async (firstName, lastName, CNP, email, group, special
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
         // create student entity
-        let student = await Student.create({ group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
+        let student = await Student.create({ id: user.id, group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
             domainId, specializationId, userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex'); // generate activation token
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
@@ -241,15 +241,18 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
 }
 
 export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string) => {
+    const transaction = await sequelize.transaction();
     try {
-        let user = await User.create({ firstName, lastName, CNP, email, type: 'teacher' });
-        let teacher = await Teacher.create({ userId: user.id });
+        let user = await User.create({ title, firstName, lastName, CNP, email, type: 'teacher' }, { transaction });
+        let teacher = await Teacher.create({ id: user.id, userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex');
-        let activationToken = await ActivationToken.create({ token, userId: user.id });
+        let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
         Mailer.sendWelcomeEmail(user, activationToken.token);
+        await transaction.commit();
         return UserController.getUserData(user.id);
     } catch (err) {
-        throw "VALIDATION_ERROR";
+        await transaction.rollback();
+        throw new ResponseError('Eroare de validare.', "VALIDATION_ERROR");
     }
 }
 
