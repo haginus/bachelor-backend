@@ -7,7 +7,7 @@ const transporter = createTransport(config.mailer);
 
 export async function sendWelcomeEmail(user, token) {
   const url = `${config.WEBSITE_URL}/login/token/${token}`;
-  const html = await renderFile("./alerts/mail-templates/welcome.ejs", { user, url } );
+  const html = await renderFile("./src/alerts/mail-templates/welcome.ejs", { user, url } );
   let info = await transporter.sendMail({
     from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
     to: user.email,
@@ -18,7 +18,7 @@ export async function sendWelcomeEmail(user, token) {
 
 export async function sendRejectedApplicationEmail(studentUser, teacherUser, application) {
   const url = `${config.WEBSITE_URL}/student/teachers`;
-  const html = await renderFile("./alerts/mail-templates/application-rejected.ejs", { studentUser, teacherUser, application, url } );
+  const html = await renderFile("./src/alerts/mail-templates/application-rejected.ejs", { studentUser, teacherUser, application, url } );
   let info = await transporter.sendMail({
     from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
     to: studentUser.email,
@@ -29,7 +29,7 @@ export async function sendRejectedApplicationEmail(studentUser, teacherUser, app
 
 export async function sendAcceptedApplicationEmail(studentUser, teacherUser, application) {
   const url = `${config.WEBSITE_URL}/student/paper`;
-  const html = await renderFile("./alerts/mail-templates/application-accepted.ejs", { studentUser, teacherUser, application, url } );
+  const html = await renderFile("./src/alerts/mail-templates/application-accepted.ejs", { studentUser, teacherUser, application, url } );
   let info = await transporter.sendMail({
     from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
     to: studentUser.email,
@@ -41,7 +41,7 @@ export async function sendAcceptedApplicationEmail(studentUser, teacherUser, app
 export const sendRemovedPaperNotice = async (studentUser: User, teacherUser: User) => {
   try {
     const url = `${config.WEBSITE_URL}/student/teachers`;
-    const html = await renderFile("./alerts/mail-templates/removed-paper-notice.ejs", { studentUser, teacherUser, url } );
+    const html = await renderFile("./src/alerts/mail-templates/removed-paper-notice.ejs", { studentUser, teacherUser, url } );
     let info = await transporter.sendMail({
       from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
       to: studentUser.email,
