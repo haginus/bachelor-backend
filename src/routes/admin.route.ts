@@ -3,6 +3,7 @@ var router = Router()
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import { isLoggedIn, isAdmin } from '../controllers/auth.controller';
 import * as AdminController from '../controllers/admin.controller';
+import { ResponseError } from '../util/util';
 
 router.use(isLoggedIn);
 router.use(isAdmin);
@@ -74,10 +75,22 @@ router.post('/students/add-bulk', fileUpload({
     limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
 }), async function(req, res) {
     try {
-        let result = await AdminController.addStudentBulk((req.files.file as UploadedFile).data);
+        let { specializationId, studyForm } = req.body;
+        if(!specializationId) {
+            throw new ResponseError('Lipsește ID-ul specializării.');
+        }
+        if(!['if', 'id', 'ifr'].includes(studyForm)) {
+            throw new ResponseError('Formă de studiu invalidă.');
+        }
+        if(!req.files?.file) {
+            throw new ResponseError('Lipsește fișierul CSV.');
+        }
+        let fileBuffer = (req.files.file as UploadedFile).data;
+        let result = await AdminController.addStudentBulk(fileBuffer, specializationId, 'if');
         res.json(result);
     } catch(err) {
-        res.status(400).json(err);
+        console.log(err);
+        res.status(err.httpStatusCode).json(err);
     }
 });
 

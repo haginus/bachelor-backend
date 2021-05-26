@@ -170,8 +170,8 @@ export class Teacher extends Model<TeacherAttributes, TeacherCreationAttributes>
 }
 
 
-type StudyForm = 'if' | 'id' | 'ifr';
-type FundingForm = 'budget' | 'tax';
+export type StudyForm = 'if' | 'id' | 'ifr';
+export type FundingForm = 'budget' | 'tax';
 
 interface StudentAttributes {
   id: number;

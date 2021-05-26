@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -8,6 +8,7 @@ import { Model, Op, OrderItem, Sequelize } from "sequelize";
 import csv from 'csv-parser';
 import fs from 'fs';
 import { PaperRequiredDocument } from "../paper-required-documents";
+import { removeDiacritics, ResponseError } from "../util/util";
 var stream = require('stream');
 
 interface Statistic {
@@ -144,76 +145,65 @@ export const deleteUser = async (id) => {
     return result;
 }
 
-export const addStudentBulk = async (file) => {
-    /*
-    let users = []
+export const addStudentBulk = async (file: Buffer, specializationId: number, studyForm: StudyForm) => {
+    const specialization = await Specialization.findByPk(specializationId);
+    if(!specialization) {
+        throw new ResponseError('Specializarea nu a fost găsită.', 'SPECIALIZATION_NOT_FOUND');
+    }
+    let users = [];
+    const HEADERS = [
+        ['NUME', 'lastName'],
+        ['PRENUME', 'firstName'],
+        ['CNP', 'CNP'],
+        ['EMAIL', 'email'],
+        ['GRUPA', 'group'],
+        ['NUMAR_MATRICOL', 'identificationCode'],
+        ['PROMOTIE', 'promotion'],
+        ['FORMA_FINANTARE', 'fundingForm'],
+        ['AN_INMATRICULARE', 'matriculationYear']
+    ];
+    let headerLength = 0;
     await new Promise((resolve, reject) => {
-        try {
-            var bufferStream = new stream.PassThrough();
-            bufferStream.end(file);
-            bufferStream
-                .pipe(csv(["firstName", "lastName", "CNP", "email", "domain", "domain_type", "group"]))
-                .on('data', (data) => users.push(data))
-                .on('end', () => {
-                    resolve(null);
-                });
-        } catch (err) {
-            console.log(err)
-            throw "INVALID_CSV";
-        }
+        var bufferStream = new stream.PassThrough();
+        bufferStream.end(file);
+        bufferStream
+            .pipe(csv({
+                mapHeaders: ({ header, index }) => {
+                    const expectedHeader = HEADERS[index][0];
+                    if(header != expectedHeader) {
+                        reject(new ResponseError(`Eroare pe coloana ${index + 1}: se aștepta 
+                            "${expectedHeader}", dar s-a citit "${header}".`));
+                    }
+                    headerLength++;
+                    return HEADERS[index][1];
+                }
+            }))
+            .on('data', (data) => users.push(data))
+            .on('end', () => {
+                if(headerLength != HEADERS.length) {
+                    reject(new ResponseError("Lungimea antetului nu coincide cu cea așteptată."));
+                }
+                resolve(null);
+            });
     });
-    let domains = users.map(user => { return { name: user.domain, type: user.domain_type } });
-    let domainsDict = {};
-    for (let i = 0; i < domains.length; i++) {
-        const domain = domains[i];
-        if (domainsDict[domain.name]) {
-            if (domainsDict[domain.name] != domain.type) {
-                throw "CONFLICTING_DOMAINS";
-            }
+    let promises = users.map(user => {
+        let fundingForm: string = removeDiacritics((user.fundingForm || '').toLowerCase());
+        if(fundingForm == 'buget') {
+            fundingForm = 'budget';
+        } else if(fundingForm == 'taxa') {
+            fundingForm = 'tax';
         } else {
-            domainsDict[domain.name] = domain.type;
+            throw new ResponseError('Câmpul "formă de finanțare" trebuie să fie buget/taxă.');
         }
-    }
-    let uniqueDomains = [];
-    for (const [key, value] of Object.entries(domainsDict)) {
-        uniqueDomains.push({ name: key, type: value });
-    }
-
-    const dbDomains = await Domain.findAll();
-    dbDomains.forEach(domain => {
-        if (domainsDict[domain.name]) {
-            if (domainsDict[domain.name] != domain.type)
-                throw "CONFLICTING_DOMAINS";
-            uniqueDomains = uniqueDomains.filter(v => v.name != domain.name);
-            // set domain id for user
-            usersInDomain = users.filter(u => u.domain == domain.name).map(u => {
-                return { ...u, domainId: domain.id };
-            })
-            users = users.filter(u => u.domain != domain.name).concat(usersInDomain);
-        }
+        return addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group,
+            specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
     });
 
-    for (let i = 0; i < uniqueDomains.length; i++) {
-        const domain = uniqueDomains[i];
-        domainDb = await Domain.create(domain);
-        usersInDomain = users.filter(u => u.domain == domain.name).map(u => {
-            return { ...u, domainId: domainDb.id };
-        })
-        users = users.filter(u => u.domain != domain.name).concat(usersInDomain);
-    }
-
-    let promises = []
-    users.forEach(user => {
-        const { firstName, lastName, CNP, email, group, domainId } = user;
-        promises.push(this.addStudent(firstName, lastName, CNP, email, group, domainId));
-    });
 
     let results = await Promise.allSettled(promises);
-
-    let addedDomains = uniqueDomains.length;
     let totalStudents = users.length;
 
-    let response = { students: [], addedDomains, totalStudents, addedStudents: 0 };
+    let response = { students: [], totalStudents, addedStudents: 0 };
 
     results.forEach(result => {
         if (result.status == 'fulfilled') {
@@ -223,8 +213,6 @@ export const addStudentBulk = async (file) => {
     });
 
     return response;
-    */
-   return null;
 }
 
 // Teachers
