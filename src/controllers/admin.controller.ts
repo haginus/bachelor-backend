@@ -169,13 +169,13 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
         bufferStream
             .pipe(csv({
                 mapHeaders: ({ header, index }) => {
-                    const expectedHeader = HEADERS[index][0];
+                    const expectedHeader = HEADERS[index] && HEADERS[index][0];
                     if(header != expectedHeader) {
-                        reject(new ResponseError(`Eroare pe coloana ${index + 1}: se aștepta 
-                            "${expectedHeader}", dar s-a citit "${header}".`));
+                        reject(new ResponseError(`Eroare pe coloana ${index + 1}: se aștepta ` +
+                            `"${expectedHeader}", dar s-a citit "${header}".`));
                     }
                     headerLength++;
-                    return HEADERS[index][1];
+                    return HEADERS[index] && HEADERS[index][1];
                 }
             }))
             .on('data', (data) => users.push(data))
@@ -260,28 +260,43 @@ export const editTeacher = async (id: number, title: string, firstName: string, 
     return UserController.getUserData(id);
 }
 
-export const addTeacherBulk = async (file) => {
-    let users = []
+export const addTeacherBulk = async (file: Buffer) => {
+    const HEADERS = [
+        ['TITLU', 'title'],
+        ['NUME', 'lastName'],
+        ['PRENUME', 'firstName'],
+        ['CNP', 'CNP'],
+        ['EMAIL', 'email'],
+    ];
+    let users = [];
+    let headerLength = 0;
     await new Promise((resolve, reject) => {
-        try {
-            var bufferStream = new stream.PassThrough();
-            bufferStream.end(file);
-            bufferStream
-                .pipe(csv(["firstName", "lastName", "CNP", "email"]))
-                .on('data', (data) => users.push(data))
-                .on('end', () => {
-                    resolve(null);
-                });
-        } catch (err) {
-            console.log(err)
-            throw "INVALID_CSV";
-        }
+        let bufferStream = new stream.PassThrough();
+        bufferStream.end(file);
+        bufferStream
+            .pipe(csv({
+                mapHeaders: ({ header, index }) => {
+                    const expectedHeader = HEADERS[index] && HEADERS[index][0];
+                    if(header != expectedHeader) {
+                        reject(new ResponseError(`Eroare pe coloana ${index + 1}: se aștepta ` + 
+                            `"${expectedHeader}", dar s-a citit "${header}".`));
+                    }
+                    headerLength++;
+                    return HEADERS[index] && HEADERS[index][1];
+                }
+            }))
+            .on('data', (data) => users.push(data))
+            .on('end', () => {
+                if(headerLength != HEADERS.length) {
+                    reject(new ResponseError("Lungimea antetului nu coincide cu cea așteptată."));
+                }
+                resolve(null);
+            });
     });
 
-    let promises = []
-    users.forEach(user => {
-        const { firstName, lastName, CNP, email } = user;
-        promises.push(addTeacher(null, firstName, lastName, CNP, email));
+    let promises = users.map(user => {
+        const { title, firstName, lastName, CNP, email } = user;
+        return addTeacher(title, firstName, lastName, CNP, email);
     });
 
     let results = await Promise.allSettled(promises);
