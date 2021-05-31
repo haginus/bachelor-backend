@@ -1,16 +1,16 @@
 import { Topic } from "../models/models";
 
 
-export function getTopics() {
+export const getTopics = () => {
     return Topic.findAll();
 }
 
-export function addTopic(name) {
+export const addTopic = (name: string) => {
     return Topic.create({ name });
 }
 
-export function addTopics(names) {
-    const toAdd = []
+export const addTopics = (names: string[]) => {
+    const toAdd = [];
     names.forEach(name => {
         toAdd.push({ name });
     });

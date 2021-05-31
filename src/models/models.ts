@@ -303,14 +303,14 @@ export class Address extends Model<AddressAttributes, AddressCreationAttributes>
 
 interface TopicAttributes {
   id: number;
-  name: number;
+  name: string;
 }
 
 interface TopicCreationAttributes extends Optional<TopicAttributes, "id"> {}
 
 export class Topic extends Model<TopicAttributes, TopicCreationAttributes> implements TopicAttributes {
   id: number;
-  name: number;
+  name: string;
 }
 
 interface OfferAttributes {
