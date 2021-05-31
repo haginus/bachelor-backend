@@ -329,10 +329,17 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes> imple
   limit: number;
 
   takenPlaces: number;
+  teacher?: Teacher;
 
   setTopics: HasManySetAssociationsMixin<Topic, number>;
 
   applications: Application[];
+
+  public static associations: {
+    teacher: Association<Offer, Teacher>;
+    domain: Association<Offer, Domain>;
+    applications: Association<Offer, Application>;
+  };
 }
 
 interface ApplicationAttributes {

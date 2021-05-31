@@ -1,7 +1,7 @@
 import { createTransport } from "nodemailer";
 import { config } from '../config/config';
 import { renderFile } from 'ejs';
-import { User } from "../models/models";
+import { Application, User } from "../models/models";
 
 const transporter = createTransport(config.mailer);
 
@@ -12,6 +12,17 @@ export async function sendWelcomeEmail(user, token) {
     from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
     to: user.email,
     subject: "Activați contul dvs.",
+    html
+  });
+}
+
+export async function sendNewApplicationEmail(studentUser: User, teacherUser: User, application: Application) {
+  const url = `${config.WEBSITE_URL}/teacher/applications/pending/${application.offerId}`;
+  const html = await renderFile("./src/alerts/mail-templates/new-application.ejs", { studentUser, teacherUser, application, url } );
+  let info = await transporter.sendMail({
+    from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
+    to: teacherUser.email,
+    subject: "Cerere de asociere nouă",
     html
   });
 }

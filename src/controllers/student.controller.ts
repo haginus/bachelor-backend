@@ -6,6 +6,8 @@ import { Model, Op, Sequelize } from "sequelize";
 import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
+import * as Mailer from "../alerts/mailer";
+
 
 
 const getStoragePath = DocumentController.getStoragePath;
@@ -181,9 +183,13 @@ export class StudentController {
         }
         const offer = await Offer.findOne({
             where: { id: offerId },
-            include: [{
-                model: Application as typeof Model
-            }]
+            include: [
+                Offer.associations.applications,
+                {
+                    association: Offer.associations.teacher,
+                    include: [Teacher.associations.user]
+                }
+            ]
         }); // get offer
         if (!offer) {
             throw "OFFER_NOT_FOUND"
@@ -207,7 +213,9 @@ export class StudentController {
         if (offer.applications.filter(application => application.studentId == student.id).length > 0) { // check double applications
             throw "ALREADY_APPLIED"
         }
-        return Application.create({ title, description, usedTechnologies, studentId: student.id, offerId: offer.id });
+        let application = await Application.create({ title, description, usedTechnologies, studentId: student.id, offerId: offer.id });
+        Mailer.sendNewApplicationEmail(student.user, offer.teacher.user, application);
+        return application;
     }
 
     public static getApplications = async (uid, state) => {
