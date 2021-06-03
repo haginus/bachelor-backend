@@ -109,6 +109,17 @@ router.get('/paper', async (req, res) => {
     }
 });
 
+router.post('/paper/edit', async (req, res) => {
+    try {
+        const { title, description, topicIds } = req.body;
+        const result = await StudentController.editPaper(req._user, title, description, topicIds);
+        res.json(result);
+    } catch(err) {
+        console.log(err)
+        res.status(500).json("");
+    }
+});
+
 router.get('/extra-data', async (req, res) => {
     try {
         const data = await StudentController.getExtraData(req._user.id);

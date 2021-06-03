@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
 import * as Mailer from "../alerts/mailer";
+import { ResponseError } from "../util/util";
 
 
 
@@ -316,6 +317,38 @@ export class StudentController {
             paperRes.teacher = paper.teacher.user;
         }
         return paperRes;
+    }
+
+    public static editPaper = async (user: User, title: string, description: string, topicIds: number[]) => {
+        const transaction = await sequelize.transaction();
+        const paper = user.student.paper;
+        if(!paper) {
+            throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
+        }
+        const titleUpdated = paper.title != title;
+        let prevTitle = paper.title, prevDesc = paper.description;
+        try {
+            paper.title = title;
+            paper.description = description;
+            await paper.save();
+            await paper.setTopics(topicIds, { transaction });
+            if (titleUpdated) {
+                const extraData = await user.student.getStudentExtraDatum();
+                if(extraData != null) {
+                    const sessionSettings = await SessionSettings.findOne();
+                    let student = await StudentController.getStudentByUid(user.id);
+                    await StudentController.generatePaperDocuments(student, extraData, sessionSettings);
+                }
+            }
+            await transaction.commit();
+            return { success: true, documentsGenerated: titleUpdated };
+        } catch(err) {
+            paper.title = prevTitle;
+            paper.description = prevDesc;
+            await paper.save();
+            await transaction.rollback();
+            throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 500);
+        }
     }
 
     public static getExtraData = async (uid) => {
