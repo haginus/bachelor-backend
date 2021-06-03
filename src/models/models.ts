@@ -331,6 +331,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes> imple
   takenPlaces: number;
   teacher?: Teacher;
 
+  topics: Topic[];
   setTopics: HasManySetAssociationsMixin<Topic, number>;
 
   applications: Application[];
@@ -338,6 +339,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes> imple
   public static associations: {
     teacher: Association<Offer, Teacher>;
     domain: Association<Offer, Domain>;
+    topics: Association<Offer, Topic>;
     applications: Association<Offer, Application>;
   };
 }
@@ -395,6 +397,9 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
 
   public student?: Student;
   public teacher?: Teacher;
+  public topics?: Topic[];
+
+  public setTopics: HasManySetAssociationsMixin<Topic, number>;
 
   public documents?: Document[];
   public committee: Committee;
@@ -406,6 +411,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
     documents: Association<Paper, Document>;
     committee: Association<Paper, Committee>;
     grades: Association<Paper, PaperGrade>;
+    topics: Association<Paper, Topic>;
   };
 }
 
@@ -891,7 +897,15 @@ Offer.init({
 }, {
   timestamps: false,
   sequelize,
-  modelName: "offer"
+  modelName: "offer",
+  defaultScope: {
+    include: {
+      model: Topic as typeof Model,
+      through: {
+        attributes: []
+      }
+    }
+  }
 });
 
 Teacher.hasMany(Offer);
@@ -1024,6 +1038,9 @@ Paper.belongsTo(Student);
 Teacher.hasMany(Paper);
 Paper.belongsTo(Teacher);
 
+Paper.belongsToMany(Topic, { through: "paperTopics", timestamps: false });
+Topic.belongsToMany(Paper, { through: "paperTopics", timestamps: false });
+
 Document.init({
   id: {
     type: DataTypes.INTEGER,
@@ -1071,6 +1088,13 @@ Document.belongsTo(User, { foreignKey: 'uploadedBy' });
 
 Paper.addScope('documents', {
   include: [ sequelize.model("document") ]
+});
+
+Paper.addScope('topics', {
+  include: [{
+    association: Paper.associations.topics,
+    through: { attributes: [] }
+  }]
 });
 
 Paper.addScope('teacher', {

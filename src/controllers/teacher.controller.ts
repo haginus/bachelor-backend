@@ -5,6 +5,7 @@ import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
+import { ResponseError } from "../util/util";
 
 
 export const validateTeacher = async (uid) => {
@@ -219,14 +220,14 @@ export const acceptApplication = async (user, applicationId) => {
 
     let application = await getApplication(applicationId);
     if(!application) {
-        throw "MISSING_APPLICATION"
+        throw new ResponseError("Cererea nu există.", "MISSING_APPLICATION", 401);
     }
     if(application.offer.teacherId != teacher.id) {
-        throw "UNAUTHORIZED"
+        throw new ResponseError("Cererea nu vă aparține.", "UNAUTHORIZED", 403);
     }
 
     if(application.accepted != null) {
-        throw "NOT_ALLOWED"
+        throw new ResponseError("Cererea a fost deja acceptată sau respinsă.", "NOT_ALLOWED", 401);
     }
 
     const takenPlaces = await Application.count({
@@ -238,25 +239,29 @@ export const acceptApplication = async (user, applicationId) => {
     }
 
     application.accepted = true;
-
-    await application.save();
-
-    await Application.destroy({  // remove other student applications
-        where: { 
-            studentId: application.studentId,
-            id: {
-                [Op.ne]: applicationId
-            }
-        }
-    });
-
-    const domain = await Domain.findOne({ where: { id: application.student.domainId } }); // get the domain for type
-
-    // CREATE PAPER
-    const { title, description, studentId } = application;
-    await Paper.create({
-        title, description, studentId, teacherId: teacher.id, type: domain.type
-    });
+    const transaction = await sequelize.transaction();
+    try {
+        await application.save({ transaction });
+        await Application.destroy({  // remove other student applications
+            where: { 
+                studentId: application.studentId,
+                id: { [Op.ne]: applicationId }
+            },
+            transaction
+        });
+        const domain = await Domain.findOne({ where: { id: application.student.domainId } }); // get the domain for type
+        // CREATE PAPER
+        const { title, description, studentId } = application;
+        const paper = await Paper.create({
+            title, description, studentId, teacherId: teacher.id, type: domain.type
+        }, { transaction });
+        const topicIds = application.offer.topics.map(topic => topic.id);
+        await paper.setTopics(topicIds, { transaction });
+        await transaction.commit();
+    } catch(err) {
+        await transaction.rollback();
+        throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 500);
+    }
 
     Mailer.sendAcceptedApplicationEmail(application.student.user, user, application);
     return { success: true }
