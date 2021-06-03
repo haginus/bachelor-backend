@@ -636,7 +636,7 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
 
     let count = await Paper.count({where});
 
-    let scopes = ['student', 'teacher'];
+    let scopes = ['student', 'teacher', 'topics'];
     if(!minified) {
         scopes.push('documents');
         scopes.push('committee');

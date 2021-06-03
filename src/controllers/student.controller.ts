@@ -310,7 +310,7 @@ export class StudentController {
 
     public static getPaper = async (uid) => {
         const student = await StudentController.getStudentByUid(uid);
-        let paper = await Paper.scope(["documents", "teacher"]).findOne({ where: { studentId: student.id } });
+        let paper = await Paper.scope(["documents", "teacher", "topics"]).findOne({ where: { studentId: student.id } });
         let paperRes: any = JSON.parse(JSON.stringify(paper)); // sequelize will return the user info nested as `user` in paper.teacher
         if (paper) {
             paperRes.teacher = paper.teacher.user;

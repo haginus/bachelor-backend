@@ -273,7 +273,7 @@ export const getDomains = () => {
 
 export const getStudentPapers = async (user: User) => {
     let papers = await user.teacher.getPapers({
-        scope: ['committee'],
+        scope: ['committee', 'topics'],
         include: [
             {
                 model: Document as typeof Model,
@@ -349,7 +349,7 @@ export const getCommittees = async (user: User) => {
 export const getCommitteee = async (user: User, committeeId: number) => {
     const committee = await Committee.findOne({
         where: { id: committeeId },
-        include: [Paper.scope(['student', 'teacher', 'documents', 'grades'])]
+        include: [Paper.scope(['student', 'teacher', 'documents', 'grades', 'topics'])]
     });
     if(!committee) {
         throw "NOT_FOUND";
