@@ -400,6 +400,23 @@ export const gradePaper = async (user: User, paperId: number, forPaper: number, 
     }
 }
 
+export const markGradesAsFinal = async (user: User, committeeId: number) => {
+    const committee = await Committee.findByPk(committeeId);
+    if(!committee) {
+        throw new ResponseError("Comisie inexistentă.", "COMMITTEE_NOT_FOUND", 404);
+    }
+    const member = committee.members.find(member => member.id == user.teacher.id);
+    if(!member || !['president', 'secretary'].includes(member.committeeMember.role)) {
+        throw new ResponseError("Nu aveți acest drept.", "UNAUTHORIZED", 403);
+    }
+    if(committee.finalGrades) {
+        throw new ResponseError("Notele au fost deja marcate drept finale.", "ALREADY_MARKED", 401);
+    }
+    committee.finalGrades = true;
+    await committee.save();
+    return { success: true };
+}
+
 const literals = {
     countOfferAcceptedApplications: Sequelize.literal(`(
         SELECT COUNT(*)

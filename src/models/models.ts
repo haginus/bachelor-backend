@@ -456,13 +456,15 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
 interface CommitteeAttributes {
   id: number;
   name: string;
+  finalGrades: boolean;
 }
 
-interface CommitteeCreationAttributes extends Optional<CommitteeAttributes, "id"> {}
+interface CommitteeCreationAttributes extends Optional<CommitteeAttributes, "id" | "finalGrades"> {}
 
 export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttributes> implements CommitteeAttributes {
   id: number;
   name: string;
+  finalGrades: boolean;
 
   members: Teacher[];
   papers?: Paper[]
@@ -1275,6 +1277,10 @@ Committee.init({
     type: DataTypes.STRING,
     allowNull: false
   },
+  finalGrades: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
 }, {
   timestamps: false,
   sequelize,

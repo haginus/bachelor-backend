@@ -155,4 +155,14 @@ router.get('/committees/:id', async function (req, res) {
     }
 });
 
+router.post('/committees/:id/mark-grades-final', async function (req, res) {
+    try {
+        const { id } = req.params;
+        let result = await TeacherController.markGradesAsFinal(req._user, +id);
+        res.json(result);
+    } catch(err) {
+        res.status(err.httpStatusCode).json(err);
+    }
+});
+
 export default router;
