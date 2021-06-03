@@ -396,6 +396,8 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public isValid: boolean | null;
   public gradeAverage: number | null;
 
+  public readonly createdAt!: Date;
+
   public student?: Student;
   public teacher?: Teacher;
   public topics?: Topic[];
@@ -1028,7 +1030,8 @@ Paper.init({
   }
   // documents
 }, {
-  timestamps: false,
+  timestamps: true,
+  updatedAt: false,
   sequelize,
   modelName: "paper"
 })

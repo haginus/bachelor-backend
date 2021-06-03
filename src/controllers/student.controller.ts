@@ -319,11 +319,25 @@ export class StudentController {
         return paperRes;
     }
 
+    /** Check if student can edit paper. */
+    private static checkEditPaper = (paper: Paper, sessionSettings: SessionSettings) => {
+        const today = new Date().setHours(0, 0, 0, 0);
+        const endDateSecretary = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
+        const paperCreatedAt = new Date(paper.createdAt);
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+        return (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary) &&
+        today <= endDateSecretary;
+    }
+
     public static editPaper = async (user: User, title: string, description: string, topicIds: number[]) => {
         const transaction = await sequelize.transaction();
         const paper = user.student.paper;
         if(!paper) {
             throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
+        }
+        const sessionSettings = await SessionSettings.findOne();
+        if(!StudentController.checkEditPaper(paper, sessionSettings)) {
+            throw new ResponseError("Nu puteți edita lucrarea acum.", "PAPER_NOT_FOUND", 403);
         }
         const titleUpdated = paper.title != title;
         let prevTitle = paper.title, prevDesc = paper.description;
@@ -335,7 +349,6 @@ export class StudentController {
             if (titleUpdated) {
                 const extraData = await user.student.getStudentExtraDatum();
                 if(extraData != null) {
-                    const sessionSettings = await SessionSettings.findOne();
                     let student = await StudentController.getStudentByUid(user.id);
                     await StudentController.generatePaperDocuments(student, extraData, sessionSettings);
                 }
