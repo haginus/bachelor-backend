@@ -428,7 +428,7 @@ export class StudentController {
                 let extraDataModel = await StudentExtraData.create(newMainData, { transaction });
                 let addressModel = await Address.create(newAddress, { transaction });
                 await extraDataModel.setAddress(addressModel, { transaction });
-                await StudentController.generatePaperDocuments(student, data, null);
+                await StudentController.generatePaperDocuments(student, data, sessionSettings);
                 await transaction.commit();
             } catch (err) {
                 await transaction.rollback();
