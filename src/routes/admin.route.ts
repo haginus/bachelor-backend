@@ -242,15 +242,14 @@ router.post('/topics/edit', async (req, res) => {
 
 router.post('/topics/delete', async (req, res) => {
     const { id, moveId } = req.body;
-    if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
-        return res.status(400).json("BAD_REQUEST");
-    }
     try {
+        if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
+            throw new ResponseError("ID-uri greșite.", "BAD_IDS", 401);
+        }
         await AdminController.deleteTopic(id, moveId);
         res.status(200).json({ success: true });
     } catch(err) {
-        console.log(err);
-        res.status(500);
+        res.status(err.httpStatusCode).json(err);
     }
 });
 

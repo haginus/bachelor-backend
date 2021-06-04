@@ -435,18 +435,42 @@ export const editTopic = (id, name) => {
     return Topic.update({ name }, { where: { id } });
 }
 
-export const deleteTopic = async (id, moveId) => {
+export const deleteTopic = async (id: number, moveId: number) => {
     if(id == moveId) {
-        throw "BAD_REQUEST"
+        throw new ResponseError("Nu puteți muta ofertele și lucrările în aceeași temă. ", "SAME_IDS", 401);
     }
 
     const moveTopic = await Topic.findOne({ where: { id: moveId } });
     if(!moveTopic) {
-        throw "BAD_REQUEST"
+        throw new ResponseError("Tema pentru mutare nu există", "BAD_MOVE_ID", 401);
     }
-
-    //await Offer.update({ topicId: moveId }, { where: { topicId: id } });
-    return Topic.destroy({ where: id });
+    const transaction = await sequelize.transaction();
+    try {
+        // Update offer and paper topics in bulk using manual SQL query since sequelize doen't have this feature
+        // First we need to get the offers and papers that have the moveId already (we will exclude them)
+        // Pay attention to escapes since not having them can cause SQL injections!!!
+        let [results, _] = await sequelize.query(`SELECT offerId FROM OfferTopics WHERE topicId = ${sequelize.escape(moveId)};`);
+        let excludedOfferIds = results.map(result => (result as any).offerId).join(',') || 0;
+        await sequelize.query(`
+            UPDATE OfferTopics SET topicId = ${sequelize.escape(moveId)}
+            WHERE topicId = ${sequelize.escape(id)}
+            AND offerId NOT IN (${excludedOfferIds});`,
+            { transaction });
+        [results, _] = await sequelize.query(`SELECT paperId FROM paperTopics WHERE topicId = ${sequelize.escape(moveId)};`);
+        let excludedPaperIds = results.map(result => (result as any).paperId).join(',') || 0;
+        await sequelize.query(`
+            UPDATE paperTopics SET topicId = ${sequelize.escape(moveId)}
+            WHERE topicId = ${sequelize.escape(id)}
+            AND paperId NOT IN (${excludedPaperIds});`,
+            { transaction });
+        await Topic.destroy({ where: { id }, transaction });
+        await transaction.commit();
+        return { success: true }
+    } catch(err) {
+        console.log(err)
+        await transaction.rollback();
+        throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 501)
+    }
 }
 
 // COMMITTEES
