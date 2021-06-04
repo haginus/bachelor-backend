@@ -336,7 +336,7 @@ export class StudentController {
         const paperCreatedAt = new Date(paper.createdAt);
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
         return (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary) &&
-        today <= endDateSecretary;
+        today <= endDateSecretary && paper.isValid == null;
     }
 
     public static editPaper = async (user: User, title: string, description: string, topicIds: number[]) => {
