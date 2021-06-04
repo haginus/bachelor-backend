@@ -47,7 +47,7 @@ app.get('/user/:userId', AuthController.isLoggedIn, function (req, res) {
 }); */
 
 app.get('/user/info', AuthController.isLoggedIn, async (req, res) => {
-  let user = await UserController.getUserData(req._user.id);
+  let user = req._user;
   res.json(user);
 });
 
