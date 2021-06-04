@@ -501,7 +501,7 @@ export class StudentController {
 
 
     public static getPaperRequiredDocuments = (user: User) => { 
-        return DocumentController.getPaperRequiredDocuments(user.student.id);
+        return DocumentController.getPaperRequiredDocuments(user.student.paper.id);
     }
 
     public static checkApplyPeriod = async ()=> {
