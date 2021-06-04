@@ -19,7 +19,6 @@ const properties = [
     },
     {
         name: 'password',
-        validator: /^[a-zA-Z\s\-]+$/,
         hidden: true
     },
     {
