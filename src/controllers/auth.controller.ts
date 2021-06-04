@@ -1,7 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from 'crypto';
 import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize } from "../models/models";
 import { config } from "../config/config";
+import { ResponseError } from "../util/util";
+import * as Mailer from '../alerts/mailer';
 
 const getUser = async (where) => {
     return User.findOne({ 
@@ -49,7 +52,7 @@ export const changePasswordWithActivationCode = async (req, res) => {
     }
     const activationToken = await ActivationToken.findOne({ where: { token, used: false } })
     if (activationToken) {
-        const user = await User.findOne({ where: { id: activationToken.userId } })
+        const user = await getUser({ id: activationToken.userId });
         if(!user) {
             return res.status(400).json({ "error": "USER_NOT_FOUND" });
         }
@@ -65,6 +68,34 @@ export const changePasswordWithActivationCode = async (req, res) => {
     } else {
         return res.status(401).json({ "error": "INVALID_CODE" });
     }
+}
+
+export const resetPassword = async (email: string) => {
+    const user = await User.findOne({ where: { email } });
+    if(user) {
+        const prevSent = await ActivationToken.findAll({ where: { userId: user.id }, limit: 3, order: [['id', 'DESC'] ]});
+        // If user has sent too many password reset requests
+        if(prevSent.length == 3 && !prevSent.find(token => token.used)) {
+            const createdAt = prevSent[0].createdAt.getTime();
+            const now = new Date().getTime();
+            if(createdAt + 60 * 60 * 1000 > now) {
+                throw new ResponseError(
+                    "Ați trimis prea multe cereri de resetare a parolei.\nReîncercați peste o oră.",
+                    "TOO_MANY_REQUESTS", 403);
+            }
+        }
+        const transaction = await sequelize.transaction();
+        try {
+            let token = crypto.randomBytes(64).toString('hex');
+            await ActivationToken.create({ token, userId: user.id }, { transaction });
+            await Mailer.sendResetPasswordEmail(user, token);
+            await transaction.commit();
+        } catch(err) {
+            await transaction.rollback();
+            throw new ResponseError("A apărut o eroare la trimiterea e-mailului. Contactați administratorul.", null, 500);
+        }
+    }
+    return { success: true };
 }
 
 export const isLoggedIn = async (req, res, next) => {

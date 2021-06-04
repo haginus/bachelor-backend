@@ -16,6 +16,17 @@ export async function sendWelcomeEmail(user, token) {
   });
 }
 
+export async function sendResetPasswordEmail(user: User, token: string) {
+  const url = `${config.WEBSITE_URL}/login/token/${token}`;
+  const html = await renderFile("./src/alerts/mail-templates/reset-password.ejs", { user, url } );
+  let info = await transporter.sendMail({
+    from: '"Platforma de asociere FMI" <noreply@asociere.fmi.unibuc.ro>',
+    to: user.email,
+    subject: "Resetați parola contului dvs.",
+    html
+  });
+}
+
 export async function sendNewApplicationEmail(studentUser: User, teacherUser: User, application: Application) {
   const url = `${config.WEBSITE_URL}/teacher/applications/pending/${application.offerId}`;
   const html = await renderFile("./src/alerts/mail-templates/new-application.ejs", { studentUser, teacherUser, application, url } );
