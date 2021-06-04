@@ -1,4 +1,4 @@
-import { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings, Specialization, DocumentType } from "../models/models";
+import { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, sequelize, StudentExtraData, Address, Document, SessionSettings, Specialization, DocumentType, Committee, PaperGrade } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as AuthController from './auth.controller';
@@ -312,9 +312,19 @@ export class StudentController {
     public static getPaper = async (uid) => {
         const student = await StudentController.getStudentByUid(uid);
         let paper = await Paper.scope(["documents", "teacher", "topics"]).findOne({ where: { studentId: student.id } });
-        let paperRes: any = JSON.parse(JSON.stringify(paper)); // sequelize will return the user info nested as `user` in paper.teacher
+        let committee: Committee, grades: PaperGrade[] = [];
+        if(paper.committeeId) {
+            committee = await paper.getCommittee({ scope: 'min' });
+            if(committee.finalGrades) {
+                grades = await paper.getGrades();
+                paper.grades = grades;
+            }
+        }
+        let paperRes: any = paper.toJSON(); // sequelize will return the user info nested as `user` in paper.teacher
         if (paper) {
             paperRes.teacher = paper.teacher.user;
+            paperRes.grades = grades;
+            paperRes.committee = committee;
         }
         return paperRes;
     }

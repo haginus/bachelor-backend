@@ -403,6 +403,8 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public topics?: Topic[];
 
   public setTopics: HasManySetAssociationsMixin<Topic, number>;
+  public getCommittee: HasOneGetAssociationMixin<Committee>;
+  public getGrades: HasManyGetAssociationsMixin<PaperGrade>;
 
   public documents?: Document[];
   public committee: Committee;
