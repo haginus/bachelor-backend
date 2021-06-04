@@ -329,6 +329,8 @@ router.get('/committees/documents/:documentName', async (req, res) => {
         let result: Buffer;
         if(documentName == 'committee_compositions') {
             result = await AdminController.generateCommitteeCompositions();
+        } else if(documentName == 'committee_students') {
+            result = await AdminController.generateCommitteeStudents();
         } else {
             throw "BAD_REQUEST";
         }

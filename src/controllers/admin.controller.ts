@@ -606,6 +606,10 @@ export const generateCommitteeCompositions = () => {
     return DocumentController.generateCommitteeCompositions();
 }
 
+export const generateCommitteeStudents = () => {
+    return DocumentController.generateCommitteeStudents();
+}
+
 // PAPERS
 
 export interface GetPapersFilter {

@@ -439,3 +439,27 @@ export const generateCommitteeCompositions = async () => {
     let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer as Buffer;
 }
+
+export const generateCommitteeStudents = async () => {
+    const committees = await Committee.findAll({
+        include: [{
+            model: Paper.scope(['teacher', 'student']),
+            include: [{ // also include domains
+                association: Paper.associations.student,
+                include: [Student.associations.domain]
+            }]
+        }]
+    });
+    committees.sort((c1, c2) => {
+        const d1Type = c1.domains[0].type;
+        const d2Type = c2.domains[0].type;
+        // sort by domain type, then by name
+        return d1Type < d2Type ? -1 : (d1Type > d2Type ? 1 :
+            c1.name <= c2.name ? -1 : 1);
+    });
+    const sessionSettings = await SessionSettings.findOne();
+    const content = await ejs.renderFile(getDocumentTemplatePath("committee_students"), { committees, sessionSettings } );
+    let fileBuffer: Buffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    return fileBuffer;
+
+}

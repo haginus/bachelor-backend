@@ -1,0 +1,148 @@
+<html>
+    <head>
+        <title>Programarea examenului de licenţă/disertație</title>
+    </head>
+    <body>
+        <% for(let i = 0; i < committees.length; i++) {
+            let committee = committees[i];
+            let domain = committee.domains[0];
+            let committeePaperType = domain.type == 'bachelor' ? 'licență' : domain.type == 'master' ? 'disertație' : null;
+        %>
+            <div class="header-container">
+                <p class="col">
+                    UNIVERSITATEA DIN BUCUREȘTI <br>
+                    Facultatea de Matematică și Informatică	<br>
+                </p>
+                <p class="col right v-align-b">
+                    Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
+                </p>
+            </div>
+
+            <h1>
+                Programarea examenului de <%= committeePaperType %> <br>
+                <%= committee.name %>
+            </h1>
+                <table>
+                    <tr>
+                        <th>Nr. crt.</th>
+                        <th>Nume și prenume</th>
+                        <th>Profesor coordonator</th>
+                        <th>Titlul lucrării</th>
+                        <th>Domeniul</th>
+                    </tr>
+                    <% for(let k = 0; k < committee.papers.length; k++) {
+                        let paper = committee.papers[k];
+                    %>
+                        <tr>
+                            <td><%= k + 1 %>.</td>
+                            <td>
+                                <%= paper.student.user.lastName %>
+                                <%= paper.student.user.firstName %>    
+                            </td>
+                            <td>
+                                <%= paper.teacher.user.lastName %>
+                                <%= paper.teacher.user.firstName %>    
+                            </td>
+                            <td><%= paper.title %> </td>
+                            <td><%= paper.student.domain.name %> </td>
+                        </tr>
+                    <% } %>       
+                </table>
+            <div class="page-break"></div>
+        <% } %>
+    </body>
+
+    <style>
+        html {
+            width: 21cm;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        body {
+            margin: 0px;
+            padding: 0 1cm;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .upper {
+            text-transform: uppercase;
+        }
+
+        .header-container,
+        .footer-container {
+            display: flex;
+        }
+
+        .header-container {
+            font-weight: bold;
+            align-items: flex-end;
+        }
+
+        .header-container .col,
+        .footer-container .col {
+            flex: 1;
+        }
+
+        .footer-container .col {
+            text-align: center;
+            font-size: 12pt;
+        }
+
+        .col.right {
+            text-align: right;
+        }
+
+        .col.center {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 18pt;
+            text-align: center;
+        }
+
+        .promotion-header {
+            margin-top: 0.5cm;
+            margin-bottom: 0.1cm;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        th {
+            background-color: #bdbdbd;
+        }
+
+        @media print {
+            th {
+                background-color: #bdbdbd!important;
+            }
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        table { 
+            page-break-inside: auto
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto
+        }
+
+    </style>
+</html>
