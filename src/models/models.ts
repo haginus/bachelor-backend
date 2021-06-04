@@ -789,7 +789,7 @@ User.addScope("min", {
   attributes: ['id', 'title', 'firstName', 'lastName', 'fullName', 'email']
 });
 
-User.hasMany(ActivationToken);
+User.hasMany(ActivationToken, { onDelete: 'CASCADE' });
 ActivationToken.belongsTo(User);
 
 Student.init({
@@ -915,13 +915,13 @@ Offer.init({
   }
 });
 
-Teacher.hasMany(Offer);
+Teacher.hasMany(Offer, { onDelete: 'CASCADE' });
 Offer.belongsTo(Teacher);
 
 Offer.belongsToMany(Topic, { through: "OfferTopics", timestamps: false });
 Topic.belongsToMany(Offer, { through: "OfferTopics", timestamps: false });
 
-Domain.hasMany(Offer);
+Domain.hasMany(Offer, { onDelete: 'CASCADE' });
 Offer.belongsTo(Domain);
 
 
@@ -967,14 +967,14 @@ Application.init({
   modelName: "application"
 });
 
-Student.hasMany(Application);
+Student.hasMany(Application, { onDelete: 'CASCADE' });
 Application.belongsTo(Student, {
   foreignKey: {
     allowNull: false
   }
 });
 
-Offer.hasMany(Application);
+Offer.hasMany(Application, { onDelete: 'CASCADE' });
 Application.belongsTo(Offer);
 
 
@@ -1040,7 +1040,7 @@ Paper.init({
   modelName: "paper"
 })
 
-Student.hasOne(Paper);
+Student.hasOne(Paper, { onDelete: 'CASCADE' });
 Paper.belongsTo(Student);
 
 Teacher.hasMany(Paper);
@@ -1088,7 +1088,7 @@ Document.init({
   modelName: "document"
 })
 
-Paper.hasMany(Document);
+Paper.hasMany(Document, { onDelete: 'CASCADE' });
 Document.belongsTo(Paper);
 
 User.hasMany(Document, { foreignKey: 'uploadedBy' });
