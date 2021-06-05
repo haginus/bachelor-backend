@@ -1,49 +1,41 @@
-var express = require('express')
-var router = express.Router()
+import express from 'express'
+const router = express.Router()
 import * as AuthController from '../controllers/auth.controller'
 import * as TopicController from '../controllers/topic.controller'
+import { ResponseError, ResponseErrorUnauthorized } from '../util/util'
 
 router.use(AuthController.isLoggedIn)
 
-router.get('/', async function (req, res) {
-    try {
-        const topics = await TopicController.getTopics();
-        res.json(topics);
-    } catch (err) {
-        return res.status(400).json("INTERNAL_ERROR");
-    }
+router.get('/', async function (req, res, next) {
+    const topics = await TopicController.getTopics()
+        .catch(err => next(err));
+    res.json(topics);
 });
 
-router.post('/add', async function (req, res) {
+router.post('/add', async function (req, res, next) {
     if(!['admin', 'teacher'].includes(req._user.type)) {
-        return res.status(403).json("UNAUTHORIZED");
+        return next(new ResponseErrorUnauthorized());
     }
     const { name } = req.body;
     if(!name || typeof name != "string") {
-        return res.status(400).json("BAD_REQUEST");
+        return next(new ResponseError('Numele temei lipsește.'));
     }
-    try {
-        const topic = await TopicController.addTopic(name);
-        return res.json(topic);
-    } catch (err) {
-        return res.status(400).json("TOPIC_ALREADY_EXISTS");
-    }
+    const topic = await TopicController.addTopic(name)
+        .catch(err => next(err));
+    return res.json(topic);
 });
 
-router.post('/add-bulk', async function (req, res) {
+router.post('/add-bulk', async function (req, res, next) {
     if(!['admin', 'teacher'].includes(req._user.type)) {
-        return res.status(403).json("UNAUTHORIZED");
+        return next(new ResponseErrorUnauthorized());
     }
     const { names } = req.body;
-    if(!names || typeof names != "object") {
-        return res.status(400).json("BAD_REQUEST");
+    if(!names || !Array.isArray(names)) {
+        return next(new ResponseError('Numele temelor lipsesc.'));
     }
-    try {
-        const topic = await TopicController.addTopics(names);
-        return res.json(topic);
-    } catch (err) {
-        return res.status(400).json("TOPIC_ALREADY_EXISTS");
-    }
+    const topics = await TopicController.addTopics(names)
+        .catch(err => next(err));
+    return res.json(topics);
 });
 
 export default router
