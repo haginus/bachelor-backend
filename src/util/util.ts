@@ -10,6 +10,12 @@ export class ResponseError extends Error {
     }
 }
 
+export class ResponseErrorUnauthorized extends ResponseError {
+    constructor(message?: string) {
+        super('Nu sunteți autorizat să faceți această acțiune.', 'NOT_AUTHORIZED', 403);
+    }
+}
+
 export const removeDiacritics = (str: string) => {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
