@@ -1,12 +1,11 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
-import { config } from "../config/config";
-import { Model, Op, OrderItem, Sequelize } from "sequelize";
+import bcrypt from "bcrypt";
+import { Op, OrderItem} from "sequelize";
 import csv from 'csv-parser';
-import fs from 'fs';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { removeDiacritics, ResponseError } from "../util/util";
 var stream = require('stream');
@@ -744,6 +743,27 @@ export const changeSessionSettings = async (settings) => {
         return SessionSettings.update(settings, { where: { lock: 'X' } });
     } else { // else do create query
         return SessionSettings.create(settings)
+    }
+}
+
+export const beginNewSession = async (user: User, password: string) => {
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+        throw new ResponseError("Parolă incorectă.", "WRONG_PASSWORD", 403);
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        await Offer.destroy({ where: { id: {[Op.ne]: null} } });
+        await Committee.destroy({ where: { id: {[Op.ne]: null} } });
+        await Student.destroy({ where: { id: {[Op.ne]: null} } });
+        let sessionName = 'Sesiune nouă';
+        let allowGrading = false;
+        await SessionSettings.update({ sessionName, allowGrading }, { where: { lock: 'X' }, transaction });
+        await transaction.rollback();
+    } catch(err) {
+        console.log(err)
+        await transaction.rollback();
+        throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 500);
     }
 }
 

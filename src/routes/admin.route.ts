@@ -389,6 +389,16 @@ router.post('/session', async (req, res) => {
         console.log(err)
         res.status(400).json("BAD_REQUEST");
     }
+});
+
+router.post('/session/new', async (req, res) => {
+    const { password } = req.body;
+    try {
+        await AdminController.beginNewSession(req._user, password);
+        res.json({ success: true });
+    } catch(err) {
+        res.status(err.httpStatusCode).json(err);
+    }
 })
 
 export default router;
