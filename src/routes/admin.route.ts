@@ -62,7 +62,7 @@ router.post('/students/add-bulk', fileUpload(), async function(req, res, next) {
             throw new ResponseError('Lipsește fișierul CSV.');
         }
         let fileBuffer = (req.files.file as UploadedFile).data;
-        let result = await AdminController.addStudentBulk(fileBuffer, specializationId, 'if');
+        let result = await AdminController.addStudentBulk(fileBuffer, specializationId, studyForm);
         res.json(result);
     } catch(err) {
         next(err);
