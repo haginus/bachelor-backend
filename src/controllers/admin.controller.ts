@@ -8,6 +8,7 @@ import { Op, OrderItem} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { removeDiacritics, ResponseError } from "../util/util";
+import { autoAssignPapers } from "../util/assign-papers";
 var stream = require('stream');
 
 interface Statistic {
@@ -599,6 +600,10 @@ export const setCommitteePapers = async (id, paperIds) => {
         }
     });
     return committee.setPapers(papers);
+}
+
+export const autoAssignCommitteePapers = () => {
+    return autoAssignPapers();
 }
 
 export const generateCommitteeCompositions = () => {

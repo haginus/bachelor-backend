@@ -323,6 +323,16 @@ router.post('/committees/assign-papers', async (req, res) => {
     }
 });
 
+router.post('/committees/auto-assign-papers', async (req, res) => {
+    try {
+        const result = await AdminController.autoAssignCommitteePapers();
+        res.json(result);
+    } catch(err) {
+        console.log(err)
+        res.status(err.httpStatusCode || 500).json(err);
+    }
+});
+
 router.get('/committees/documents/:documentName', async (req, res) => {
     const { documentName } = req.params;
     try {

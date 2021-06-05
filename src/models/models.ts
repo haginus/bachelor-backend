@@ -150,6 +150,7 @@ export class Teacher extends Model<TeacherAttributes, TeacherCreationAttributes>
   public userId!: number;
 
   public user?: User;
+  public offers?: Offer[];
   public papers: Paper[];
 
   public committeeMember?: CommitteeMember;
@@ -473,7 +474,9 @@ export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttri
   domains: Domain[];
 
   setDomains: HasManySetAssociationsMixin<Committee, Domain>;
-  setPapers: HasManySetAssociationsMixin<Committee, Paper>;
+  setPapers: HasManySetAssociationsMixin<Paper, number>;
+  addPaper: HasManyAddAssociationMixin<Paper, number>;
+  addPapers: HasManyAddAssociationMixin<Paper[], number[]>;
   setMembers: HasManySetAssociationsMixin<Committee, Teacher>;
 
   public static associations: {
