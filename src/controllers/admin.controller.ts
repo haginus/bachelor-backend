@@ -225,7 +225,7 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
 
     let sortArray: OrderItem = [ 'id', 'ASC'];
     if (['id', 'firstName', 'lastName', 'CNP', 'email'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
-        sortArray = [ 'id', 'ASC'];
+        sortArray = [ sort, order];
     }
 
     let query = await User.findAndCountAll({
