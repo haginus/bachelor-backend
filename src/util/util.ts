@@ -4,7 +4,7 @@ export class ResponseError extends Error {
     httpStatusCode: number;
     constructor(message: string, code?: string, httpStatusCode?: number) {
         super();
-        this.code = code;
+        this.code = code || 'BAD_REQUEST';
         this.message = message;
         this.httpStatusCode = httpStatusCode || 400;
     }
