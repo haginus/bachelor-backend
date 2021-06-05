@@ -9,71 +9,47 @@ router.use(isLoggedIn);
 router.use(isAdmin);
 
 
-router.get('/stats', async function (req, res) {
-    try {
-        const stats = await AdminController.getStats();
-        res.json(stats);
-    } catch (err) {
-        console.log(err)
-        return res.status(500);
-    }
+router.get('/stats', async function (req, res, next) {
+    const stats = await AdminController.getStats()
+        .catch(err => next(err));
+    res.json(stats);
 });
 
 // STUDENTS
 
-router.get('/students', async function (req, res) {
-    try {
-        let { sort, order, page, pageSize } = req.query;
-        let pageAsNumber = Number(page);
-        let pageSizeAsNumber = Number(pageSize); 
-        const students = await AdminController.getStudents(sort, order, null, pageAsNumber, pageSizeAsNumber);
-        res.json(students);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json(err);
-    }
+router.get('/students', async function (req, res, next) {
+    let { sort, order, page, pageSize } = req.query;
+    const students = await AdminController.getStudents(sort, order, null, +page, +pageSize)
+        .catch(err => next(err));
+    res.json(students);
 });
 
-router.get('/student', async function (req, res) {
-    try {
-        let { id } = req.query;
-        const student = await AdminController.getStudent(Number(id));
-        res.json(student);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json("INTERNAL_ERROR");
-    }
+router.get('/student', async function (req, res, next) {
+    let { id } = req.query;
+    const student = await AdminController.getStudent(+id)
+        .catch(err => next(err));
+    res.json(student);
 });
 
-router.post('/students/add', async function (req, res) {
-    try {
-        let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
-            studyForm, fundingForm, matriculationYear } = req.body;
-        const student = await AdminController.addStudent(firstName, lastName, CNP, email, group,
-                                    specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear);
-        res.json(student);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json(err);
-    }
+router.post('/students/add', async function (req, res, next) {
+    let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
+        studyForm, fundingForm, matriculationYear } = req.body;
+    const student = await AdminController.addStudent(firstName, lastName, CNP, email, group,
+        specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear)
+        .catch(err => next(err));
+    res.json(student);
 });
 
-router.post('/students/edit', async function (req, res) {
-    try {
-        let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
-            studyForm, fundingForm, matriculationYear } = req.body;
-        const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, specializationId,
-                                                identificationCode, promotion, studyForm, fundingForm, matriculationYear);
-        res.json(student);
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json(err);
-    }
+router.post('/students/edit', async function (req, res, next) {
+    let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
+        studyForm, fundingForm, matriculationYear } = req.body;
+    const student = await AdminController.editStudent(id, firstName, lastName, CNP, group, specializationId,
+        identificationCode, promotion, studyForm, fundingForm, matriculationYear)
+        .catch(err => next(err));
+    res.json(student);
 });
 
-router.post('/students/add-bulk', fileUpload({
-    limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
-}), async function(req, res) {
+router.post('/students/add-bulk', fileUpload(), async function(req, res, next) {
     try {
         let { specializationId, studyForm } = req.body;
         if(!specializationId) {
@@ -89,251 +65,177 @@ router.post('/students/add-bulk', fileUpload({
         let result = await AdminController.addStudentBulk(fileBuffer, specializationId, 'if');
         res.json(result);
     } catch(err) {
-        console.log(err);
-        res.status(err.httpStatusCode).json(err);
+        next(err);
     }
 });
 
-router.post('/users/delete', async function (req, res) {
+router.post('/users/delete', async function (req, res, next) {
     try {
         let { id } = req.body;
         if(!id) {
-            throw "BAD_REQUEST";
+            throw new ResponseError('Lipsește ID-ul utilizatorului.');
         }
         const result = await AdminController.deleteUser(id);
         res.json({ result });
     } catch (err) {
-        return res.status(400).json(err);
+        next(err);
     }
 });
 
 // TEACHERS
 
-router.get('/teachers', async function (req, res) {
-    try {
-        let { sort, order, page, pageSize } = req.query;
-        let pageAsNumber = Number(page);
-        let pageSizeAsNumber = Number(pageSize); 
-        const teachers = await AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', null, pageAsNumber, pageSizeAsNumber);
-        res.json(teachers);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json(err);
-    }
+router.get('/teachers', async function (req, res, next) {
+    let { sort, order, page, pageSize } = req.query;
+    const teachers = await AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', null, +page, +pageSize)
+        .catch(err => next(err));
+    res.json(teachers);
 });
 
-router.post('/teachers/add', async function (req, res) {
-    try {
-        let { title, firstName, lastName, CNP, email } = req.body;
-        const teacher = await AdminController.addTeacher(title, firstName, lastName, CNP, email);
-        res.json(teacher);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json(err);
-    }
+router.post('/teachers/add', async function (req, res, next) {
+    let { title, firstName, lastName, CNP, email } = req.body;
+    const teacher = await AdminController.addTeacher(title, firstName, lastName, CNP, email)
+        .catch(err => next(err));
+    res.json(teacher);
 });
 
-router.post('/teachers/edit', async function (req, res) {
-    try {
-        let { id, title, firstName, lastName, CNP } = req.body;
-        const teacher = await AdminController.editTeacher(id, title, firstName, lastName, CNP);
-        res.json(teacher);
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json(err);
-    }
+router.post('/teachers/edit', async function (req, res, next) {
+    let { id, title, firstName, lastName, CNP } = req.body;
+    const teacher = await AdminController.editTeacher(id, title, firstName, lastName, CNP)
+        .catch(err => next(err));
+    res.json(teacher);
 });
 
-router.post('/teachers/add-bulk', fileUpload({
-    limits: { fileSize: 2 * 1024 * 1024 }  // 2MB limit
-}), async function(req, res) {
-    try {
-        let result = await AdminController.addTeacherBulk((req.files.file as UploadedFile).data);
-        res.json(result);
-    } catch(err) {
-        res.status(400).json(err);
-    }
+router.post('/teachers/add-bulk', fileUpload(), async function(req, res, next) {
+    let result = await AdminController.addTeacherBulk((req.files.file as UploadedFile).data)
+        .catch(err => next(err));
+    res.json(result);
 });
 
 // DOMAINS
 
-router.get('/domains', async function (req, res) {
-    let domains = await AdminController.getDomains();
+router.get('/domains', async function (req, res, next) {
+    let domains = await AdminController.getDomains()
+        .catch(err => next(err));
     res.json(domains);
 });
 
-router.get('/domains/extra', async function (req, res) {
-    let domains = await AdminController.getDomainsExtra();
+router.get('/domains/extra', async function (req, res, next) {
+    let domains = await AdminController.getDomainsExtra()
+        .catch(err => next(err));
     res.json(domains);
 });
 
-router.post('/domains/add', async (req, res) => {
+router.post('/domains/add', async (req, res, next) => {
     const { name, type, specializations } = req.body;
-    try {
-        let domain = await AdminController.addDomain(name, type, specializations);
-        return res.json(domain);
-    } catch(err) {
-        console.log(err)
-        res.status(400).json("BAD_REQUEST")
-    }
+    let domain = await AdminController.addDomain(name, type, specializations)
+        .catch(err => next(err));
+    return res.json(domain);
 });
 
-router.post('/domains/edit', async (req, res) => {
+router.post('/domains/edit', async (req, res, next) => {
     const { id, name, type, specializations } = req.body;
-    try {
-        let domain = await AdminController.editDomain(id, name, type, specializations);
-        return res.json(domain);
-    } catch(err) {
-        console.log(err)
-        res.status(400).json("BAD_REQUEST")
-    }
+    let domain = await AdminController.editDomain(id, name, type, specializations)
+        .catch(err => next(err));
+    return res.json(domain);
 });
 
-router.post('/domains/delete', async (req, res) => {
+router.post('/domains/delete', async (req, res, next) => {
     const { id } = req.body;
     if(!id || isNaN(id)) {
-        return res.status(400).json("BAD_REQUEST");
+        return next(new ResponseError("Lipsește ID-ul domeniului."));
     }
-    try {
-        await AdminController.deleteDomain(id);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
+    await AdminController.deleteDomain(id)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
 // TOPICS
-router.get('/topics', async function (req, res) {
-    try {
-        let { sort, order, page, pageSize } = req.query;
-        let pageAsNumber = Number(page);
-        let pageSizeAsNumber = Number(pageSize); 
-        const topics = await AdminController.getTopics(sort, order, null, pageAsNumber, pageSizeAsNumber);
-        res.json(topics);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json(err);
-    }
+router.get('/topics', async function (req, res, next) {
+    let { sort, order, page, pageSize } = req.query;
+    const topics = await AdminController.getTopics(sort, order, null, +page, +pageSize)
+        .catch(err => next(err));
+    res.json(topics);
 });
 
-router.post('/topics/add', async (req, res) => {
+router.post('/topics/add', async (req, res, next) => {
     const { name } = req.body;
-    try {
-        let topic = await AdminController.addTopic(name);
-        return res.json(topic);
-    } catch(err) {
-        console.log(err)
-        res.status(400).json("BAD_REQUEST")
-    }
+    let topic = await AdminController.addTopic(name)
+        .catch(err => next(err));
+    return res.json(topic);
 });
 
 
-router.post('/topics/edit', async (req, res) => {
+router.post('/topics/edit', async (req, res, next) => {
     const { id, name } = req.body;
-    try {
-        let topic = await AdminController.editTopic(id, name);
-        return res.json(topic);
-    } catch(err) {
-        console.log(err)
-        res.status(400).json("BAD_REQUEST")
-    }
+    let topic = await AdminController.editTopic(id, name)
+        .catch(err => next(err));
+    return res.json(topic);
+
 });
 
-router.post('/topics/delete', async (req, res) => {
+router.post('/topics/delete', async (req, res, next) => {
     const { id, moveId } = req.body;
-    try {
-        if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
-            throw new ResponseError("ID-uri greșite.", "BAD_IDS", 401);
-        }
-        await AdminController.deleteTopic(id, moveId);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        res.status(err.httpStatusCode).json(err);
+    if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
+        return next(new ResponseError("ID-uri greșite."));
     }
+    await AdminController.deleteTopic(id, moveId)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
 // COMMITTEES
 
-router.get('/committees', async function (req, res) {
-    try {
-        const committees = await AdminController.getCommittees();
-        res.json(committees);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json("INTERNAL_ERROR");
-    }
+router.get('/committees', async function (req, res, next) {
+    const committees = await AdminController.getCommittees()
+        .catch(err => next(err));
+    res.json(committees);
 });
 
-router.get('/committees/:id', async function (req, res) {
-    try {
-        const { id } = req.params;
-        const committee = await AdminController.getCommittee(+id);
-        res.json(committee);
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json("INTERNAL_ERROR");
-    }
+router.get('/committees/:id', async function (req, res, next) {
+    const { id } = req.params;
+    const committee = await AdminController.getCommittee(+id)
+        .catch(err => next(err));
+    res.json(committee);
 });
 
-router.post('/committees/add', async (req, res) => {
+router.post('/committees/add', async (req, res, next) => {
     const { name, domains, members } = req.body;
-    try {
-        await AdminController.addCommittee(name, domains, members);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
+    await AdminController.addCommittee(name, domains, members)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
-router.post('/committees/edit', async (req, res) => {
+router.post('/committees/edit', async (req, res, next) => {
     const { id, name, domains, members } = req.body;
-    try {
-        await AdminController.editCommittee(id, name, domains, members);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
+    await AdminController.editCommittee(id, name, domains, members)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
-router.post('/committees/delete', async (req, res) => {
+router.post('/committees/delete', async (req, res, next) => {
     const { id } = req.body;
-    try {
-        await AdminController.deleteCommittee(id);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
+    await AdminController.deleteCommittee(id)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
-router.post('/committees/assign-papers', async (req, res) => {
+router.post('/committees/assign-papers', async (req, res, next) => {
     const { id, paperIds } = req.body;
     if(!id || !Array.isArray(paperIds)) {
-        return res.status(400).json("BAD_REQUEST");
+        return next(new ResponseError("Parametri lipsă."));
     }
-    try {
-        await AdminController.setCommitteePapers(id, paperIds);
-        res.status(200).json({ success: true });
-    } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
+    await AdminController.setCommitteePapers(id, paperIds)
+        .catch(err => next(err));
+    res.status(200).json({ success: true });
 });
 
-router.post('/committees/auto-assign-papers', async (req, res) => {
-    try {
-        const result = await AdminController.autoAssignCommitteePapers();
-        res.json(result);
-    } catch(err) {
-        console.log(err)
-        res.status(err.httpStatusCode || 500).json(err);
-    }
+router.post('/committees/auto-assign-papers', async (req, res, next) => {
+    const result = await AdminController.autoAssignCommitteePapers()
+        .catch(err => next(err));
+    res.json(result);
 });
 
-router.get('/committees/documents/:documentName', async (req, res) => {
+router.get('/committees/documents/:documentName', async (req, res, next) => {
     const { documentName } = req.params;
     try {
         let result: Buffer;
@@ -342,73 +244,58 @@ router.get('/committees/documents/:documentName', async (req, res) => {
         } else if(documentName == 'committee_students') {
             result = await AdminController.generateCommitteeStudents();
         } else {
-            throw "BAD_REQUEST";
+            throw new ResponseError("Documentul cerut nu există.");
         }
         res.contentType("application/pdf");
         res.send(result);
     } catch(err) {
-        console.log(err);
-        res.status(400).json(err);
+        next(err);
     }
 });
 
 // PAPERS
-router.get('/papers', async function (req, res) {
-    try {
-        let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, minified } = req.query;
-        let filter = {
-            assigned: assigned != undefined ? assigned == 'true' || assigned == '1' : null,
-            assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
-            forCommittee: forCommittee != undefined ? Number(forCommittee) : null,
-            isValid: isValid != undefined ? isValid == 'true' || isValid == '1' : null,
-        }
-        let pageAsNumber = Number(page);
-        let pageSizeAsNumber = Number(pageSize);
-        if(isNaN(pageAsNumber) || isNaN(pageSizeAsNumber) || pageAsNumber < 0 || pageSizeAsNumber < 0) {
-            pageSizeAsNumber = null;
-            pageAsNumber = null;
-        }
-        const boolMinified = minified == 'true' || minified == '1';
-        const papers = await AdminController.getPapers(<string>sort, <'ASC' | 'DESC'>order, filter, pageAsNumber, pageSizeAsNumber, boolMinified);
-        res.json(papers);
-    } catch (err) {
-        console.log(err)
-        return res.status(400).json(err);
+router.get('/papers', async function (req, res, next) {
+    let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, minified } = req.query;
+    let filter = {
+        assigned: assigned != undefined ? assigned == 'true' || assigned == '1' : null,
+        assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
+        forCommittee: forCommittee != undefined ? Number(forCommittee) : null,
+        isValid: isValid != undefined ? isValid == 'true' || isValid == '1' : null,
     }
+    let pageAsNumber = Number(page);
+    let pageSizeAsNumber = Number(pageSize);
+    if(isNaN(pageAsNumber) || isNaN(pageSizeAsNumber) || pageAsNumber < 0 || pageSizeAsNumber < 0) {
+        pageSizeAsNumber = null;
+        pageAsNumber = null;
+    }
+    const boolMinified = minified == 'true' || minified == '1';
+    const papers = await AdminController.getPapers(<string>sort, <'ASC' | 'DESC'>order, filter,
+        pageAsNumber, pageSizeAsNumber, boolMinified)
+        .catch(err => next(err));
+    res.json(papers);
 });
 
-router.post('/papers/validate', async (req, res) => {
+router.post('/papers/validate', async (req, res, next) => {
     const { paperId, validate } = req.body;
-    try {
-        await AdminController.validatePaper(paperId, validate);
-        res.json({ success: true });
-    } catch(err) {
-        console.log(err)
-        res.status(400).json(err);
-    }
-})
+    await AdminController.validatePaper(paperId, validate)
+        .catch(err => next(err));
+    res.json({ success: true });
+});
 
 // SESSION SETTINGS
 
-router.post('/session', async (req, res) => {
+router.post('/session', async (req, res, next) => {
     const settings = req.body;
-    try {
-        await AdminController.changeSessionSettings(settings);
-        res.json({ success: true });
-    } catch(err) {
-        console.log(err)
-        res.status(400).json("BAD_REQUEST");
-    }
+    await AdminController.changeSessionSettings(settings)
+        .catch(err => next(err));
+    res.json({ success: true });
 });
 
-router.post('/session/new', async (req, res) => {
+router.post('/session/new', async (req, res, next) => {
     const { password } = req.body;
-    try {
-        await AdminController.beginNewSession(req._user, password);
-        res.json({ success: true });
-    } catch(err) {
-        res.status(err.httpStatusCode).json(err);
-    }
-})
+    await AdminController.beginNewSession(req._user, password)
+        .catch(err => next(err));
+    res.json({ success: true });
+});
 
 export default router;
