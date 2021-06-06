@@ -101,7 +101,7 @@ export const resetPassword = async (email: string) => {
     return { success: true };
 }
 
-export const isLoggedIn = async (req, res, next) => {
+export const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
     let token = req.header('Authorization');
     if (!token || !token.startsWith('Bearer ')) {
         next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
