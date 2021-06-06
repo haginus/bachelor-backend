@@ -13,6 +13,7 @@ import documentsRoutes from './routes/documents.route';
 import { config } from './config/config';
 import * as Mailer from './alerts/mailer';
 import { ResponseError } from './util/util';
+import { ValidationError } from 'sequelize';
 
 
 const app = express();
@@ -43,7 +44,9 @@ app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
 
 app.use(function (err, req, res, next) {
-  if(!(err instanceof ResponseError)) {
+  if(err instanceof ValidationError) {
+    err = new ResponseError(err.errors[0].message);
+  } else if(!(err instanceof ResponseError)) {
     console.log(err);
     err = new ResponseError('A apărut o eroare. Contactați administratorul.', 'INTERNAL_ERROR', 500);
   }

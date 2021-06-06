@@ -369,6 +369,11 @@ export class Application extends Model<ApplicationAttributes, ApplicationCreatio
 
   public student: Student;
   public offer: Offer;
+
+  public static associations: {
+    student: Association<Application, Student>;
+    offer: Association<Application, Offer>;
+  }
 }
 
 
@@ -559,11 +564,21 @@ SessionSettings.init({
   },
   sessionName: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'Numele sesiunii lipsește.'
+      }
+    }
   },
   currentPromotion: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'Promoția curentă lipsește.'
+      }
+    }
   },
   applyStartDate: {
     type: DataTypes.DATEONLY,
@@ -575,7 +590,7 @@ SessionSettings.init({
     validate: {
       isGreaterThanApplyStartDate(value) {
         if (new Date(value).getTime() < new Date(this.applyStartDate).getTime()) {
-          throw new Error('applyEndDate must be greater than applyStartDate.');
+          throw new Error('Data încheierii sesiunii de asociere nu poate fi mai devreme de cea a începerii.');
         }
       }
     }
@@ -586,7 +601,7 @@ SessionSettings.init({
     validate: {
       isGreaterThanApplyStartDate(value) {
         if (new Date(value).getTime() < new Date(this.applyStartDate).getTime()) {
-          throw new Error('fileSubmissionStartDate must be greater than applyStartDate.');
+          throw new Error('Data începerii depunerilor de documente nu poate fi mai devreme de cea a începerii sesiunii de asociere.');
         }
       }
     }
@@ -597,7 +612,7 @@ SessionSettings.init({
     validate: {
       isGreaterThanFileSubmissionStartDate(value) {
         if (new Date(value).getTime() < new Date(this.fileSubmissionStartDate).getTime()) {
-          throw new Error('fileSubmissionEndDate must be greater than fileSubmissionStartDate.');
+          throw new Error('Data încheierii depunerilor de documente nu poate fi mai devreme de cea a începerii.');
         }
       }
     }
@@ -608,7 +623,7 @@ SessionSettings.init({
     validate: {
       isGreaterThanFileSubmissionStartDate(value) {
         if (new Date(value).getTime() < new Date(this.fileSubmissionStartDate).getTime()) {
-          throw new Error('paperSubmissionEndDate must be greater than fileSubmissionStartDate.');
+          throw new Error('Termenul limită pentru depunerea lucrărilor nu poate fi mai devreme de data începerii depunerilor de documente.');
         }
       }
     }
@@ -637,13 +652,21 @@ Domain.init({
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'Numele domeniului lipsește.'
+      }
+    }
   },
   type: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      isIn: [['bachelor', 'master']],
+      isIn: {
+        args: [['bachelor', 'master']],
+        msg: 'Tipul domeniului este invalid.'
+      },
     }
   }
 }, {
@@ -659,7 +682,8 @@ Specialization.init({
     primaryKey: true,
   },
   domainId: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   name: {
     type: DataTypes.STRING,
@@ -944,21 +968,31 @@ Application.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      len: [3, 128]
-    }
+      len: {
+        args: [3, 256],
+        msg: 'Lungimea titlului trebuie să fie între 3 și 256 de caractere.'
+      },
+    },
+    
   },
   description: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1024),
     allowNull: false,
     validate: {
-      len: [5, 1024]
+      len: {
+        args: [64, 1024],
+        msg: 'Lungimea descrierii trebuie să fie între 64 și 1024 de caractere.'
+      }
     }
   },
   usedTechnologies: {
     type: DataTypes.STRING,
     allowNull: true,
     validate: {
-      len: [1, 256]
+      len: {
+        args: [1, 256],
+        msg: 'Lungimea tehnologiilor folosite trebuie să fie între 1 și 256 de caractere.'
+      }
     }
   },
   accepted: {
