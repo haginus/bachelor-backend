@@ -3,10 +3,11 @@ import jwt from "jsonwebtoken";
 import crypto from 'crypto';
 import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize } from "../models/models";
 import { config } from "../config/config";
-import { ResponseError } from "../util/util";
+import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../alerts/mailer';
+import { WhereOptions } from "sequelize/types";
 
-const getUser = async (where) => {
+const getUser = async (where: WhereOptions<User>) => {
     return User.findOne({ 
         where, 
         include: [
@@ -23,50 +24,51 @@ const getUser = async (where) => {
     });
 }
 
-export const login = async (req, res) => {
-    const { email, password } = req.body;
-    const user = await getUser({ email });
-    if (user) {
-        if(!user.password) {
-            return res.status(401).json({ "error": "NOT_ACTIVATED" });
-        }
-
-        const validPassword = await bcrypt.compare(password, user.password);  // check if passwords match
-        if (!validPassword) {
-            return res.status(401).json({ "error": "WRONG_PASSWORD" });
-        }
-        // create and assign the token
-        const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
-        let usr = JSON.parse(JSON.stringify(user)); // delete password in order to send to frontend
-        delete usr.password; 
-        res.header("auth-token", token).json({ "token": token, user: usr });
-    } else {
-        return res.status(401).json({ "error": "EMAIL_NOT_FOUND" });
-    }
+const createLoginResponse = async (user: User) => {
+    const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
+    let responseUser = copyObject(user);
+    delete responseUser.password; // remove the hashed password in order to send the response
+    return { token, user: responseUser };
 }
 
-export const changePasswordWithActivationCode = async (req, res) => {
-    const { token, password, confirmPassword } = req.body;
-    if(password !== confirmPassword && password.length < 6) {
-        return res.status(400).json({ "error": "BAD_PASSWORD" });
+export const loginWithEmailAndPassword = async (email: string, password: string) => {
+    const user = await getUser({ email });
+    if(!user) {
+        throw new ResponseErrorUnauthorized('E-mailul nu a fost găsit.', 'EMAIL_NOT_FOUND');
     }
-    const activationToken = await ActivationToken.findOne({ where: { token, used: false } })
-    if (activationToken) {
-        const user = await getUser({ id: activationToken.userId });
-        if(!user) {
-            return res.status(400).json({ "error": "USER_NOT_FOUND" });
-        }
+    if(!user.password) {
+        throw new ResponseErrorUnauthorized('Verificați-vă e-mailul pentru a activa acest cont.', 'NOT_ACTIVATED');
+    }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if(!validPassword) {
+        throw new ResponseErrorUnauthorized('Parolă incorectă.', 'WRONG_PASSWORD');
+    }
+    return createLoginResponse(user);
+}
 
-        await User.update({ password }, { where: {id: activationToken.userId } });
-        await ActivationToken.update({used: true}, { where: { id: activationToken.id } })
-        
-        // create and assign the token
-        const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
-        let usr = JSON.parse(JSON.stringify(user)); // delete password in order to send to frontend
-        delete usr.password; 
-        res.header("auth-token", token).json({ "token": token, user: usr });
-    } else {
-        return res.status(401).json({ "error": "INVALID_CODE" });
+export const changePasswordWithActivationCode = async (token: string, password: string) => {
+    if(!password || password.length < 6) {
+        throw new ResponseError('Parola trebuie să aibă cel puțin 6 caractere.', 'BAD_PASSWORD');
+    }
+    const activationToken = await ActivationToken.findOne({ where: { token, used: false } });
+    if(!activationToken) {
+        throw new ResponseErrorUnauthorized('Token-ul de activare este invalid sau a fost deja folosit.', 'INVALID_TOKEN');
+    }
+    const user = await getUser({ id: activationToken.userId });
+    if(!user) {
+        throw new ResponseErrorInternal();
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        user.password = password;
+        activationToken.used = true;
+        await activationToken.save({ transaction });
+        await user.save({ transaction });
+        await transaction.commit();
+        return createLoginResponse(user);
+    } catch(err) {
+        await transaction.rollback();
+        throw new ResponseErrorInternal();
     }
 }
 
@@ -79,9 +81,9 @@ export const resetPassword = async (email: string) => {
             const createdAt = prevSent[0].createdAt.getTime();
             const now = new Date().getTime();
             if(createdAt + 60 * 60 * 1000 > now) {
-                throw new ResponseError(
+                throw new ResponseErrorForbidden(
                     "Ați trimis prea multe cereri de resetare a parolei.\nReîncercați peste o oră.",
-                    "TOO_MANY_REQUESTS", 403);
+                    "TOO_MANY_REQUESTS");
             }
         }
         const transaction = await sequelize.transaction();

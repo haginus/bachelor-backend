@@ -1,18 +1,28 @@
 export class ResponseError extends Error {
-    code: string;
-    message: string;
     httpStatusCode: number;
-    constructor(message: string, code?: string, httpStatusCode?: number) {
+    constructor(message: string, name?: string, httpStatusCode?: number) {
         super();
-        this.code = code || 'BAD_REQUEST';
+        this.name = name || 'BAD_REQUEST';
         this.message = message;
         this.httpStatusCode = httpStatusCode || 400;
     }
 }
 
 export class ResponseErrorUnauthorized extends ResponseError {
-    constructor(message?: string) {
-        super('Nu sunteți autorizat să faceți această acțiune.', 'NOT_AUTHORIZED', 403);
+    constructor(message?: string, name?: string) {
+        super(message || 'Nu sunteți autorizat să faceți această acțiune.', name || 'UNAUTHORIZED', 401);
+    }
+}
+
+export class ResponseErrorForbidden extends ResponseError {
+    constructor(message?: string, name?: string) {
+        super(message || 'Nu aveți dreptul să faceți să faceți această acțiune.', name || 'FORBIDDEN', 403);
+    }
+}
+
+export class ResponseErrorInternal extends ResponseError {
+    constructor(message?: string, name?: string) {
+        super(message || 'A apărut o eroare. Contactați administratorul.', name || 'INTERNAL_ERROR', 500);
     }
 }
 

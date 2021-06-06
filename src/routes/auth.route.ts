@@ -1,24 +1,31 @@
-import { Router } from 'express';
-var router = Router();
+import express from 'express';
+const router = express.Router();
+import * as AuthController from '../controllers/auth.controller';
 
-import { login, changePasswordWithActivationCode, getSessionSettings, resetPassword } from '../controllers/auth.controller';
+router.post('/login', async (req, res, next) => {
+    const { email, password } = req.body;
+    const response = await AuthController.loginWithEmailAndPassword(email, password)
+        .catch(err => next(err));
+    res.json(response);
+});
 
-router.post('/login', login);
-
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', async (req, res, next) => {
     const { email } = req.body;
-    try {
-        const result = await resetPassword(email);
-        res.json(result);
-    } catch(err) {
-        res.status(err.httpStatusCode).json(err);
-    }
-})
+    const result = await AuthController.resetPassword(email)
+        .catch(err => next(err));
+    res.json(result);
+});
 
-router.post('/change-password-token', changePasswordWithActivationCode);
+router.post('/change-password-token', async (req, res, next) => {
+    const { token, password } = req.body;
+    const response = await AuthController.changePasswordWithActivationCode(token, password)
+        .catch(err => next(err));
+    res.json(response);
+});
 
-router.get('/session', async (req, res) => {
-    let result = await getSessionSettings();
+router.get('/session', async (req, res, next) => {
+    const result = await AuthController.getSessionSettings()
+        .catch(err => next(err));
     res.json(result);
 });
 
