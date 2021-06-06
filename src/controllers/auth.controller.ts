@@ -6,6 +6,7 @@ import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../alerts/mailer';
 import { WhereOptions } from "sequelize/types";
+import { NextFunction, Request, Response } from "express";
 
 const getUser = async (where: WhereOptions<User>) => {
     return User.findOne({ 
@@ -94,7 +95,7 @@ export const resetPassword = async (email: string) => {
             await transaction.commit();
         } catch(err) {
             await transaction.rollback();
-            throw new ResponseError("A apărut o eroare la trimiterea e-mailului. Contactați administratorul.", null, 500);
+            throw new ResponseErrorInternal("A apărut o eroare la trimiterea e-mailului. Contactați administratorul.");
         }
     }
     return { success: true };
@@ -103,7 +104,7 @@ export const resetPassword = async (email: string) => {
 export const isLoggedIn = async (req, res, next) => {
     let token = req.header('Authorization');
     if (!token || !token.startsWith('Bearer ')) {
-        return res.status(403).json({ "error": "NOT_LOGGED_IN" });
+        next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
     }
     
     token = token.slice(7).trimStart();  // get the value of the token
@@ -114,29 +115,29 @@ export const isLoggedIn = async (req, res, next) => {
         req._user = user;
         next();
     } catch(err) {
-        res.status(403).json({ "error": "NOT_LOGGED_IN" });
+        next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
     }
 }
 
-export const isAdmin = async (req, res, next) => {
-    if(req._user.type !== "admin") {
-        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    if(req._user?.type !== "admin") {
+        next(new ResponseErrorUnauthorized());
     } else {
         next();
     }
 }
 
-export const isStudent = async (req, res, next) => {
+export const isStudent = async (req: Request, res: Response, next: NextFunction) => {
     if(req._user.type !== "student") {
-        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+        next(new ResponseErrorUnauthorized());
     } else {
         next();
     }
 }
 
-export const isTeacher = async (req, res, next) => {
+export const isTeacher = async (req: Request, res: Response, next: NextFunction) => {
     if(req._user.type !== "teacher") {
-        res.status(403).json({ "error": "NOT_AUTHORIZED" });
+        next(new ResponseErrorUnauthorized());
     } else {
         next();
     }
