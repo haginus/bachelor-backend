@@ -1,5 +1,5 @@
-import { Router } from 'express';
-var router = Router()
+import express from 'express';
+const router = express.Router();
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import { isLoggedIn, isAdmin } from '../controllers/auth.controller';
 import * as AdminController from '../controllers/admin.controller';
