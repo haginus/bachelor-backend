@@ -9,6 +9,7 @@ import { Model } from "sequelize/types";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
+import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
 
 const HtmlToPdfOptions = { format: 'A4', printBackground: true };
 
@@ -21,25 +22,37 @@ const getDocumentTemplatePath = (docName: string) => {
     return path.resolve(process.env.PWD, 'src', 'document-templates', fileName);
 }
 
-/** Delete a document by ID. Only the person that uploaded the document can delete it. */
+/** Delete a document by ID. */
 export const deleteDocument = async (user: User, documentId: number): Promise<boolean> => {
     const document = await Document.findOne({ 
         where: { id: documentId },
         include: [ Document.associations.paper ]
     });
     if(!document) {
-        throw "NOT_FOUND";
+        throw new ResponseError('Documentul nu există.', 'NOT_FOUND');
     }
     if(document.uploadedBy != user.id) {
-        throw "UNAUTHORIZED";
-    }
-    if(document.paper.isValid != null && user.type != 'teacher') {
-        throw "PAPER_CANNOT_CHANGE";
+        if(user.type == 'teacher') {
+            if(!paperRequiredDocuments.find(reqDoc => reqDoc.uploadBy == 'committee')) {
+                throw new ResponseErrorForbidden();
+            }
+            const committee = await document.paper.getCommittee({ scope: 'min' });
+            const isMember = committee.members.findIndex(member => member.user.id == user.id) >= 0;
+            if(!isMember) {
+                throw new ResponseErrorForbidden();
+            }
+        } else {
+            throw new ResponseErrorForbidden();
+        }
+    } 
+    if(user.type != 'teacher' && document.paper.isValid != null) {
+        throw new ResponseErrorForbidden();
     }
     // Check if document category can be modified
     if (user.type == 'student' && !(await checkFileSubmissionPeriod(document.category))) {
-        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+        throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
     }
+    
     await document.destroy();
     return true;
 }
@@ -53,7 +66,7 @@ export const getDocument = async (user: User, documentId: number) => {
         }]
     });
     if(!document) {
-        throw "NOT_FOUND";
+        throw new ResponseError('Documentul nu există.', 'NOT_FOUND');
     }
 
     // Admin and student can view all documents, teacher can only view 'paper_files' category
@@ -75,10 +88,10 @@ export const getDocument = async (user: User, documentId: number) => {
             })).length > 0;
             // If user is not in committee, it means they don't have access to the file
             if(!isInCommittee) {
-                throw "NOT_AUTHORIZED";
+                throw new ResponseErrorForbidden();
             }
         } else {
-            throw "NOT_AUTHORIZED";
+            throw new ResponseErrorForbidden();
         }
     }
     const extension = mime.extension(document.mimeType);
@@ -87,7 +100,7 @@ export const getDocument = async (user: User, documentId: number) => {
         return buffer;
     } catch(err) {
         console.log(err)
-        throw "INTERNAL_NOT_FOUND";
+        throw new ResponseErrorInternal();
     }
 }
 
@@ -102,7 +115,7 @@ export const generateDocument = (name, data) => {
         return generateLiquidationForm(data);
     }
 
-    throw "INVALID_DOCUMENT_NAME";
+    throw new ResponseErrorInternal('Nume de document invalid');
 }
 
 const generateSignUpForm = async (student) => {
@@ -143,12 +156,12 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     const sessionSettings = await SessionSettings.findOne();
 
     if (type == 'generated') { // do not allow "uploading" generated files
-        throw "BAD_REQUEST";
+        throw new ResponseErrorForbidden();
     }
     // Find the paper and check if it is valid
     const paper = await Paper.findOne({ where: { id: paperId } });
     if(paper.isValid != null && perspective != 'committee') {
-        throw "PAPER_CANNOT_CHANGE";
+        throw new ResponseErrorForbidden();
     }
     const requiredDocuments = await getPaperRequiredDocuments(paperId, sessionSettings);
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
@@ -156,21 +169,21 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     const requiredDoc = requiredDocuments
         .find(doc => doc.name == name && doc.uploadBy == perspective); // find uploaded doc name in required list
     if (!requiredDoc) { // if it is not then throw error
-        throw "INVALID_DOCUMENT";
+        throw new ResponseError('Document invalid.', 'INVALID_DOCUMENT');
     }
     if (!requiredDoc.types[type]) { // check if uploaded doc type is required
-        throw "INVALID_DOCUMENT_TYPE";
+        throw new ResponseError('Tip document invalid.', 'INVALID_DOCUMENT_TYPE');
     }
     const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(','); // get accepted mimeTypes
     if (!acceptedMimeTypes.includes(mimeType)) { // check if uploaded doc mimeType is in the accepted array
-        throw "INVALID_DOCUMENT_MIMETYPE";
+        throw new ResponseError('MIME type-ul documentului este invalid.', 'INVALID_DOCUMENT_MIMETYPE');
     }
 
     const category = requiredDoc.category;
 
     // Check if document category can be uploaded
-    if (!(await checkFileSubmissionPeriod(category, sessionSettings))) {
-        throw "NOT_IN_FILE_SUBMISSION_PERIOD";
+    if (perspective != 'committee' && !(await checkFileSubmissionPeriod(category, sessionSettings))) {
+        throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
     }
 
     const fileExtension = mime.extension(mimeType); // get the file extension
@@ -179,16 +192,16 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
 
     if (type == 'signed') { // if uploaded document type is signed
         if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
-            throw "MISSING_GENERATED_DOCUMENT";
+            throw new ResponseErrorForbidden('Nu puteți încărca un semnat fără generat.', "MISSING_GENERATED_DOCUMENT");
         }
         if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
-            throw "ALREADY_SIGNED";
+            throw new ResponseErrorForbidden('Documentul este deja semnat.', "ALREADY_SIGNED");
         }
     }
 
     if (type == 'copy') { // if uploaded document type is copy
         if (paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
-            throw "ALREADY_UPLOADED";
+            throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
         }
     }
 
@@ -200,7 +213,7 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     } catch (err) {
         console.log(err);
         await transaction.rollback(); // rollback if anything goes wrong
-        throw "INTERNAL_ERROR";
+        throw new ResponseErrorInternal();
     }
 
     return newDocument;
@@ -224,7 +237,7 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
     })
 
     if (!paper) { // if student has no paper
-        throw "UNAUTHORIZED";
+        throw new ResponseErrorForbidden();
     }
 
     if (!sessionSettings) { // if sessionSettings was not provided
@@ -301,14 +314,12 @@ const equalGroups = (first: Group, second: Group) => {
     return true;
 }
 
-/** Checks if user is the president or the secretary of the committee. 
- * @Throws "NOT_AUTHORIZED"
-*/
+/** Checks if user is the president or the secretary of the committee. */
 const checkCommitteeDocumentGenerationRight = (user: User, committee: Committee) => {
     let president = committee.members.find(member => member.committeeMember.role == 'president');
     let secretary = committee.members.find(member => member.committeeMember.role == 'secretary');
     if(president.id != user.teacher.id && secretary.id != user.teacher.id) {
-        throw "NOT_AUTHORIZED";
+        throw new ResponseErrorForbidden();
     }
     return true;
 }
@@ -461,5 +472,4 @@ export const generateCommitteeStudents = async () => {
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_students"), { committees, sessionSettings } );
     let fileBuffer: Buffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
     return fileBuffer;
-
 }
