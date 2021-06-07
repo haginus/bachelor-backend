@@ -683,11 +683,19 @@ Specialization.init({
   },
   domainId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    unique: {
+      name: 'domainSpecializationNameUnique',
+      msg: 'Numele specializării trebuie să fie unic în domeniu.'
+    }
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique: {
+      name: 'domainSpecializationNameUnique',
+      msg: 'Numele specializării trebuie să fie unic în domeniu.'
+    }
   },
   studyYears: {
     type: DataTypes.INTEGER,
