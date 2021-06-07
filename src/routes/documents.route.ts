@@ -3,34 +3,31 @@ const router = express.Router();
 import * as DocumentController from '../controllers/document.controller';
 import { ResponseError, ResponseErrorUnauthorized } from '../util/util';
 import isLoggedIn from './middlewares/isLoggedIn';
+import isType from './middlewares/isType';
 
 router.use(isLoggedIn());
 
-router.get('/view', async (req, res, next) => {
+router.get('/view', (req, res, next) => {
     let { id } = req.query;
-    let buffer = await DocumentController.getDocument(req._user, +id)
+    DocumentController.getDocument(req._user, +id)
+        .then(buffer => res.send(buffer))
         .catch(err => next(err));
-    res.send(buffer);
 });
 
 router.post('/delete', async (req, res, next) => {
     let { id } = req.body;
-    await DocumentController.deleteDocument(req._user, +id)
+    DocumentController.deleteDocument(req._user, +id)
+        .then(result => res.json({ success: true }))
         .catch(err => next(err));
-    res.json({ success: true });
+    
 });
 
-router.get('/committee/:document', async (req, res, next) => {
+router.get('/committee/:document', isType(['admin', 'teacher']), async (req, res, next) => {
     try {
         const { document } = req.params;
         let { committeeId } = req.query;
         if(!document || !committeeId) {
             throw new ResponseError('Parametri lipsă.');
-        }
-
-        // Only teachers and admins can download.
-        if(!['admin', 'teacher'].includes(req._user.type)) {
-            throw new ResponseErrorUnauthorized();
         }
         let buffer: Buffer;
         switch(document) {
