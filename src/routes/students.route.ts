@@ -5,6 +5,7 @@ import fileUpload, { UploadedFile } from 'express-fileupload';
 import { ResponseError } from '../util/util';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
+import isValidated from './middlewares/isValidated';
 
 router.use(isLoggedIn());
 router.use(isType('student'));
@@ -16,6 +17,8 @@ router.post('/validate', async function (req, res, next) {
         .catch(err => next(err));
     res.json({ success: true });
 });
+
+router.use(isValidated());
 
 router.get('/teacher-offers', async function (req, res, next) {
     let { topicIds, teacherName, onlyFree } = req.query;
