@@ -724,8 +724,16 @@ Topic.init({
   },
   name: {
     type: DataTypes.STRING,
-    unique: true,
-    allowNull: false
+    unique: {
+      name: 'uniqueTopicName',
+      msg: 'Numele temei trebuie să fie unic.'
+    },
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: 'Lipsește numele temei.'
+      }
+    }
   }
 },
 {
@@ -925,7 +933,8 @@ Offer.init({
     type: DataTypes.INTEGER,
     allowNull: false,
     validate: {
-      min: 0
+      min: 1,
+      isInt: true
     }
   }
 }, {
@@ -1383,7 +1392,8 @@ PaperGrade.init({
     allowNull: false,
     validate: {
       min: 1,
-      max: 10
+      max: 10,
+      isInt: true
     }
   },
   forPresentation: {
@@ -1391,7 +1401,8 @@ PaperGrade.init({
     allowNull: false,
     validate: {
       min: 1,
-      max: 10
+      max: 10,
+      isInt: true
     }
   }
 }, {
