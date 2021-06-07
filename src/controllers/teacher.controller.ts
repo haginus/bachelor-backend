@@ -5,23 +5,22 @@ import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
-import { ResponseError } from "../util/util";
+import { copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
 
 
-export const validateTeacher = async (uid) => {
-    return UserController.validateUser(uid);
+export const validateTeacher = async (user: User) => {
+    user.validated = true;
+    await user.save();
+    return user;
 }
 
 export const getTeacherByUserId = (uid) => {
     return Teacher.findOne({ where: { userId: uid } });
 }
 
-export const getOffers = async (uid) => {
-    const teacher = await Teacher.findOne({ where: { userId: uid } });
-    const offers = Offer.findAll({
-        where: {
-            teacherId: teacher.id
-        },
+export const getOffers = async (user: User) => {
+    const teacher = user.teacher;
+    const offers = await teacher.getOffers({
         attributes: {
             include: [
                 [ literals.countOfferApplications, "pendingApplications" ],
@@ -29,90 +28,72 @@ export const getOffers = async (uid) => {
             ]
         },
         include: [
-            {
-                model: Domain as typeof Model,
-            },
-            {
-                model: Topic as typeof Model,
-                through: {
-                    attributes: []
-                }
-            }
+            Offer.associations.domain,
+            Offer.associations.topics
         ]
-    })
-    return offers
+    });
+    return offers;
 }
 
-export const editOffer = async (uid, offerId, domainId, topicIds, limit) => {
-    let offer = await Offer.findOne({
-        where: { id: offerId },
+export const editOffer = async (user: User, offerId: number, domainId: number,
+    topicIds: number[], limit: number) => {
+    let offer = await Offer.findByPk(offerId, {
         attributes: {
             include: [
                 [literals.countOfferAcceptedApplications, "takenPlaces"]
             ]
         }
     });
-
-    const teacher = await getTeacherByUserId(uid);
-
-    if(offer.teacherId != teacher.id) {
-        throw "UNAUTHORIZED"
+    if(!offer) {
+        throw new ResponseError('Oferta nu există.');
     }
-
+    if(offer.teacherId != user.teacher.id) {
+        throw new ResponseErrorForbidden();
+    }
     if(offer.takenPlaces > limit) {
-        throw "LIMIT_LOWER_THAN_TAKEN_PLACES"
+        throw new ResponseErrorForbidden('Nu puteți seta o limită mai mare decât numărul de locuri deja ocupat.',
+            'LIMIT_LOWER_THAN_TAKEN_PLACES');
     }
-
-    let topics = await Topic.findAll({
-        where: {
-            id: {
-                [Op.in]: topicIds
-            }
-        }
-    });
-
+    const transaction = await sequelize.transaction();
     try {
         offer.domainId = domainId;
         offer.limit = limit;
-        await offer.save();
-        await offer.setTopics(topics);
-    } catch(err) {
-        console.log(err)
-        throw "VALIDATION_ERROR";
-    }
-    return offer;
-}
-
-export const addOffer = async (uid, domainId, topicIds, limit) => {
-
-    if(limit < 1) {
-        throw "LIMIT_LOWER_THAN_1";
-    }
-
-    const teacher = await getTeacherByUserId(uid);
-
-    let topics = await Topic.findAll({
-        where: {
-            id: {
-                [Op.in]: topicIds
-            }
-        }
-    });
-
-    try {
-        const offer = await Offer.create({ domainId, limit, teacherId: teacher.id });
-        await offer.setTopics(topics);
+        await offer.save({ transaction });
+        await offer.setTopics(topicIds, { transaction });
+        await transaction.commit();
         return offer;
     } catch(err) {
-        console.log(err)
-        throw "VALIDATION_ERROR";
+        await transaction.rollback();
+        if(err instanceof ValidationError) {
+            throw new ResponseError('Domeniul sau temele nu există.');
+        }
+        else throw err;
     }
 }
 
-export const getApplications = async (uid, offerId, state) => {
-    const teacher = await getTeacherByUserId(uid);
+export const addOffer = async (user: User, domainId: number, topicIds: number[], limit: number) => {
+    if(limit < 1) {
+        throw new ResponseError('Limita nu poate fi mai mică decât 1.', 'LIMIT_LOWER_THAN_1');
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        const offer = await Offer.create({ domainId, limit, teacherId: user.teacher.id }, { transaction });
+        await offer.setTopics(topicIds, { transaction });
+        await transaction.commit();
+        return offer;
+    } catch(err) {
+        await transaction.rollback();
+        if(err instanceof ValidationError) {
+            throw new ResponseError('Domeniul sau temele nu există.');
+        }
+        else throw err;
+    }
+}
+
+export const getApplications = async (user: User, offerId: number, state: string) => {
+    const teacher = user.teacher;
     const offerIdFilter = offerId ? { id: offerId } : {}
-    let stateFilter;
+    let stateFilter: { accepted?: boolean | null };
     switch(state) {
         case 'accepted':
             stateFilter = { accepted: true }
@@ -134,18 +115,14 @@ export const getApplications = async (uid, offerId, state) => {
         include: [
             {
                 required: true,
-                model: Offer as typeof Model,
+                association: Application.associations.offer,
                 where: {
                     teacherId: teacher.id,
                     ...offerIdFilter
                 },
                 include: [
-                    {
-                        model: Domain as typeof Model
-                    },
-                    {
-                        model: Topic as typeof Model
-                    }
+                    Offer.associations.domain,
+                    Offer.associations.topics
                 ],
                 attributes: {
                     include: [
@@ -154,11 +131,10 @@ export const getApplications = async (uid, offerId, state) => {
                 }
             },
             {
-                model: Student as typeof Model,
-                include: [{
-                    model: User as typeof Model,
-                    attributes: ["id", "firstName", "lastName"]
-                }]
+                association: Application.associations.student,
+                include: [
+                    User.scope('min')
+                ]
             },
         ],
         order: [
@@ -166,78 +142,64 @@ export const getApplications = async (uid, offerId, state) => {
         ],
     });
 
-    result = JSON.parse(JSON.stringify(result)).map(application => {
+    result = copyObject<any>(result).map(application => {
         application.student = application.student.user;
         return application;
-    })
+    });
 
     return result;
 }
 
-export const getApplication = (id) => {
+const getApplication = (id: number) => {
     return Application.findOne({ 
         where: { id },
-        include: [{
-            model: Offer as typeof Model
-        },
-        {
-            model: Student as typeof Model,
-            include: [
-                {
-                    model: User as typeof Model,
-                    attributes: ["id", "firstName", "lastName", "email"]
-                }
-            ]
-        }]
+        include: [
+            Application.associations.offer,
+            {
+                association: Application.associations.student,
+                include: [
+                    User.scope('min')
+                ]
+            }
+        ]
     });
 }
 
-export const declineApplication = async (user, applicationId) => {
-    const teacher = await getTeacherByUserId(user.id);
-
+export const declineApplication = async (user: User, applicationId: number) => {
     let application = await getApplication(applicationId);
     if(!application) {
-        throw "MISSING_APPLICATION"
+        throw new ResponseError('Cererea nu a fost găsită.', 'MISSING_APPLICATION');
     }
-    if(application.offer.teacherId != teacher.id) {
-        throw "UNAUTHORIZED"
+    if(application.offer.teacherId != user.teacher.id) {
+        throw new ResponseErrorForbidden();
     }
-
     if(application.accepted != null) {
-        throw "NOT_ALLOWED"
+        throw new ResponseErrorForbidden();
     }
-
     application.accepted = false;
-
     await application.save();
-
     Mailer.sendRejectedApplicationEmail(application.student.user, user, application);
     return { success: true }
 }
 
-export const acceptApplication = async (user, applicationId) => {
-    const teacher = await getTeacherByUserId(user.id);
-
+export const acceptApplication = async (user: User, applicationId: number) => {
     let application = await getApplication(applicationId);
     if(!application) {
         throw new ResponseError("Cererea nu există.", "MISSING_APPLICATION", 401);
     }
-    if(application.offer.teacherId != teacher.id) {
+    if(application.offer.teacherId != user.teacher.id) {
         throw new ResponseError("Cererea nu vă aparține.", "UNAUTHORIZED", 403);
     }
-
     if(application.accepted != null) {
         throw new ResponseError("Cererea a fost deja acceptată sau respinsă.", "NOT_ALLOWED", 401);
     }
-
     const takenPlaces = await Application.count({
         where: { offerId: application.offerId, accepted: true }
-    })
+    });
 
     if(takenPlaces + 1 > application.offer.limit) {
-        throw "LIMIT_REACHED"
+        throw new ResponseError("Limita ofertei a fost deja atinsă.", "LIMIT_REACHED", 403);
     }
-
     application.accepted = true;
     const transaction = await sequelize.transaction();
     try {
@@ -253,14 +215,14 @@ export const acceptApplication = async (user, applicationId) => {
         // CREATE PAPER
         const { title, description, studentId } = application;
         const paper = await Paper.create({
-            title, description, studentId, teacherId: teacher.id, type: domain.type
+            title, description, studentId, teacherId: user.teacher.id, type: domain.type
         }, { transaction });
         const topicIds = application.offer.topics.map(topic => topic.id);
         await paper.setTopics(topicIds, { transaction });
         await transaction.commit();
     } catch(err) {
         await transaction.rollback();
-        throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 500);
+        throw err;
     }
 
     Mailer.sendAcceptedApplicationEmail(application.student.user, user, application);
@@ -309,10 +271,10 @@ export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name
 export const removePaper = async (user: User, paperId: number): Promise<boolean> => {
     const paper = await Paper.findOne({ where: { id: paperId } });
     if(!paper) {
-        throw "PAPER_NOT_FOUND";
+        throw new ResponseErrorForbidden();
     }
     if(paper.teacherId != user.teacher.id) {
-        throw "UNAUTHORIZED";
+        throw new ResponseErrorForbidden();
     }
     const studentId = paper.studentId;
     const transaction = await sequelize.transaction();
@@ -324,12 +286,12 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
         // Get student data to send email
         let student = await User.findOne({
             include: [{ association: User.associations.student, required: true, where: { id: studentId } }]
-        })
+        });
         Mailer.sendRemovedPaperNotice(student, user);
         await transaction.commit();
     } catch(err) {
         await transaction.rollback();
-        throw "INTERNAL_ERROR";
+        throw err;
     }
     return true;
 }
@@ -357,7 +319,7 @@ export const getCommitteee = async (user: User, committeeId: number) => {
     if(committee.members.findIndex(member => member.id == user.teacher?.id) < 0) {
         throw "TEACHER_NOT_IN_COMMITTEE";
     }
-    let resp: any = JSON.parse(JSON.stringify(committee));
+    let resp: any = copyObject(committee);
     
     resp.members = resp.members.map(member => {
         let parsedMember: any = { ...member }
@@ -378,25 +340,22 @@ export const getCommitteee = async (user: User, committeeId: number) => {
 }
 
 export const gradePaper = async (user: User, paperId: number, forPaper: number, forPresentation: number) => {
-    const paper = await Paper.findOne(
-        { where: { id: paperId },
-        include: [{
-            model: Committee.scope("min")
-        }]
+    const paper = await Paper.findByPk(paperId, {
+        include: [ Committee.scope("min") ]
     });
     if(!paper) {
-        throw "PAPER_NOT_FOUND";
+        throw new ResponseErrorForbidden();
     }
     // Check if teacher is in the committee the paper is assigned to and they have right to grade
     if(paper.committee.members.findIndex(member => 
         member.id == user.teacher.id && member.committeeMember.role != 'secretary') < 0) {
-        throw "NOT_ALLOWED";
+        throw new ResponseErrorForbidden();
     }
     try {
         await PaperGrade.upsert({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
         return true;
     } catch(err) {
-        throw "BAD_REQUEST";
+        throw new ResponseError('Notele trebuie să fie întregi de la 1 la 10.');
     }
 }
 
@@ -407,10 +366,10 @@ export const markGradesAsFinal = async (user: User, committeeId: number) => {
     }
     const member = committee.members.find(member => member.id == user.teacher.id);
     if(!member || !['president', 'secretary'].includes(member.committeeMember.role)) {
-        throw new ResponseError("Nu aveți acest drept.", "UNAUTHORIZED", 403);
+        throw new ResponseErrorForbidden();
     }
     if(committee.finalGrades) {
-        throw new ResponseError("Notele au fost deja marcate drept finale.", "ALREADY_MARKED", 401);
+        throw new ResponseErrorForbidden("Notele au fost deja marcate drept finale.", "ALREADY_MARKED");
     }
     committee.finalGrades = true;
     await committee.save();

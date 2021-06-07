@@ -10,7 +10,7 @@ router.use(isLoggedIn());
 router.use(isType('teacher'));
 
 router.post('/validate', function (req, res, next) {
-    TeacherController.validateTeacher(req._user.id)
+    TeacherController.validateTeacher(req._user)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
@@ -18,21 +18,21 @@ router.post('/validate', function (req, res, next) {
 router.use(isValidated());
 
 router.get('/offers', (req, res, next) => {
-    TeacherController.getOffers(req._user.id)
+    TeacherController.getOffers(req._user)
         .then(offers => res.json(offers))
         .catch(err => next(err));
 });
 
 router.post('/offers/edit', (req, res, next) => {
     const { id, domainId, topicIds, limit } = req.body;
-    TeacherController.editOffer(req._user.id, id, domainId, topicIds, limit)
+    TeacherController.editOffer(req._user, id, domainId, topicIds, limit)
         .then(offer => res.json(offer))
         .catch(err => next(err));
 });
 
 router.post('/offers/add', (req, res, next) => {
     const { domainId, topicIds, limit } = req.body;
-    TeacherController.addOffer(req._user.id, domainId, topicIds, limit)
+    TeacherController.addOffer(req._user, domainId, topicIds, limit)
         .then(offer => res.json(offer))
         .catch(err => next(err));
 });
@@ -46,7 +46,7 @@ router.get('/applications', (req, res, next) => {
     if(!['accepted', 'declined', 'pending'].includes(state)) {
         state = null;
     }
-    TeacherController.getApplications(req._user.id, offerId, state)
+    TeacherController.getApplications(req._user, offerId, state)
         .then(applications => res.json(applications))
         .catch(err => next(err));
 });
