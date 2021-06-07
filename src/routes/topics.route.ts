@@ -1,41 +1,29 @@
 import express from 'express'
 const router = express.Router()
 import * as TopicController from '../controllers/topic.controller'
-import { ResponseError, ResponseErrorUnauthorized } from '../util/util'
 import isLoggedIn from './middlewares/isLoggedIn';
+import isType from './middlewares/isType';
 
 router.use(isLoggedIn());
 
-router.get('/', async function (req, res, next) {
-    const topics = await TopicController.getTopics()
+router.get('/', function (req, res, next) {
+    TopicController.getTopics()
+        .then(topics => res.json(topics))
         .catch(err => next(err));
-    res.json(topics);
 });
 
-router.post('/add', async function (req, res, next) {
-    if(!['admin', 'teacher'].includes(req._user.type)) {
-        return next(new ResponseErrorUnauthorized());
-    }
+router.post('/add', isType(['admin', 'teacher']), function (req, res, next) {
     const { name } = req.body;
-    if(!name || typeof name != "string") {
-        return next(new ResponseError('Numele temei lipsește.'));
-    }
-    const topic = await TopicController.addTopic(name)
+    TopicController.addTopic(name)
+        .then(topic => res.json(topic))
         .catch(err => next(err));
-    return res.json(topic);
 });
 
-router.post('/add-bulk', async function (req, res, next) {
-    if(!['admin', 'teacher'].includes(req._user.type)) {
-        return next(new ResponseErrorUnauthorized());
-    }
+router.post('/add-bulk', isType(['admin', 'teacher']), async (req, res, next) => {
     const { names } = req.body;
-    if(!names || !Array.isArray(names)) {
-        return next(new ResponseError('Numele temelor lipsesc.'));
-    }
-    const topics = await TopicController.addTopics(names)
+    TopicController.addTopics(names)
+        .then(topics => res.json(topics))
         .catch(err => next(err));
-    return res.json(topics);
 });
 
 export default router
