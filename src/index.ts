@@ -3,7 +3,6 @@ import *  as _ from './custom'
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import * as AuthController from './controllers/auth.controller';
-import * as UserController from './controllers/user.controller';
 import authRoutes from './routes/auth.route';
 import studentRoutes from './routes/students.route';
 import teacherRoutes from './routes/teacher.route';
@@ -15,6 +14,8 @@ import * as Mailer from './alerts/mailer';
 import { ResponseError } from './util/util';
 import { ValidationError } from 'sequelize';
 
+import isLoggedIn from './routes/middlewares/isLoggedIn';
+import errorHandler from './routes/middlewares/errorHandler';
 
 const app = express();
 app.use(cors())
@@ -31,7 +32,7 @@ const delay = async function(req, res, next) {
 if(config.MAKE_DELAY)
   app.use(delay);
 
-app.get('/user/info', AuthController.isLoggedIn, async (req, res) => {
+app.get('/user/info', isLoggedIn(), async (req, res) => {
   let user = req._user;
   res.json(user);
 });
@@ -42,16 +43,7 @@ app.use('/teacher', teacherRoutes);
 app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
-
-app.use(function (err, req, res, next) {
-  if(err instanceof ValidationError) {
-    err = new ResponseError(err.errors[0].message);
-  } else if(!(err instanceof ResponseError)) {
-    console.log(err);
-    err = new ResponseError('A apărut o eroare. Contactați administratorul.', 'INTERNAL_ERROR', 500);
-  }
-  res.status(err.httpStatusCode).json(err);
-})
+app.use(errorHandler());
 
 // start app
 app.listen(config.PORT, function () {

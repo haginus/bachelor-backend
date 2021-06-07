@@ -6,9 +6,8 @@ import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../alerts/mailer';
 import { WhereOptions } from "sequelize/types";
-import { NextFunction, Request, Response } from "express";
 
-const getUser = async (where: WhereOptions<User>) => {
+export const getUser = async (where: WhereOptions<User>) => {
     return User.findOne({ 
         where, 
         include: [
@@ -99,48 +98,6 @@ export const resetPassword = async (email: string) => {
         }
     }
     return { success: true };
-}
-
-export const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
-    let token = req.header('Authorization');
-    if (!token || !token.startsWith('Bearer ')) {
-        next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
-    }
-    
-    token = token.slice(7).trimStart();  // get the value of the token
-    try {
-        const payload = jwt.verify(token, config.SECRET_KEY);
-        const { id } = <any> payload; 
-        let user = await getUser({ id });
-        req._user = user;
-        next();
-    } catch(err) {
-        next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
-    }
-}
-
-export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    if(req._user?.type !== "admin") {
-        next(new ResponseErrorUnauthorized());
-    } else {
-        next();
-    }
-}
-
-export const isStudent = async (req: Request, res: Response, next: NextFunction) => {
-    if(req._user.type !== "student") {
-        next(new ResponseErrorUnauthorized());
-    } else {
-        next();
-    }
-}
-
-export const isTeacher = async (req: Request, res: Response, next: NextFunction) => {
-    if(req._user.type !== "teacher") {
-        next(new ResponseErrorUnauthorized());
-    } else {
-        next();
-    }
 }
 
 export const getSessionSettings = () => {

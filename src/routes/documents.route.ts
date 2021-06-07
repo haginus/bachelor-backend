@@ -1,10 +1,10 @@
 import express from 'express';
 const router = express.Router();
 import * as DocumentController from '../controllers/document.controller';
-import * as AuthController from '../controllers/auth.controller';
 import { ResponseError, ResponseErrorUnauthorized } from '../util/util';
+import isLoggedIn from './middlewares/isLoggedIn';
 
-router.use(AuthController.isLoggedIn);
+router.use(isLoggedIn());
 
 router.get('/view', async (req, res, next) => {
     let { id } = req.query;

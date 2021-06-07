@@ -1,12 +1,13 @@
 import express from 'express';
 const router = express.Router();
 import fileUpload, { UploadedFile } from 'express-fileupload';
-import { isLoggedIn, isAdmin } from '../controllers/auth.controller';
 import * as AdminController from '../controllers/admin.controller';
 import { ResponseError } from '../util/util';
+import isLoggedIn from './middlewares/isLoggedIn';
+import isType from './middlewares/isType';
 
-router.use(isLoggedIn);
-router.use(isAdmin);
+router.use(isLoggedIn());
+router.use(isType('admin'));
 
 
 router.get('/stats', async function (req, res, next) {

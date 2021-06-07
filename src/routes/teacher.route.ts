@@ -1,11 +1,12 @@
 import express from 'express'
 const router = express.Router()
 import fileUpload, { UploadedFile } from 'express-fileupload';
-import * as AuthController from '../controllers/auth.controller';
 import * as TeacherController from '../controllers/teacher.controller';
+import isLoggedIn from './middlewares/isLoggedIn';
+import isType from './middlewares/isType';
 
-router.use(AuthController.isLoggedIn);
-router.use(AuthController.isTeacher);
+router.use(isLoggedIn());
+router.use(isType('teacher'));
 
 router.post('/validate', async function (req, res) {
     try {

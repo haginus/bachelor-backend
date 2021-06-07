@@ -1,10 +1,10 @@
 import express from 'express'
 const router = express.Router()
-import * as AuthController from '../controllers/auth.controller'
 import * as TopicController from '../controllers/topic.controller'
 import { ResponseError, ResponseErrorUnauthorized } from '../util/util'
+import isLoggedIn from './middlewares/isLoggedIn';
 
-router.use(AuthController.isLoggedIn)
+router.use(isLoggedIn());
 
 router.get('/', async function (req, res, next) {
     const topics = await TopicController.getTopics()
