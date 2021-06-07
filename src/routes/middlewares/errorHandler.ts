@@ -3,7 +3,7 @@ import { ValidationError } from "sequelize";
 import { ResponseError } from "../../util/util";
 
 export default function () {
-    return async function (err: Error, req: Request, res: Response, next: NextFunction) {
+    return function (err: Error, req: Request, res: Response, next: NextFunction) {
         let shownError!: ResponseError;
         if (err instanceof ValidationError) {
             shownError = new ResponseError(err.errors[0].message);
