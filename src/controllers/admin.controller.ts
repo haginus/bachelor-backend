@@ -630,7 +630,7 @@ export interface GetPapersFilter {
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
     page?: number, pageSize?: number, minified?: boolean) => {
     let sortArray: OrderItem = ['id', 'ASC']
-    if (['id', 'title', 'type'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+    if (['id', 'title', 'type', 'committeeId'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
         sortArray = [sort, order];
     }
 
