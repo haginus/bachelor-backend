@@ -1451,6 +1451,24 @@ Paper.addScope('grades', {
 });
 
 sequelize.sync()
-  .then(() => console.log('Database has synced correctly.'))
+  .then(() => {
+    SessionSettings.findOrCreate(
+      {
+        where: { lock: 'X' },
+        defaults: { 
+          lock: 'X',
+          sessionName: 'Sesiune nouă',
+          applyStartDate: new Date(),
+          applyEndDate: new Date(),
+          fileSubmissionStartDate: new Date(),
+          fileSubmissionEndDate: new Date(),
+          paperSubmissionEndDate: new Date(),
+          allowGrading: false,
+          currentPromotion: new Date().getFullYear().toString()
+      }
+    }).then(() => {
+      console.log('Database has synced correctly.');
+    });
+  })
   .catch(error => console.log('This error occured', error));
 
