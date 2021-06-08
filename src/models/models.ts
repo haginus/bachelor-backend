@@ -951,7 +951,7 @@ Offer.init({
   modelName: "offer",
   defaultScope: {
     include: {
-      model: Topic as typeof Model,
+      model: Topic,
       through: {
         attributes: []
       }
@@ -1348,8 +1348,8 @@ Committee.init({
         as: 'members',
         include: [User.scope("min")]
       },
-      Paper as typeof Model,
-      Domain as typeof Model
+      Paper,
+      Domain
     ] 
   }
 });
@@ -1419,7 +1419,7 @@ PaperGrade.init({
   modelName: "paperGrade",
   defaultScope: {
     include: [{
-      model: <typeof Model>Teacher,
+      model: Teacher,
       include: [User.scope("min")]
     }]
   }

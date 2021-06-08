@@ -79,7 +79,7 @@ export const getDocument = async (user: User, documentId: number) => {
         if(user.type == 'teacher' && document.category == 'paper_files') {
             let isInCommittee: boolean = (await user.teacher.getCommittees({
                 include: [{
-                    model: Paper as typeof Model,
+                    model: Paper,
                     required: true,
                     where: {
                         id: document.paper.id
@@ -228,8 +228,8 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
             {
                 association: Paper.associations.student,
                 include: [
-                    StudentExtraData as typeof Model,
-                    Domain as typeof Model
+                    StudentExtraData,
+                    Domain
                 ]
             }
         ],
@@ -332,8 +332,10 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
                 model: Paper.scope(['teacher', 'grades']),
                 include: [{
                     association: Paper.associations.student,
-                    include: [User.scope('min'), <typeof Model>StudentExtraData,
-                    <typeof Model>Specialization, <typeof Model>Domain]
+                    include: [
+                        User.scope('min'), StudentExtraData,
+                        Specialization, Domain
+                    ]
                 }]
             }
         ]
@@ -378,8 +380,10 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
                 model: Paper.scope(['teacher', 'grades']),
                 include: [{
                     association: Paper.associations.student,
-                    include: [User.scope('min'), <typeof Model>StudentExtraData,
-                    <typeof Model>Specialization, <typeof Model>Domain]
+                    include: [
+                        User.scope('min'), StudentExtraData,
+                        Specialization, Domain
+                    ]
                 }]
             }
         ]

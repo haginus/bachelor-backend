@@ -238,17 +238,17 @@ export const getStudentPapers = async (user: User) => {
         scope: ['committee', 'topics'],
         include: [
             {
-                model: Document as typeof Model,
+                model: Document,
                 required: false,
                 where: { category: 'paper_files' }
             },
             {
                 required: true,
-                model: Student as typeof Model,
+                model: Student,
                 include: [
                     User.scope("min"),
-                    Domain as typeof Model,
-                    Specialization as typeof Model
+                    Domain,
+                    Specialization 
                 ]
             }
         ]
