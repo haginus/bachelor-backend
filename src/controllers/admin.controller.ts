@@ -521,6 +521,17 @@ const checkCommitteeComponence = (members) => {
     }
 }
 
+const _checkDomains = (domains: Domain[]) => {
+    if(domains.length == 0) {
+        throw new ResponseError('Comisia trebuie să aibă domenii.');
+    } else {
+        const sameType = domains.map(domain => domain.type).every(domainType => domainType == domains[0].type);
+        if(!sameType) {
+            throw new ResponseError('Domeniile comisiei trebuie să fie de același tip.');
+        }
+    }
+}
+
 export const addCommittee = async (name, domainsIds, members) => {
     // Will throw if the committee is badly formed
     checkCommitteeComponence(members);
@@ -533,6 +544,7 @@ export const addCommittee = async (name, domainsIds, members) => {
                 [Op.in]: domainsIds
             }
         }});
+        _checkDomains(domains);
         await committee.setDomains(domains, { transaction }); // set domains
         let committeeMembers = members.map(member => { // add the committee id
             return { ...member, committeeId: committee.id }
@@ -564,6 +576,7 @@ export const editCommittee = async (id, name, domainsIds, members) => {
                 [Op.in]: domainsIds
             }
         }});
+        _checkDomains(domains);
         await oldCommittee.setDomains(domains, { transaction }); // set domains
         await oldCommittee.setMembers([], { transaction }); // remove all the members in order to insert in bulk
         let committeeMembers = members.map(member => { // add the committee id
