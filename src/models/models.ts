@@ -42,6 +42,7 @@ export class Domain extends Model<DomainAttributes, DomainCreationAttributes> im
   public specializations?: Specialization[];
 
   public studentNumber?: number;
+  public students: Student[];
 
   public static associations: {
     specializations: Association<Domain, Specialization>;
