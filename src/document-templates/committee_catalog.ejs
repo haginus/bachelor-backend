@@ -48,20 +48,22 @@
 
 <html>
     <head>
-        <title>Catalog examen de licență</title>
+        <title>Catalog examen de finalizare</title>
     </head>
     <body>
         <% for(let i = 0; i < paperGroups.length; i++) {
             let group = paperGroups[i];
             let studyYears = parseInt(group[0].student.specialization.studyYears);
             let creditNumber = 60 * studyYears;
-            let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`
+            let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`;
+            let domainType = group[0].type;
+            let domainTypeString = domainType == 'bachelor' ? 'licență' : (domainType == 'master' ? 'disertație' : '');
             %>
             <div class="header-container">
                 <p class="col">
                     UNIVERSITATEA DIN BUCUREȘTI <br>
                     Facultatea de Matematică și Informatică	<br>
-                    Domeniul de licenţă: <%= group[0].student.domain.name %> <br>
+                    Domeniul de <%= domainTypeString %>: <%= group[0].student.domain.name %> <br>
                     Programul de studii/specializarea: <%= group[0].student.specialization.name %> <br>
                     Durata studiilor: <%= studyDurationString %> <br>
                     Număr credite: <%= creditNumber %> <br>
@@ -69,21 +71,21 @@
                     Promoția: <%= group[0].student.promotion %> 
                 </p>
                 <p class="col right">
-                    Examen de licență<br>
+                    Examen de <%= domainTypeString %><br>
                     Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
-                    Credite licență - 10
+                    Credite <%= domainTypeString %> - 10
                 </p>
             </div>
 
             <h1>
-                CATALOG EXAMEN DE LICENȚĂ <br>
-                Prezentarea și susținerea lucrării de licență
+                CATALOG EXAMEN DE <%= domainTypeString.toUpperCase() %> <br>
+                Prezentarea și susținerea lucrării de <%= domainTypeString %>
             </h1>
             <table>
                 <tr>
                     <th rowspan="2">Nr. crt.</th>
                     <th rowspan="2">Numele, inițiala tatălui și prenumele absolventului</th>
-                    <th rowspan="2">Titlul lucrării de licență și profesorul coordonator</th>
+                    <th rowspan="2">Titlul lucrării de <%= domainTypeString %> și profesorul coordonator</th>
                     <% for(let i = 0; i < committee.members.length; i++) {
                         let member = committee.members[i];
                         if(member.committeeMember.role == 'secretary') continue;

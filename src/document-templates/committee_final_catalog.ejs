@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>Catalog examen de licență</title>
+        <title>Catalog examen de finalizare</title>
     </head>
     <body>
         <% for(let i = 0; i < paperPromotionGroups.length; i++) {
@@ -9,12 +9,14 @@
             let studyYears = parseInt(first.student.specialization.studyYears);
             let creditNumber = 60 * studyYears;
             let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`
+            let domainType = first.type;
+            let domainTypeString = domainType == 'bachelor' ? 'licență' : (domainType == 'master' ? 'disertație' : '');
             %>
             <div class="header-container">
                 <p class="col">
                     UNIVERSITATEA DIN BUCUREȘTI <br>
                     Facultatea de Matematică și Informatică	<br>
-                    Domeniul de licenţă: <%= first.student.domain.name %> <br>
+                    Domeniul de <%= domainTypeString %>: <%= first.student.domain.name %> <br>
                     Programul de studii/specializarea: <%= first.student.specialization.name %> <br>
                     Durata studiilor: <%= studyDurationString %> <br>
                     Număr credite: <%= creditNumber %> <br>
@@ -22,13 +24,13 @@
                 </p>
                 <p class="col right v-align-b">
                     Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
-                    Proba: Prezentarea și susținerea<br>lucrării de licență - credite 10
+                    Proba: Prezentarea și susținerea<br>lucrării de <%= domainTypeString %> - credite 10
                 </p>
             </div>
 
             <h1>
                 CATALOG FINAL <br>
-                EXAMEN DE LICENȚĂ
+                EXAMEN DE <%= domainTypeString.toUpperCase() %>
             </h1>
             <% for(let j = 0; j < group.length; j++) {
                 let promotionItem = group[j];
@@ -39,7 +41,7 @@
                         <th>Nr. crt.</th>
                         <th>Numele, inițiala tatălui și prenumele absolventului</th>
                         <th>Anul înmatriculării</th>
-                        <th>Media examenului de licență</th>
+                        <th>Media examenului de <%= domainTypeString %></th>
                     </tr>
                     <% for(let k = 0; k < promotionItem.items.length; k++) {
                         let paper = promotionItem.items[k];

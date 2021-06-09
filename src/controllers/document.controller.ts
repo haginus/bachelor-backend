@@ -324,9 +324,8 @@ const checkCommitteeDocumentGenerationRight = (user: User, committee: Committee)
     return true;
 }
 
-export const generateCommitteeCatalog = async (user: User, committeId: number): Promise<Buffer> => {
-    const committee = await Committee.findOne({
-        where: { id: committeId },
+const getCommitteeForGeneration = (id: number) => {
+    return Committee.findByPk(id, {
         include: [
             {
                 model: Paper.scope(['teacher', 'grades']),
@@ -340,6 +339,10 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
             }
         ]
     });
+}
+
+export const generateCommitteeCatalog = async (user: User, committeId: number): Promise<Buffer> => {
+    const committee = await getCommitteeForGeneration(committeId);
     if(user.type == 'teacher') {
         checkCommitteeDocumentGenerationRight(user, committee);
     }
@@ -373,21 +376,7 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
 }
 
 export const generateCommitteeFinalCatalog = async (user: User, committeId: number): Promise<Buffer> => {
-    const committee = await Committee.findOne({
-        where: { id: committeId },
-        include: [
-            {
-                model: Paper.scope(['teacher', 'grades']),
-                include: [{
-                    association: Paper.associations.student,
-                    include: [
-                        User.scope('min'), StudentExtraData,
-                        Specialization, Domain
-                    ]
-                }]
-            }
-        ]
-    });
+    const committee = await getCommitteeForGeneration(committeId);
     if(user.type == 'teacher') {
         checkCommitteeDocumentGenerationRight(user, committee);
     }
