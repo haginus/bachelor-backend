@@ -17,7 +17,7 @@ export const getStoragePath = (fileName: string) => {
     return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
 }
 
-const getDocumentTemplatePath = (docName: string) => {
+export const getDocumentTemplatePath = (docName: string) => {
     let fileName: string = docName + '.ejs';
     return path.resolve(process.env.PWD, 'src', 'document-templates', fileName);
 }

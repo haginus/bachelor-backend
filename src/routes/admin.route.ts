@@ -3,6 +3,7 @@ const router = express.Router();
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import * as AdminController from '../controllers/admin.controller';
 import { ResponseError } from '../util/util';
+import { generateFinalReport } from '../util/final-report';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 
@@ -290,6 +291,14 @@ router.post('/session', async (req, res, next) => {
     await AdminController.changeSessionSettings(settings)
         .catch(err => next(err));
     res.json({ success: true });
+});
+
+router.get('/session/report', (req, res, next) => {
+    generateFinalReport()
+        .then(buffer => {
+            res.send(buffer);
+        })
+        .catch(err => next(err));
 });
 
 router.post('/session/new', async (req, res, next) => {

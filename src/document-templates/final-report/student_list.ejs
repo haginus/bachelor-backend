@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <title>Listă studenți - <%= domain.name %></title>
+    </head>
+    <body>
+        <h1>Listă studenți</h1>
+        <h1>Domeniul <%= domain.name %></h1>
+        <table>
+            <tr>
+                <th>Nr. crt.</th>
+                <th>Nume</th>
+                <th>Prenume</th>
+                <th>Specializare</th>
+                <th>Grupă</th>
+                <th>Nume lucrare</th>
+                <th>Profesor coordonator</th>
+                <th>Notă lucrare</th>
+            </tr>
+            <% for(let i = 0; i < domain.students.length; i++) { 
+                let student = domain.students[i];
+                let paper = student.paper;
+            %>
+                <tr>
+                    <td><%= i + 1 %>.</td>
+                    <td><%= student.user.lastName %></td>
+                    <td><%= student.user.firstName %></td>
+                    <td><%= student.specialization.name %></td>
+                    <td><%= student.group %></td>
+                    <td><%= student.paper?.title %></td>
+                    <td><%= student.paper?.teacher.user.fullName %></td>
+                    <td><%= student.paper?.gradeAverage %></td>
+                </tr>
+            <% } %>
+        </table>
+    </body>
+
+    <style>
+        h1 {
+            font-size: 18pt;
+            text-align: center;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        td {
+            text-align: center;
+        }
+    </style>
+</html>
