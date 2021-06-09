@@ -68,7 +68,7 @@ const generateStudentList = async () => {
     const domains = await Domain.findAll({
         include: [{
             model: Student,
-            include: [User, StudentExtraData, Specialization, Paper.scope(['teacher', 'grades'])]
+            include: [User, StudentExtraData, Specialization, Paper.scope(['teacher', 'grades', 'committee'])]
         }]
     });
     return Promise.all(domains.map(async domain => {
@@ -85,7 +85,7 @@ const getStudentDataAndDocs = async () => {
             Domain,
             StudentExtraData,
             Specialization,
-            { model: Paper.scope(['documents', 'teacher', 'committee']), required: true }
+            { model: Paper.scope(['documents', 'teacher', 'committee', 'grades']), required: true }
         ]
     });
     const sessionSettings = await SessionSettings.findOne();

@@ -12,13 +12,16 @@
                 <th>Prenume</th>
                 <th>Specializare</th>
                 <th>Grupă</th>
-                <th>Nume lucrare</th>
+                <th>Titlu lucrare</th>
                 <th>Profesor coordonator</th>
+                <th>Comisie</th>
                 <th>Notă lucrare</th>
+                <th>Date suplimentare</th>
             </tr>
             <% for(let i = 0; i < domain.students.length; i++) { 
                 let student = domain.students[i];
                 let paper = student.paper;
+                let dataLink = `${student.group}_${student.user.fullName}/Date.json`
             %>
                 <tr>
                     <td><%= i + 1 %>.</td>
@@ -28,7 +31,11 @@
                     <td><%= student.group %></td>
                     <td><%= student.paper?.title %></td>
                     <td><%= student.paper?.teacher.user.fullName %></td>
+                    <td><%= student.paper?.committee.name %></td>
                     <td><%= student.paper?.gradeAverage %></td>
+                    <td>
+                        <a href="<%= dataLink %>" target="_blank">Vezi datele</a>
+                    </td>
                 </tr>
             <% } %>
         </table>
