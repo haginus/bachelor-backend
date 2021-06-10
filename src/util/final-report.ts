@@ -7,6 +7,7 @@ import fs from 'fs';
 import mime from 'mime-types';
 import { DOMAIN_TYPES } from './constants';
 import { copyObject } from './util';
+import { config } from '../config/config';
 
 
 export const generateFinalReport = (): Promise<Buffer> => {
@@ -17,7 +18,7 @@ export const generateFinalReport = (): Promise<Buffer> => {
         bufferStream.on('close', () => resolve(Buffer.concat(buffers)));
 
         const archive = archiver('zip', {
-            zlib: { level: 9 } 
+            zlib: { level: config.COMPRESSION_LEVEL } 
         });
         const committeeDocs = await getCommitteeDocuments();
         archive.append(committeeDocs.committeeCompositions, { name: `Comisii/Componeță comisii.pdf` });

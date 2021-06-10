@@ -9,6 +9,7 @@ export const config = {
     MAKE_DELAY: process.env.MAKE_DELAY,
     PORT: process.env.PORT,
     WEBSITE_URL: process.env.WEBSITE_URL,
+    COMPRESSION_LEVEL: Number(process.env.COMPRESSION_LEVEL) || 0,
     mailer: {  
         host: process.env.MAILER_HOST,
         port: process.env.MAILER_PORT,
