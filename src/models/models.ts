@@ -21,7 +21,9 @@ import {
   HasOneSetAssociationMixin
 } from "sequelize";
 
-export const sequelize = new Sequelize(config.DATABASE_STRING);
+export const sequelize = new Sequelize(config.DATABASE_STRING, {
+  logging: !config.DISABLE_SEQUELIZE_LOGGING
+});
 
 export type DomainType = 'bachelor' | 'master';
 
