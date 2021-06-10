@@ -8,7 +8,7 @@ export default function() {
     return async function (req: Request, res: Response, next: NextFunction) {
         let token = req.header('Authorization');
         if (!token || !token.startsWith('Bearer ')) {
-            next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
+            return next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
         }
         
         token = token.slice(7).trimStart();  // get the value of the token
