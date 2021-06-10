@@ -4,6 +4,9 @@
 # tsc build
 /build
 
+# env
+.env
+
 # dependencies
 /node_modules
 
@@ -42,4 +45,3 @@ testem.log
 .DS_Store
 Thumbs.db
 debug.log
-config/config.js
