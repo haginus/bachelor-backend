@@ -12,9 +12,9 @@ router.use(isType('admin'));
 
 
 router.get('/stats', function (req, res, next) {
-    const stats = AdminController.getStats()
+    AdminController.getStats()
+        .then(stats => res.json(stats))
         .catch(err => next(err));
-    res.json(stats);
 });
 
 // STUDENTS
