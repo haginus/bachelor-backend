@@ -2,16 +2,15 @@ version: '3.8'
 
 services:
   bachelor-backend:
-    image: haginus/bachelor-backend
-    # build:
-    #     context: .
-    #     dockerfile: ./docker/Dockerfile
+    build:
+        context: .
+        dockerfile: ./docker/Dockerfile
     depends_on:
-      - ogor-db
+      - bachelor-db
     volumes:
       - .:/usr/src/ogor-backend/
     ports:
-      - 8000:8000
+      - 3000:3000
 
   bachelor-db:
     image: mysql
