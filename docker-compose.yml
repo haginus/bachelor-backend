@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  bachelor-backend:
+    image: haginus/bachelor-backend
+    # build:
+    #     context: .
+    #     dockerfile: ./docker/Dockerfile
+    depends_on:
+      - ogor-db
+    volumes:
+      - .:/usr/src/ogor-backend/
+    ports:
+      - 8000:8000
+
+  bachelor-db:
+    image: mysql
+    ports:
+        - "3308:3306"
+    environment:
+        MYSQL_ROOT_PASSWORD: 12345678
+        MYSQL_DATABASE: bachelor
+
