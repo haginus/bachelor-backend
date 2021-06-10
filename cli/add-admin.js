@@ -61,7 +61,7 @@ util.connection.on('connect', () => {
             .execute("INSERT INTO users (firstName, lastName, email, password, validated, type) VALUES (?, ?, ?, ?, 1, 'admin');",
                 [firstName, lastName, email, password])
                 .on('result', () => {
-                    console.log('Admin added succesfully.')
+                    console.log('Admin added successfully.')
                     util.connection.end();
                 })
                 .on('error', (err) => {

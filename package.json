@@ -26,7 +26,8 @@
     "start:dev": "nodemon src/index.ts",
     "build": "tsc",
     "postbuild": "cp -R src/document-templates build/document-templates && cp -R src/alerts/mail-templates build/alerts/mail-templates",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "addAdmin": "node cli/add-admin.js"
   },
   "repository": {
     "type": "git",
