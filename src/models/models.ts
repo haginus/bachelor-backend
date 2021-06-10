@@ -213,6 +213,8 @@ export class Student extends Model<StudentAttributes, StudentCreationAttributes>
   public setUser!: BelongsToSetAssociationMixin<User, number>;
   public getPaper!: HasOneGetAssociationMixin<Paper>;
   public createPaper!: HasOneCreateAssociationMixin<Paper>;
+  public getTopics!: HasManyGetAssociationsMixin<Topic>;
+
   public getStudentExtraDatum!: HasOneGetAssociationMixin<StudentExtraData>
 
   public setTopics: HasManySetAssociationsMixin<Topic, number>

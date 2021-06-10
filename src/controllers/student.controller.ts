@@ -138,8 +138,9 @@ export class StudentController {
     }
 
     public static getSuggestedTeacherOffers = async (user: User) => {
+        const topics = await user.student.getTopics();
         const filters = {
-            topicIds: user.student.topics.map(topic => topic.id)
+            topicIds: topics.map(topic => topic.id)
         }
         return StudentController.getTeacherOffers(user, filters);
     }
