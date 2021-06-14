@@ -7,10 +7,15 @@
             <div class="card-content">
                 <h2>Salutare, <%= teacherUser.firstName %> <%= teacherUser.lastName %>!</h2>
                 <p>
-                    Aveți o noută cerere de asociere de la <%= studentUser.firstName %> <%= studentUser.lastName %>!
+                    Aveți o nouă cerere de asociere de la <%= studentUser.firstName %> <%= studentUser.lastName %>!
                     <br><br>
                     <b><%= application.title %></b><br>
                     <i><%= application.description %></i>
+                    <% if(application.usedTechnologies) { %> 
+                        <br>
+                        <span>Tehnologii folosite: </span>
+                        <i><%= application.usedTechnologies %></i>
+                    <% } %>
                     <br><br>
                     Răspundeți cererii de asociere accesând link-ul de mai jos:
                 </p>
