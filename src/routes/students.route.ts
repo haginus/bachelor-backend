@@ -11,16 +11,16 @@ router.use(isLoggedIn());
 router.use(isType('student'));
 
 
-router.post('/validate', async function (req, res, next) {
+router.post('/validate', function (req, res, next) {
     const { topics } = req.body;
-    await StudentController.validateStudent(req._user, topics)
+    StudentController.validateStudent(req._user, topics)
+        .then(_ => res.json(res.json({ success: true })))
         .catch(err => next(err));
-    res.json({ success: true });
 });
 
 router.use(isValidated());
 
-router.get('/teacher-offers', async function (req, res, next) {
+router.get('/teacher-offers', function (req, res, next) {
     let { topicIds, teacherName, onlyFree } = req.query;
     let topicIdsArray: number[];
     try {
@@ -38,79 +38,79 @@ router.get('/teacher-offers', async function (req, res, next) {
         topicIds: topicIdsArray,
         onlyFree: onlyFree == 'true'
     }
-    let teacherOffers = await StudentController.getTeacherOffers(req._user, filters)
+    StudentController.getTeacherOffers(req._user, filters)
+        .then(teacherOffers => res.json(teacherOffers))
         .catch(err => next(err));
-    res.json(teacherOffers);
 });
 
-router.get('/teacher-offers/suggested', async function (req, res, next) {
-    let teacherOffers = await StudentController.getSuggestedTeacherOffers(req._user)
+router.get('/teacher-offers/suggested', function (req, res, next) {
+    StudentController.getSuggestedTeacherOffers(req._user)
+        .then(teacherOffers => res.json(teacherOffers))
         .catch(err => next(err));
-    res.json(teacherOffers); 
 });
 
-router.post('/teacher-offers/apply', async function (req, res, next) {
+router.post('/teacher-offers/apply', function (req, res, next) {
     const { offerId, title, description, usedTechnologies } = req.body;
-    await StudentController.applyToOffer(req._user, offerId, title, description, usedTechnologies)
+    StudentController.applyToOffer(req._user, offerId, title, description, usedTechnologies)
+        .then(_ => res.json({ success: true }))
         .catch(err => next(err));
-    res.json({ success: true });
 });
 
-router.get('/applications', async (req, res, next) => {
+router.get('/applications', (req, res, next) => {
     let { state } = req.query;
     if(!['accepted', 'declined', 'pending'].includes(state as string)) {
         state = null;
     }
-    const applications = await StudentController.getApplications(req._user, state as string)
+    StudentController.getApplications(req._user, state as string)
+        .then(applications => res.json(applications))
         .catch(err => next(err));
-    res.json(applications)
 });
 
-router.post('/applications/cancel', async (req, res, next) => {
+router.post('/applications/cancel', (req, res, next) => {
     const { applicationId } = req.body;
-    const result = await StudentController.cancelApplication(req._user, applicationId)
+    StudentController.cancelApplication(req._user, applicationId)
+        .then(_ => res.json({ success: true }))
         .catch(err => next(err));
-    res.json(result)
 });
 
-router.get('/paper', async (req, res, next) => {
-    const paper = await StudentController.getPaper(req._user)
+router.get('/paper', (req, res, next) => {
+    StudentController.getPaper(req._user)
+        .then(paper => res.json(paper))
         .catch(err => next(err));
-    res.json(paper)
 });
 
-router.post('/paper/edit', async (req, res, next) => {
+router.post('/paper/edit', (req, res, next) => {
     const { title, description, topicIds } = req.body;
-    const result = await StudentController.editPaper(req._user, title, description, topicIds)
+    StudentController.editPaper(req._user, title, description, topicIds)
+        .then(result => res.json(result))
         .catch(err => next(err));
-    res.json(result);
 });
 
-router.get('/extra-data', async (req, res, next) => {
-    const data = await StudentController.getExtraData(req._user)
+router.get('/extra-data', (req, res, next) => {
+    StudentController.getExtraData(req._user)
+        .then(data => res.json(data))
         .catch(err => next(err));
-    res.json(data)
 });
 
-router.post('/extra-data/set', async (req, res, next) => {
-    const data = await StudentController.setExtraData(req._user, req.body)
+router.post('/extra-data/set', (req, res, next) => {
+    StudentController.setExtraData(req._user, req.body)
+        .then(result => res.json(result))
         .catch(err => next(err));
-    res.json(data);
 });
 
-router.get('/paper/documents/get-required', async (req, res, next) => {
-    let documents = await StudentController.getPaperRequiredDocuments(req._user)
+router.get('/paper/documents/get-required', (req, res, next) => {
+    StudentController.getPaperRequiredDocuments(req._user)
+        .then(documents => res.json(documents))
         .catch(err => next(err));
-    res.json(documents);
 });
 
 router.post('/paper/documents/upload', fileUpload({
     limits: { fileSize: 100 * 1024 * 1024 }  // 100MB limit
-}), async function(req, res, next) {
+}), function(req, res, next) {
     const { name, type } = req.body;
-    let result = await StudentController.uploadPaperDocument(req._user, req.files.file as UploadedFile, name, type)
+    StudentController.uploadPaperDocument(req._user, req.files.file as UploadedFile, name, type)
+        .then(result => res.json(result))
         .catch(err => next(err));
-    res.json(result);
 });
 
 export default router;
