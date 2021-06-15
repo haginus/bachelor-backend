@@ -4,10 +4,10 @@ import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
 import bcrypt from "bcrypt";
-import { Op, OrderItem} from "sequelize";
+import { Op, OrderItem, ValidationError} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { removeDiacritics, ResponseError } from "../util/util";
+import { removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 var stream = require('stream');
 
@@ -101,17 +101,30 @@ export const addStudent = async (firstName, lastName, CNP, email, group, special
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
         // create student entity
-        let student = await Student.create({ id: user.id, group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
+        await Student.create({ id: user.id, group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
             domainId, specializationId, userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex'); // generate activation token
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
-        await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
+        try {
+            await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
+        } catch(err) {
+            throw new ResponseErrorInternal(
+                'Studentul nu a putut fi creat deoarece serverul de e-mail este indisponibil. Contactați administratorul.',
+                'EMAIL_NOT_SENT'
+            );
+        }
         await transaction.commit(); // commit changes
         return UserController.getUserData(user.id); // return user data
     } catch (err) {
-        console.log(err);
+        console.log(err)
         await transaction.rollback(); // if anything goes wrong, rollback
-        throw "VALIDATION_ERROR";
+        if(err instanceof ValidationError) {
+            if(err.errors[0].validatorKey == 'not_unique') {
+                throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
+            }
+            throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
+        }
+        throw err;
     }
 }
 
