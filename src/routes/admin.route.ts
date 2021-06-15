@@ -301,7 +301,7 @@ router.get('/session/report', (req, res, next) => {
 router.post('/session/new', (req, res, next) => {
     const { password } = req.body;
     AdminController.beginNewSession(req._user, password)
-        .then(result => res.json({ success: true }))
+        .then(result => res.json(result))
         .catch(err => next(err));
 });
 

@@ -771,13 +771,14 @@ export const beginNewSession = async (user: User, password: string) => {
     }
     const transaction = await sequelize.transaction();
     try {
-        await Offer.destroy({ where: { id: {[Op.ne]: null} } });
-        await Committee.destroy({ where: { id: {[Op.ne]: null} } });
-        await Student.destroy({ where: { id: {[Op.ne]: null} } });
+        await Offer.destroy({ where: { id: { [Op.ne]: null } }, transaction });
+        await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction });
+        await User.destroy({ where: { type: 'student' }, transaction });
         let sessionName = 'Sesiune nouă';
         let allowGrading = false;
         await SessionSettings.update({ sessionName, allowGrading }, { where: { lock: 'X' }, transaction });
-        await transaction.rollback();
+        await transaction.commit();
+        return SessionSettings.findOne();
     } catch(err) {
         console.log(err)
         await transaction.rollback();
