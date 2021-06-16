@@ -55,13 +55,16 @@
     <p class="title">
         FIȘĂ DE ÎNSCRIERE <br>
         pentru examenul de finalizare a studiilor
-            <% switch (student.domain.type) {
+            <% let paperTypeString;
+            switch (student.domain.type) {
                 case 'bachelor' : %>
                         (LICENȚĂ)
-                        <% break;
+                        <% paperTypeString = 'licență';
+                        break;
                 case 'master' : %>
                         (DISERTAȚIE)
-                        <% break;
+                        <% paperTypeString = 'disertație';
+                        break;
             } %>
         <br>
         sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>
@@ -71,32 +74,32 @@
     <table>
         <tr>
             <td class="first-td-1">Nume de familie la naștere</td>
-            <td width=160 class="content"><%= student.extra.birthLastName %></td>
-            <td width=110>Nume de familie actual</td>
+            <td width="160" class="content"><%= student.extra.birthLastName %></td>
+            <td width="110">Nume de familie actual</td>
             <td class="content"><%= student.user.lastName %></td>
         </tr>
     </table>
     <table>
         <tr>
             <td class="first-td-1">Prenume</td>
-            <td width=285 class="content"><%= student.user.firstName %></td>
-            <td width=140>Inițiala tatălui/mamei</td>
+            <td width="285" class="content"><%= student.user.firstName %></td>
+            <td width="140">Inițiala tatălui/mamei</td>
             <td class="content"><%= student.extra.parentInitial %></td>
         </tr>
     </table>
     <table>
         <tr>
             <td class="first-td-1">Fiul/fiica lui</td>
-            <td width=160 class="content"><%= student.extra.fatherName %></td>
-            <td width=110>și</td>
+            <td width="160" class="content"><%= student.extra.fatherName %></td>
+            <td width="110">și</td>
             <td class="content"><%= student.extra.motherName %></td>
         </tr>
     </table>
     <table>
         <tr>
             <td class="first-td-1">Data nașterii</td>
-            <td width=160 class="content"><%= birthDate %></td>
-            <td width=110>Stare civilă</td>
+            <td width="160" class="content"><%= birthDate %></td>
+            <td width="110">Stare civilă</td>
             <td class="content">
                 <% switch (student.extra.civilState) {
                     case 'not_married' : %>
@@ -127,8 +130,8 @@
     <table class="last">
         <tr>
             <td class="first-td-1">Etnie</td>
-            <td width=160 class="content"><%= student.extra.ethnicity %></td>
-            <td width=110>CNP</td>
+            <td width="160" class="content"><%= student.extra.ethnicity %></td>
+            <td width="110">CNP</td>
             <td class="content"><%= student.user.CNP %></td>
         </tr>
     </table>
@@ -136,15 +139,15 @@
     <p class="table-header">Locul nașterii</p>
     <table>
         <tr>
-            <td width=100>Țara</td>
-            <td width=200 class="content"><%= student.extra.placeOfBirthCountry %></td>
-            <td width=110>Județ/Sector</td>
+            <td width="100">Țara</td>
+            <td width="200" class="content"><%= student.extra.placeOfBirthCountry %></td>
+            <td width="110">Județ/Sector</td>
             <td class="content"><%= student.extra.placeOfBirthCounty %></td>
         </tr>
     </table>
     <table class="last">
         <tr>
-            <td width=100>Localitatea</td>
+            <td width="100">Localitatea</td>
             <td class="content"><%= student.extra.placeOfBirthLocality %></td>
         </tr>
     </table>
@@ -152,50 +155,89 @@
     <p class="table-header">Date de contact</p>
     <table>
         <tr>
-            <td width=100>Telefon fix</td>
-            <td width=200 class="content"><%= student.extra.landline %></td>
-            <td width=110>Telefon mobil</td>
+            <td width="100">Telefon fix</td>
+            <td width="200" class="content"><%= student.extra.landline %></td>
+            <td width="110">Telefon mobil</td>
             <td class="content"><%= student.extra.mobilePhone %></td>
         </tr>
     </table>
     <table class="last">
         <tr>
-            <td width=100>E-mail</td>
+            <td width="100">E-mail</td>
             <td class="content"><%= student.extra.personalEmail %></td>
         </tr>
     </table>
 
 
     <p class="bold">
-        Prezint și susțin lucrarea de
-        <% switch (student.domain.type) {
-            case 'bachelor' : %>
-                    licenţă
-                    <% break;
-            case 'master' : %>
-                    disertație
-                    <% break;
-        } %>
-        cu titlul:
+        Prezint și susțin lucrarea de <%= paperTypeString %> cu titlul:
     </p>
     <p class="italic"><%= student.paper.title %></p>
-    <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
 
+    <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
+    <% let isPrevPromotion = student.sessionSettings.currentPromotion != student.promotion; 
+    %>
     <p>
-        Depun la dosarul de înscriere <i>(vor fi transmise de absolvenți în format electronic):</i>
+        Depun la dosarul de înscriere<i><%= isPrevPromotion ? ' (vor fi transmise de absolvenți în format electronic)' : ''%></i>:
     </p>
     <ul>
         <%if (student.domain.type == 'master') { %>
             <li>Diploma de licenţă</li>
         <% } %>
-        <li>Diploma de bacalaureat</li>
+        <li>
+            <span>Diploma de bacalaureat</span>
+            <% if(!isPrevPromotion) { %>
+                <span> - copie certificată conform cu originalul</span>
+                <i> (va fi adăugată la dosar de către secretarul de an)</i>
+            <% } %>
+        </li>
         <li>2 fotografii color, pe hârtie fotografică, dimensiunea 3/4 <i>(vor fi aduse de absolvent la ridicarea adeverintei de licență)</i></li>
-        <li>Certificatul de naștere</li>
-        <li>Certificatul de căsătorie <i>(unde este cazul)</i></li>
-        <li>Copie carte de identitate</li>
-        <li>Declarația pe propria răspundere că lucrarea de licenţă este rezultatul muncii mele</li>
-        <li>Lucrarea de disertație și referatul coordonatorului științific <b><i>(în format pdf)</i></b></li>
-        <li>Fișa de lichidare</li>
+        <li>
+            <span>Certificatul de naștere</span>
+            <% if(!isPrevPromotion) { %>
+                <span> - copie certificată conform cu originalul</span>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } %>
+        </li>
+        <li>
+            <span>Certificatul de căsătorie</span>
+            <% if(!isPrevPromotion) { %>
+                <span> - copie certificată conform cu originalul (unde este cazul)</span>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } else { %>
+                <span> (unde este cazul)</span>
+            <% } %>
+        <li>
+            <span>Certificatul de competență lingvistică</span>
+            <% if(!isPrevPromotion) { %>
+                <span> - copie certificată conform cu originalul</span>
+                <i> (va fi adăugată la dosar de către secretarul de an)</i>
+            <% } %>
+        </li>
+        <li>
+            <span>Copie CI</span>
+            <% if(!isPrevPromotion) { %>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } %>
+        </li>
+        <li>
+            <span>Declarația pe propria răspundere că lucrarea de <%= paperTypeString %> este rezultatul muncii mele</span>
+            <% if(!isPrevPromotion) { %>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } %>
+        </li>
+        <li>
+            <span>Lucrarea de <%= paperTypeString %> și referatul coordonatorului științific <b>(în format pdf)</b></span>
+            <% if(!isPrevPromotion) { %>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } %>
+        </li>
+        <li>
+            <span>Fișa de lichidare</span>
+            <% if(!isPrevPromotion) { %>
+                <i> (va fi transmisă de absolvent în format electronic)</i>
+            <% } %>
+        </li>
     </ul>
 
     <p>
@@ -224,7 +266,7 @@
         font-family: 'Times New Roman', Times, serif;
         font-size: 12pt;
         margin: 1.5cm;
-        margin-top: 1cm;
+        margin-top: 0.8cm;
         margin-bottom: 0cm;
     }
 
@@ -297,7 +339,7 @@
 
     .header-container {
         font-weight: bold;
-        margin-bottom: 0.9cm;
+        margin-bottom: 0.7cm;
     }
 
     .footer-container .col,
