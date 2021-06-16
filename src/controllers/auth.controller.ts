@@ -96,6 +96,8 @@ export const resetPassword = async (email: string) => {
             await transaction.rollback();
             throw new ResponseErrorInternal("A apărut o eroare la trimiterea e-mailului. Contactați administratorul.");
         }
+    } else {
+        throw new ResponseError('Contul nu există.', 'EMAIL_NOT_FOUND');
     }
     return { success: true };
 }
