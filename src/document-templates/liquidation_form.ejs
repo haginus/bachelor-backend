@@ -47,20 +47,16 @@
     </div>
     <h3>Domnule rector,</h3>
     <p class="main">
+        <% 
+            let domainType = student.domain.type;
+            let domainTypeString = domainType == 'bachelor' ? 'licență' : (domainType == 'master' ? 'master' : '');
+        %>
         Subsemnatul (a) <%= student.user.lastName %> <%= student.user.firstName %>, născut(ă) în <%= birthDate %>,
         în localitatea <%= student.extra.placeOfBirthLocality %>,
         judeţul/sectorul <%= student.extra.placeOfBirthCounty %>, țara <%= student.extra.placeOfBirthCountry %>, 
-        având Codul Numeric Personal <%= student.user.CNP %>, absolvent(ă) de studii universitare de 
-        <% switch (student.domain.type) {
-            case 'bachelor' : %>
-                    LICENȚĂ
-                    <% break;
-            case 'master' : %>
-                    DISERTAȚIE
-                    <% break;
-        } %>,
+        având codul Numeric Personal <%= student.user.CNP %>, absolvent(ă) de studii universitare de <%= domainTypeString %>
         în sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>,
-        vă rog să binevoiţi a-mi aproba eliberarea diplomei de studii. <br> <br>
+        vă rog să binevoiți a-mi aproba eliberarea diplomei de studii. <br> <br>
         Domiciliez în localitatea <%= student.extra.address.locality %>, sector/judeţ <%= student.extra.address.county %>,
         strada <%= student.extra.address.street %>, numărul <%= student.extra.address.streetNumber %>,
         <% if(student.extra.address.building) { %>
