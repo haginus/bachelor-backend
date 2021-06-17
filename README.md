@@ -14,6 +14,10 @@ cp .env.example .env
 ```
 After this, open the `.env` file and edit the environment variables to match the database you're connecting to and the mail server. Also, change the secret key.
 
+### Warning!
+
+Adding students and teachers won't work unless you have a mail server set up. If you don't have a mail server or simply don't want to configure one for this app, consider using [mailhog](https://github.com/mailhog/MailHog), a mail catcher/testing tool.
+
 ## Running the app
 
 Run `npm run start:dev` to run the app in development mode.
