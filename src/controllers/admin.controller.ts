@@ -47,11 +47,14 @@ export const getStudents = async (sort, order, filter, page, pageSize) => {
     }
 
     let sortArray: OrderItem = ['id', 'ASC']
-    if (['id', 'firstName', 'lastName', 'CNP', 'email', 'group', 'domain'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+    if (['id', 'firstName', 'lastName', 'CNP', 'email', 'group', 'domain', 'promotion']
+        .includes(sort) && ['ASC', 'DESC'].includes(order)) {
         if (sort == 'group')
             sortArray = ['student', 'group', order];
         else if (sort == 'domain')
             sortArray = ['student', 'domain', 'name', order];
+        else if (sort == 'promotion')
+            sortArray = ['student', 'promotion', order];
         else
             sortArray = [sort, order];
     }
