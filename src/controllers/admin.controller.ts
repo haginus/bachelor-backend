@@ -23,14 +23,14 @@ export const getStats = async (): Promise<Statistic[]> => {
     const teacherPromise = Teacher.count();
     const paperPromise = Paper.count();
     const assignedPaperPromise = Paper.count({ col: 'committeeId' });
-    const committeePromise = Paper.count();
-    const [studentCount, teacherCount, paperCount, assignedPaperCount, committeeCount] = 
+    const committeePromise = Committee.scope('min').findAll();
+    const [studentCount, teacherCount, paperCount, assignedPaperCount, committees] = 
         await Promise.all([studentPromise, teacherPromise, paperPromise, assignedPaperPromise, committeePromise]);
     return [
         { title: 'Studenți', content: studentCount, sectionPath: 'students' },
         { title: 'Profesori', content: teacherCount, sectionPath: 'teachers' },
         { title: 'Lucrări', content: paperCount, extra: `din care ${assignedPaperCount} atribuite`, sectionPath: 'papers' },
-        { title: 'Comisii', content: committeeCount, sectionPath: 'committees' },
+        { title: 'Comisii', content: committees.length, sectionPath: 'committees' },
     ]
 };
 
