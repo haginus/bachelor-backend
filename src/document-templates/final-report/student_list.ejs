@@ -31,7 +31,7 @@
                     <td><%= student.group %></td>
                     <td><%= student.paper?.title %></td>
                     <td><%= student.paper?.teacher.user.fullName %></td>
-                    <td><%= student.paper?.committee.name %></td>
+                    <td><%= student.paper?.committee?.name %></td>
                     <td><%= student.paper?.gradeAverage %></td>
                     <td>
                         <a href="<%= dataLink %>" target="_blank">Vezi datele</a>
