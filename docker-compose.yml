@@ -25,3 +25,6 @@ services:
         MYSQL_ROOT_PASSWORD: 12345678
         MYSQL_DATABASE: bachelor
 
+networks:
+  default:
+    driver: bachelor
