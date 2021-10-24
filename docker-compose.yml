@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.5'
 
 services:
   bachelor-backend:
@@ -27,4 +27,4 @@ services:
 
 networks:
   default:
-    driver: bachelor
+    name: bachelor
