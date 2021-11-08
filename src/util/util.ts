@@ -1,3 +1,5 @@
+import { Teacher } from "../models/models";
+
 export class ResponseError extends Error {
     httpStatusCode: number;
     constructor(message: string, name?: string, httpStatusCode?: number) {
@@ -41,4 +43,25 @@ export function removeDuplicates<Type>(arr: Type[]): Type[] {
 
 export function arrayIntersection<Type>(arr1: Type[], arr2: Type[]) {
     return arr1.filter(value => arr2.includes(value));
+}
+
+export function sortMembersByTitle(members: Teacher[]) {
+    const sorted = [...members];
+    const titleOrder = {
+        "P": 0,
+        "C": 1,
+        "L": 2,
+        "A": 3
+    }
+    return sorted.sort((a, b) => {
+        if(a.committeeMember.role == "president") {
+            return -100;
+        }
+        if(a.committeeMember.role == "secretary") {
+            return 100;
+        }
+        const aTitle = a.user.title[0];
+        const bTitle = b.user.title[0];
+        return titleOrder[aTitle] - titleOrder[bTitle];
+    });
 }

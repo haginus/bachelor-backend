@@ -9,7 +9,7 @@ import { Model } from "sequelize/types";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
+import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal, sortMembersByTitle } from "../util/util";
 
 const HtmlToPdfOptions = { format: 'A4', printBackground: true };
 
@@ -343,6 +343,7 @@ const getCommitteeForGeneration = (id: number) => {
 
 export const generateCommitteeCatalog = async (user: User, committeId: number): Promise<Buffer> => {
     const committee = await getCommitteeForGeneration(committeId);
+    committee.members = sortMembersByTitle(committee.members);
     if(user.type == 'teacher') {
         checkCommitteeDocumentGenerationRight(user, committee);
     }
