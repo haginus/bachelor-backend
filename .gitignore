@@ -7,6 +7,9 @@
 # env
 .env
 
+# compose 
+docker-compose.override.yml
+
 # dependencies
 /node_modules
 

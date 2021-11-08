@@ -7,6 +7,8 @@ services:
         dockerfile: ./docker/Dockerfile
     depends_on:
       - bachelor-db
+    volumes:
+      - app_data:/usr/src/bachelor-backend/
     ports:
       - 3000:3000
     environment: 
@@ -24,6 +26,12 @@ services:
     environment:
         MYSQL_ROOT_PASSWORD: 12345678
         MYSQL_DATABASE: bachelor
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+  app_data:
 
 networks:
   default:

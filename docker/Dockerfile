@@ -10,7 +10,7 @@ COPY ["package.json", "package-lock.json*", "./"]
 
 RUN npm install --production
 
-COPY . .
+COPY . /usr/src/bachelor-backend/
 
 RUN npm run build
 
