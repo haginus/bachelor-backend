@@ -280,7 +280,7 @@ export class StudentController {
         let paperRes: any = paper.toJSON(); // sequelize will return the user info nested as `user` in paper.teacher
         if (paper) {
             paperRes.teacher = paper.teacher.user;
-            paperRes.grades = grades;
+            paperRes.grades = [];
             paperRes.committee = committee;
         }
         return paperRes;
