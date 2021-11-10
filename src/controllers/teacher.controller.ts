@@ -351,6 +351,9 @@ export const gradePaper = async (user: User, paperId: number, forPaper: number, 
         member.id == user.teacher.id && member.committeeMember.role != 'secretary') < 0) {
         throw new ResponseErrorForbidden();
     }
+    if(paper.committee.finalGrades) {
+        throw new ResponseErrorForbidden("Nu puteți modifica nota deoarece notele au fost marcate drept finale.");
+    }
     try {
         await PaperGrade.upsert({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
         return true;
