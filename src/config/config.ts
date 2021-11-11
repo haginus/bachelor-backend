@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import path from 'path';
 dotenv.config();
 export const config = {
     SECRET_KEY: process.env.SECRET_KEY,
@@ -18,5 +19,6 @@ export const config = {
     },
     mailerOptions: {
         from: process.env.MAILER_FROM_ADDRESS
-    }
+    },
+    PROJECT_ROOT: path.join(__dirname, '..', '..')
 }

@@ -11,11 +11,12 @@ import adminRoutes from './routes/admin.route';
 import documentsRoutes from './routes/documents.route';
 import { config } from './config/config';
 import * as Mailer from './alerts/mailer';
-import { ResponseError } from './util/util';
+import { copyObject, ResponseError } from './util/util';
 import { ValidationError } from 'sequelize';
 
 import isLoggedIn from './routes/middlewares/isLoggedIn';
 import errorHandler from './routes/middlewares/errorHandler';
+import path from 'path';
 
 const app = express();
 app.use(cors())
@@ -34,7 +35,9 @@ if(config.MAKE_DELAY)
 
 app.get('/user/info', isLoggedIn(), async (req, res) => {
   let user = req._user;
-  res.json(user);
+  let profile = await user.getProfile();
+  let resp = { ...copyObject(user), profile }
+  res.json(resp);
 });
 
 app.use('/auth', authRoutes);
@@ -43,6 +46,7 @@ app.use('/teacher', teacherRoutes);
 app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
+app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')))
 app.use(errorHandler());
 
 // start app
