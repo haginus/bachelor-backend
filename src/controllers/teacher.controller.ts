@@ -133,7 +133,7 @@ export const getApplications = async (user: User, offerId: number, state: string
             {
                 association: Application.associations.student,
                 include: [
-                    User.scope('min')
+                    User.scope(['min', 'profile'])
                 ]
             },
         ],
