@@ -107,7 +107,7 @@ router.get('/committees', function (req, res, next) {
 
 router.get('/committees/:id', function (req, res, next) {
     const { id } = req.params;
-    TeacherController.getCommitteee(req._user, +id)
+    TeacherController.getCommittee(req._user, +id)
         .then(committee => res.json(committee))
         .catch(err => next(err));
 });

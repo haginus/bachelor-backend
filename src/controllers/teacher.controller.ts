@@ -249,7 +249,7 @@ export const getStudentPapers = async (user: User) => {
                 required: true,
                 model: Student,
                 include: [
-                    User.scope("min"),
+                    User.scope(["min", "profile"]),
                     Domain,
                     Specialization 
                 ]
@@ -311,7 +311,7 @@ export const getCommittees = async (user: User) => {
     });
 }
 
-export const getCommitteee = async (user: User, committeeId: number) => {
+export const getCommittee = async (user: User, committeeId: number) => {
     const committee = await Committee.findOne({
         where: { id: committeeId },
         include: [Paper.scope(['student', 'teacher', 'documents', 'grades', 'topics'])]

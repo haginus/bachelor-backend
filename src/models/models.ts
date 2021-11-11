@@ -1238,7 +1238,7 @@ Paper.addScope('teacher', {
 Paper.addScope('student', {
   include: [{
     association: Paper.associations.student,
-    include: [User.scope('min')]
+    include: [User.scope(['min', 'profile'])]
   }]
 });
 
