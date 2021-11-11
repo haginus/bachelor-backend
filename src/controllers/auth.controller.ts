@@ -26,7 +26,8 @@ export const getUser = async (where: WhereOptions<User>) => {
 
 const createLoginResponse = async (user: User) => {
     const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
-    let responseUser = copyObject(user);
+    const profile = await user.getProfile();
+    let responseUser = { ...copyObject(user), profile };
     delete responseUser.password; // remove the hashed password in order to send the response
     return { token, user: responseUser };
 }

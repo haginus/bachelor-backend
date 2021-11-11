@@ -1,6 +1,9 @@
 import express from 'express';
+import fileUpload, { UploadedFile } from 'express-fileupload';
 const router = express.Router();
 import * as AuthController from '../controllers/auth.controller';
+import * as UserController from '../controllers/user.controller';
+import isLoggedIn from './middlewares/isLoggedIn';
 
 router.post('/login', (req, res, next) => {
     const { email, password } = req.body;
@@ -25,6 +28,14 @@ router.post('/change-password-token', (req, res, next) => {
 
 router.get('/session', (req, res, next) => {
     AuthController.getSessionSettings()
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.patch('/profile', isLoggedIn(), fileUpload(), (req, res, next) => {
+    const { bio, website } = req.body;
+    let picture = (req.files?.picture as UploadedFile)?.data;
+    UserController.patchProfile(req._user, picture, bio, website)
         .then(result => res.json(result))
         .catch(err => next(err));
 });

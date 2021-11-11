@@ -129,16 +129,40 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
 
   public student?: Student;
   public teacher?: Teacher;
+  public profile?: Profile;
 
-  public getStudent!: HasOneCreateAssociationMixin<Student>;
-  public getTeacher!: HasOneCreateAssociationMixin<Teacher>;
+  public getStudent!: HasOneGetAssociationMixin<Student>;
+  public getTeacher!: HasOneGetAssociationMixin<Teacher>;
+  public getProfile!: HasOneGetAssociationMixin<Profile>;
+  public createProfile!: HasOneCreateAssociationMixin<Profile>;
 
 
   public static associations: {
     student: Association<User, Student>;
     teacher: Association<User, Teacher>;
+    profile: Association<User, Profile>;
     //activationTokens: Association<User, ActivationToken>;
   };
+}
+
+interface ProfileAttributes {
+  userId: number;
+  bio?: string;
+  website?: string;
+  picture?: string;
+}
+
+export class Profile extends Model<ProfileAttributes, ProfileAttributes> implements ProfileAttributes {
+  public userId!: number;
+  public bio!: string;
+  public website!: string;
+  public picture!: string;
+
+  public getUser!: BelongsToGetAssociationMixin<User>;
+
+  public static associations: {
+    user: Association<Profile, User>;
+  }
 }
 
 interface TeacherAttributes {
@@ -840,6 +864,40 @@ User.addScope("min", {
 User.hasMany(ActivationToken, { onDelete: 'CASCADE' });
 ActivationToken.belongsTo(User);
 
+Profile.init({
+  userId: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+  },
+  bio: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  website: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  picture: {
+    type: DataTypes.STRING,
+    allowNull: true
+  }
+}, {
+  timestamps: false,
+  sequelize,
+  modelName: 'profile'
+});
+
+User.hasOne(Profile, {
+  onDelete: "CASCADE"
+});
+Profile.belongsTo(User, {
+  onDelete: "CASCADE"
+});
+
+User.addScope("profile", {
+  include: [ sequelize.model("profile") ]
+});
+
 Student.init({
   id: {
     type: DataTypes.INTEGER,
@@ -1167,7 +1225,7 @@ Paper.addScope('topics', {
 Paper.addScope('teacher', {
   include: [{
     association: Paper.associations.teacher,
-    include: [User.scope('min')]
+    include: [User.scope(['min', 'profile'])]
   }]
 });
 

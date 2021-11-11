@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -106,6 +106,7 @@ export const addStudent = async (firstName, lastName, CNP, email, group, special
         // create student entity
         await Student.create({ id: user.id, group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
             domainId, specializationId, userId: user.id }, { transaction });
+        await Profile.create({ userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex'); // generate activation token
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
         try {
@@ -260,7 +261,8 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
     const transaction = await sequelize.transaction();
     try {
         let user = await User.create({ title, firstName, lastName, CNP, email, type: 'teacher' }, { transaction });
-        let teacher = await Teacher.create({ id: user.id, userId: user.id }, { transaction });
+        await Teacher.create({ id: user.id, userId: user.id }, { transaction });
+        await Profile.create({ userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
         Mailer.sendWelcomeEmail(user, activationToken.token);
