@@ -24,15 +24,15 @@ router.get('/offers', (req, res, next) => {
 });
 
 router.post('/offers/edit', (req, res, next) => {
-    const { id, domainId, topicIds, limit } = req.body;
-    TeacherController.editOffer(req._user, id, domainId, topicIds, limit)
+    const { id, domainId, topicIds, limit, description } = req.body;
+    TeacherController.editOffer(req._user, id, domainId, topicIds, limit, description)
         .then(offer => res.json(offer))
         .catch(err => next(err));
 });
 
 router.post('/offers/add', (req, res, next) => {
-    const { domainId, topicIds, limit } = req.body;
-    TeacherController.addOffer(req._user, domainId, topicIds, limit)
+    const { domainId, topicIds, limit, description } = req.body;
+    TeacherController.addOffer(req._user, domainId, topicIds, limit, description)
         .then(offer => res.json(offer))
         .catch(err => next(err));
 });

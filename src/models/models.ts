@@ -349,6 +349,7 @@ interface OfferAttributes {
   teacherId: number;
   domainId: number;
   limit: number;
+  description?: string;
 }
 
 interface OfferCreationAttributes extends Optional<OfferAttributes, "id"> {}
@@ -358,6 +359,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes> imple
   teacherId: number;
   domainId: number;
   limit: number;
+  description: string;
 
   takenPlaces: number;
   teacher?: Teacher;
@@ -1007,6 +1009,10 @@ Offer.init({
       min: 1,
       isInt: true
     }
+  },
+  description: {
+    type: DataTypes.STRING(1024),
+    allowNull: true,
   }
 }, {
   timestamps: false,

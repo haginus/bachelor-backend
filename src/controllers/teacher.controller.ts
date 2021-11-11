@@ -36,7 +36,7 @@ export const getOffers = async (user: User) => {
 }
 
 export const editOffer = async (user: User, offerId: number, domainId: number,
-    topicIds: number[], limit: number) => {
+    topicIds: number[], limit: number, description: string) => {
     let offer = await Offer.findByPk(offerId, {
         attributes: {
             include: [
@@ -51,13 +51,15 @@ export const editOffer = async (user: User, offerId: number, domainId: number,
         throw new ResponseErrorForbidden();
     }
     if(offer.takenPlaces > limit) {
-        throw new ResponseErrorForbidden('Nu puteți seta o limită mai mare decât numărul de locuri deja ocupat.',
+        throw new ResponseErrorForbidden('Nu puteți seta o limită mai mare decât numărul de locuri deja ocupate.',
             'LIMIT_LOWER_THAN_TAKEN_PLACES');
     }
     const transaction = await sequelize.transaction();
     try {
         offer.domainId = domainId;
         offer.limit = limit;
+        offer.description = description;
+        console.log(offer.description)
         await offer.save({ transaction });
         await offer.setTopics(topicIds, { transaction });
         await transaction.commit();
@@ -71,13 +73,14 @@ export const editOffer = async (user: User, offerId: number, domainId: number,
     }
 }
 
-export const addOffer = async (user: User, domainId: number, topicIds: number[], limit: number) => {
+export const addOffer = async (user: User, domainId: number, topicIds: number[], limit: number,
+    description: string) => {
     if(limit < 1) {
         throw new ResponseError('Limita nu poate fi mai mică decât 1.', 'LIMIT_LOWER_THAN_1');
     }
     const transaction = await sequelize.transaction();
     try {
-        const offer = await Offer.create({ domainId, limit, teacherId: user.teacher.id }, { transaction });
+        const offer = await Offer.create({ domainId, limit, teacherId: user.teacher.id, description }, { transaction });
         await offer.setTopics(topicIds, { transaction });
         await transaction.commit();
         return offer;
