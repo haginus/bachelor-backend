@@ -128,5 +128,13 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf,image/png,image/jpeg',
       uploadBy: 'committee'
+    },
+    {
+      title: 'Raport Turnitin',
+      name: 'committee_turnitin',
+      category: 'paper_files',
+      types: { copy: true },
+      acceptedMimeTypes: 'application/pdf,image/png,image/jpeg,text/plain',
+      uploadBy: 'committee'
     }
   ]
