@@ -218,7 +218,7 @@ export const acceptApplication = async (user: User, applicationId: number) => {
         // CREATE PAPER
         const { title, description, studentId } = application;
         const paper = await Paper.create({
-            title, description, studentId, teacherId: user.teacher.id, type: domain.type
+            title, description, studentId, teacherId: user.teacher.id, type: domain.paperType
         }, { transaction });
         const topicIds = application.offer.topics.map(topic => topic.id);
         await paper.setTopics(topicIds, { transaction });

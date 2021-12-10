@@ -26,11 +26,13 @@ export const sequelize = new Sequelize(config.DATABASE_STRING, {
 });
 
 export type DomainType = 'bachelor' | 'master';
+export type PaperType = 'bachelor' | 'diploma' | 'master';
 
 interface DomainAttributes {
   id: number;
   name: string;
-  type: DomainType,
+  type: DomainType;
+  paperType: PaperType;
   specializations?: Specialization[]
 }
 
@@ -40,6 +42,7 @@ export class Domain extends Model<DomainAttributes, DomainCreationAttributes> im
   public id: number;
   public name: string;
   public type: DomainType;
+  public paperType: PaperType;
 
   public specializations?: Specialization[];
 
@@ -413,7 +416,7 @@ interface PaperAttributes {
   studentId: number;
   teacherId: number;
   committeeId: number | null;
-  type: DomainType;
+  type: PaperType;
   title: string;
   description: string;
   isValid: boolean | null;
@@ -428,7 +431,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public studentId: number;
   public teacherId: number;
   public committeeId: number | null;
-  public type: DomainType;
+  public type: PaperType;
   public title: string;
   public description: string;
   public isValid: boolean | null;
@@ -701,6 +704,10 @@ Domain.init({
         msg: 'Tipul domeniului este invalid.'
       },
     }
+  },
+  paperType: {
+    type: DataTypes.STRING,
+    allowNull: false,
   }
 }, {
   timestamps: false,
@@ -1136,9 +1143,6 @@ Paper.init({
   type: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      isIn: [['bachelor', 'master']]
-    }
   },
   isValid: {
     type: DataTypes.BOOLEAN

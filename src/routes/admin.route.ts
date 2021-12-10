@@ -128,15 +128,15 @@ router.get('/domains/extra', function (req, res, next) {
 });
 
 router.post('/domains/add', (req, res, next) => {
-    const { name, type, specializations } = req.body;
-    AdminController.addDomain(name, type, specializations)
+    const { name, type, paperType, specializations } = req.body;
+    AdminController.addDomain(name, type, paperType, specializations)
         .then(domain => res.json(domain))
         .catch(err => next(err));
 });
 
 router.post('/domains/edit', (req, res, next) => {
-    const { id, name, type, specializations } = req.body;
-    AdminController.editDomain(id, name, type, specializations)
+    const { id, name, type, paperType, specializations } = req.body;
+    AdminController.editDomain(id, name, type, paperType, specializations)
         .then(domain => res.json(domain))
         .catch(err => next(err));
 });

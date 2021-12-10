@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -361,16 +361,33 @@ export const getDomain = (id) => {
     })
 }
 
-export const addDomain = (name, type, specializations) => {
+const ckeckDomainPaperTypes = (domain: DomainType, paperType: PaperType) => {
+    if(paperType == null) {
+        throw new ResponseError("Tip de lucrare incompatibil.");
+    }
+    if(domain == 'bachelor') {
+        if(!['bachelor', 'diploma'].includes(paperType)) {
+            throw new ResponseError("Tip de lucrare incompatibil.");
+        }
+    } else if(domain == 'master') {
+        if(paperType != 'master') {
+            throw new ResponseError("Tip de lucrare incompatibil.");
+        }
+    }
+}
+
+export const addDomain = (name: string, type: DomainType, paperType: PaperType, specializations: Specialization[]) => {
+    ckeckDomainPaperTypes(type, paperType);
     return Domain.create(
-        { name, type, specializations },
+        { name, type, paperType, specializations },
         {
             include: [ sequelize.model('specialization') ]
         }
     );
 }
 
-export const editDomain = async (id, name, type, specializations) => {
+export const editDomain = async (id: string, name: string, type: DomainType, paperType: PaperType, specializations) => {
+    ckeckDomainPaperTypes(type, paperType);
     const oldDomain = await getDomain(id); // get old domain data
     if(!oldDomain) {
         throw "BAD_REQUEST";
@@ -378,7 +395,7 @@ export const editDomain = async (id, name, type, specializations) => {
     const specIds = oldDomain.specializations.map(spec => spec.id);
     const transaction = await sequelize.transaction(); // start transaction
     try {
-        await Domain.update({ name, type }, { where: { id }, transaction }); // update domain data
+        await Domain.update({ name, type, paperType }, { where: { id }, transaction }); // update domain data
         let specs = {
             toAdd: specializations.filter(spec => !spec.id), // specs that do not have an id will be added,
             toEdit: specializations.filter(spec => specIds.includes(spec.id)), // specs that have ids in specIds

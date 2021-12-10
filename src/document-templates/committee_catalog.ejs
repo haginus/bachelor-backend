@@ -56,8 +56,15 @@
             let studyYears = parseInt(group[0].student.specialization.studyYears);
             let creditNumber = 60 * studyYears;
             let studyDurationString = `${studyYears} ani (${studyYears * 2} semestre)`;
-            let domainType = group[0].type;
+            let paperType = group[0].type;
+            let domainType = group[0].student.domain.type;
             let domainTypeString = domainType == 'bachelor' ? 'licență' : (domainType == 'master' ? 'disertație' : '');
+            const PAPER_TYPES = {
+                master: 'disertație',
+                bachelor: 'licență',
+                diploma: 'diplomă',
+            }
+            let paperTypeString = PAPER_TYPES[paperType];
             %>
             <div class="header-container">
                 <p class="col">
@@ -71,21 +78,21 @@
                     Promoția: <%= group[0].student.promotion %> 
                 </p>
                 <p class="col right">
-                    Examen de <%= domainTypeString %><br>
+                    Examen de <%= paperTypeString %><br>
                     Sesiunea <%= sessionSettings.sessionName.toUpperCase() %><br>
-                    Credite <%= domainTypeString %> - 10
+                    Credite <%= paperTypeString %> - 10
                 </p>
             </div>
 
             <h1>
-                CATALOG EXAMEN DE <%= domainTypeString.toUpperCase() %> <br>
-                Prezentarea și susținerea lucrării de <%= domainTypeString %>
+                CATALOG EXAMEN DE <%= paperTypeString.toUpperCase() %> <br>
+                Prezentarea și susținerea lucrării de <%= paperTypeString %>
             </h1>
             <table>
                 <tr>
                     <th rowspan="2">Nr. crt.</th>
                     <th rowspan="2">Numele, inițiala tatălui și prenumele absolventului</th>
-                    <th rowspan="2">Titlul lucrării de <%= domainTypeString %> și profesorul coordonator</th>
+                    <th rowspan="2">Titlul lucrării de <%= paperTypeString %> și profesorul coordonator</th>
                     <% for(let i = 0; i < committee.members.length; i++) {
                         let member = committee.members[i];
                         if(member.committeeMember.role == 'secretary') continue;
