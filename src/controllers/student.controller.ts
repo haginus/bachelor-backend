@@ -342,11 +342,14 @@ export class StudentController {
       throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
     }
     const sessionSettings = await SessionSettings.findOne();
-    if (Date.now() > new Date(sessionSettings.paperSubmissionEndDate).getTime()) {
+    if (Date.now() > new Date(sessionSettings.paperSubmissionEndDate).getTime() || paper.isValid) {
       throw new ResponseErrorForbidden("Nu vă mai puteți înscrie/retrage din această sesiune.");
     }
     try {
       paper.submitted = submit;
+      if(!submit) {
+        paper.committeeId = null;
+      }
       await paper.save();
       return { success: true };
     } catch (err) {
