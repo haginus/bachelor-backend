@@ -21,7 +21,7 @@ interface Statistic {
 export const getStats = async (): Promise<Statistic[]> => {
     const studentPromise = Student.count();
     const teacherPromise = Teacher.count();
-    const paperPromise = Paper.count();
+    const paperPromise = Paper.count({ where: { submitted: true }});
     const assignedPaperPromise = Paper.count({ col: 'committeeId' });
     const committeePromise = Committee.scope('min').findAll();
     const [studentCount, teacherCount, paperCount, assignedPaperCount, committees] = 
@@ -614,7 +614,7 @@ export const deleteCommittee = (id) => {
     return Committee.destroy({ where: {id } });
 }
 
-export const setCommitteePapers = async (id, paperIds) => {
+export const setCommitteePapers = async (id: number, paperIds: number[]) => {
     const committee = await Committee.findOne({ where: { id } }); // get committee
     if(!committee) {
         throw "BAD_REQUEST";
@@ -627,7 +627,10 @@ export const setCommitteePapers = async (id, paperIds) => {
     }}); // find all papers and check if the coordinating teacher is in committee
     papers.forEach(paper => {
         if(memberIds.includes(paper.teacherId)) {
-            throw "MEMBER_PAPER_INCOMPATIBILITY";
+            throw new ResponseError(`Lucrarea "${paper.title}" nu poate fi atribuită, deoarece profesorul coordonator face parte din comisie.`);
+        }
+        if(!paper.submitted || (paper.isValid != null && !paper.isValid)) {
+            throw new ResponseError(`Lucrarea "${paper.title}" nu poate fi atribuită, deoarece este invalidă.`);
         }
     });
     return committee.setPapers(papers);
@@ -656,6 +659,10 @@ export interface GetPapersFilter {
     forCommittee?: number;
     /** If papers must be valid. */
     isValid?: boolean;
+    /** If papers must not be valid. */
+    isNotValid?: boolean;
+    /** If papers must be submitted. */
+    submitted?: boolean;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -679,6 +686,13 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     }
     if(filter?.isValid != null) {
         where.isValid = filter.isValid;
+    }
+    if(filter?.isNotValid != null) {
+        where.isValid = filter.isNotValid ? false : { [Op.or]: [null, true] };
+    }
+    where.submitted = true;
+    if(filter?.submitted != null) {
+        where.submitted = filter.submitted;
     }
     let studentWhere = {};
     if(filter.forCommittee != null) {
@@ -764,6 +778,8 @@ export const validatePaper = async (paperId: number, validate: boolean) => {
         if(!checkRequiredDocuments(requiredDocs, paper.documents)) {
             throw "MISSING_DOCUMENTS"
         }
+    } else {
+        paper.committeeId = null;
     }
     await paper.save();
     return true;

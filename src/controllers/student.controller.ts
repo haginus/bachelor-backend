@@ -336,6 +336,24 @@ export class StudentController {
     }
   }
 
+  public static submitPaper = async (user: User, submit: boolean) => {
+    const paper = user.student.paper;
+    if (!paper) {
+      throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
+    }
+    const sessionSettings = await SessionSettings.findOne();
+    if (Date.now() > new Date(sessionSettings.paperSubmissionEndDate).getTime()) {
+      throw new ResponseErrorForbidden("Nu vă mai puteți înscrie/retrage din această sesiune.");
+    }
+    try {
+      paper.submitted = submit;
+      await paper.save();
+      return { success: true };
+    } catch (err) {
+      throw new ResponseErrorInternal();
+    }
+  }
+
   public static getExtraData = async (user: User) => {
     return user.student.getStudentExtraDatum({ scope: 'noKeys' });
   }

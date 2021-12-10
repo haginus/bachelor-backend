@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { Committee, Paper, sequelize, Teacher, User } from "../models/models"
 import { arrayIntersection, copyObject, removeDuplicates, ResponseError } from "./util";
 
@@ -24,7 +25,7 @@ export const autoAssignPapers = async () => {
 
     const papers = copyObject<ExtendedPaper[]>(await Paper
         .scope(['topics', 'teacher', 'student'])
-        .findAll({ where: { isValid: true, type: 'bachelor', committeeId: null } })
+        .findAll({ where: { submitted: true, isValid: {[Op.or]: [null, true]}, type: 'bachelor', committeeId: null } })
     ).map(paper => {
         const paperTopics = paper.topics.map(topic => topic.id);
         let compatibleWith = [];

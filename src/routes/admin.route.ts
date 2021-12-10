@@ -256,12 +256,14 @@ router.get('/committees/documents/:documentName', async (req, res, next) => {
 
 // PAPERS
 router.get('/papers', function (req, res, next) {
-    let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, minified } = req.query;
+    let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, isNotValid, submitted, minified } = req.query;
     let filter = {
         assigned: assigned != undefined ? assigned == 'true' || assigned == '1' : null,
         assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
         forCommittee: forCommittee != undefined ? Number(forCommittee) : null,
         isValid: isValid != undefined ? isValid == 'true' || isValid == '1' : null,
+        isNotValid: isValid != undefined ? isNotValid == 'true' || isNotValid == '1' : null,
+        submitted: submitted != undefined ? submitted == 'true' || submitted == '1' : null,
     }
     let pageAsNumber = Number(page);
     let pageSizeAsNumber = Number(pageSize);

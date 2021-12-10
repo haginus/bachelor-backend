@@ -86,6 +86,13 @@ router.post('/paper/edit', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/paper/submit', (req, res, next) => {
+    const { submit } = req.body;
+    StudentController.submitPaper(req._user, submit)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.get('/extra-data', (req, res, next) => {
     StudentController.getExtraData(req._user)
         .then(data => res.json(data))

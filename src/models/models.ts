@@ -418,9 +418,10 @@ interface PaperAttributes {
   description: string;
   isValid: boolean | null;
   gradeAverage: number | null;
+  submitted: boolean;
 }
 
-interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid" | "gradeAverage"> {}
+interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid" | "gradeAverage" | "submitted"> {}
 
 export class Paper extends Model<PaperAttributes, PaperCreationAttributes> implements PaperAttributes {
   public id: number;
@@ -432,6 +433,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public description: string;
   public isValid: boolean | null;
   public gradeAverage: number | null;
+  public submitted: boolean;
 
   public readonly createdAt!: Date;
 
@@ -1140,6 +1142,10 @@ Paper.init({
   },
   isValid: {
     type: DataTypes.BOOLEAN
+  },
+  submitted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   gradeAverage: {
     type: DataTypes.VIRTUAL,
