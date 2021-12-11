@@ -8,9 +8,7 @@ services:
     depends_on:
       - bachelor-db
     volumes:
-      - .:/usr/src/bachelor-backend/
-      - /usr/src/bachelor-backend/node_modules
-      - /usr/src/bachelor-backend/build
+      - .env:/usr/src/bachelor-backend/.env
       - /usr/src/bachelor-backend/static/profile
       - /usr/src/bachelor-backend/storage
     ports:
