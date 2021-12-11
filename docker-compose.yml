@@ -8,7 +8,11 @@ services:
     depends_on:
       - bachelor-db
     volumes:
-      - app_data:/usr/src/bachelor-backend/
+      - .:/usr/src/bachelor-backend/
+      - /usr/src/bachelor-backend/node_modules
+      - /usr/src/bachelor-backend/build
+      - /usr/src/bachelor-backend/static/profile
+      - /usr/src/bachelor-backend/storage
     ports:
       - 3000:3000
     environment: 
@@ -31,7 +35,6 @@ services:
 
 volumes:
   mysql_data:
-  app_data:
 
 networks:
   default:

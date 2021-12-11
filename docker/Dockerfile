@@ -6,11 +6,11 @@ WORKDIR /usr/src/bachelor-backend
 
 RUN apt-get -y update && apt-get -y install netcat
 
-COPY ["package.json", "package-lock.json*", "./"]
+COPY package*.json ./
 
 RUN npm install --production
 
-COPY . /usr/src/bachelor-backend/
+COPY . .
 
 RUN npm run build
 
