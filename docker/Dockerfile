@@ -1,14 +1,30 @@
-FROM node:14.15.5
+FROM node:14-slim
+
+# Install netcat (required for entrypoint script) and nano
+RUN apt-get update && apt-get -y install netcat nano
+
+# Install the Microsoft Fonts (required to render Times New Roman)
+RUN apt-get install -y ttf-mscorefonts-installer
+
+# Install latest chrome dev package and fonts to support major charsets (Chinese, Japanese, Arabic, Hebrew, Thai and a few others)
+# Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
+# installs, work.
+RUN apt-get update \
+    && apt-get install -y wget gnupg \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
+      --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 
 WORKDIR /usr/src/bachelor-backend
 
-RUN apt-get -y update && apt-get -y install netcat
-
 COPY package*.json ./
 
-RUN npm install --production
+RUN npm install 
 
 COPY . .
 
