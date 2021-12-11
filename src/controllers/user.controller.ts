@@ -1,6 +1,6 @@
 import { User, Student, Profile, sequelize } from "../models/models";
 import imageThumbnail from 'image-thumbnail';
-import { ResponseError, ResponseErrorInternal } from "../util/util";
+import { safePath, ResponseError, ResponseErrorInternal } from "../util/util";
 import path from "path";
 import fs from "fs";
 import crypto from 'crypto';
@@ -77,7 +77,7 @@ export async function patchProfile(user: User, picture: Buffer, bio: string, web
       // pass
     }
     const fileName = crypto.randomBytes(64).toString('hex') + ".jpeg";
-    const picturePath = path.join(config.PROJECT_ROOT, 'static/profile', fileName);
+    const picturePath = safePath(config.PROJECT_ROOT, 'static/profile', fileName);
     try {
       fs.writeFileSync(picturePath, thumbnail);
     } catch(err) {

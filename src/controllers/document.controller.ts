@@ -9,12 +9,13 @@ import { Model } from "sequelize/types";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal, sortMembersByTitle } from "../util/util";
+import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
+import { config } from "../config/config";
 
 const HtmlToPdfOptions = { format: 'A4', printBackground: true };
 
 export const getStoragePath = (fileName: string) => {
-    return path.resolve(process.env.PWD, 'storage', 'documents', fileName);
+    return safePath(config.PROJECT_ROOT, 'storage', 'documents', fileName);
 }
 
 export const getDocumentTemplatePath = (docName: string) => {

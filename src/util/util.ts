@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import { Teacher } from "../models/models";
 
 export class ResponseError extends Error {
@@ -64,4 +66,19 @@ export function sortMembersByTitle(members: Teacher[]) {
         const bTitle = b.user.title[0];
         return titleOrder[aTitle] - titleOrder[bTitle];
     });
+}
+
+function ensureDirectoryExists(filePath: string) {
+    const dirname = path.dirname(filePath);
+    if (fs.existsSync(dirname)) {
+      return true;
+    }
+    ensureDirectoryExists(dirname);
+    fs.mkdirSync(dirname);
+}
+
+export function safePath(...args: string[]): string {
+    const resultedPath = path.join(...args);
+    ensureDirectoryExists(resultedPath);
+    return resultedPath;
 }
