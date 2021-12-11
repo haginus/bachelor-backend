@@ -1,7 +1,7 @@
 import { Document, DocumentCategory, DomainType, DocumentType, Paper, sequelize, SessionSettings,
     StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization } from "../models/models";
 import ejs from 'ejs';
-import HtmlToPdf from 'html-pdf-node';
+import { generatePdf } from './../util/generate-pdf'
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
@@ -11,8 +11,9 @@ import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required
 import { UploadedFile } from "express-fileupload";
 import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
+import { PDFOptions } from "puppeteer";
 
-const HtmlToPdfOptions = { format: 'A4', printBackground: true };
+const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
 export const getStoragePath = (fileName: string) => {
     return safePath(config.PROJECT_ROOT, 'storage', 'documents', fileName);
@@ -127,7 +128,7 @@ const generateSignUpForm = async (student) => {
     const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
 
     const content = await ejs.renderFile(getDocumentTemplatePath("sign_up_form"), { student, date, birthDate } );
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    let fileBuffer = generatePdf(content, HtmlToPdfOptions);
     return fileBuffer;
 }
 
@@ -136,7 +137,7 @@ const generateStatutoryDeclaration = async (student) => {
 
     const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
     const content = await ejs.renderFile(getDocumentTemplatePath("statutory_declaration"), { student, date } );
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    let fileBuffer = generatePdf(content, HtmlToPdfOptions);
     return fileBuffer;
 }
 
@@ -147,7 +148,7 @@ const generateLiquidationForm = async (student) => {
     const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
     const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
     const content = await ejs.renderFile(getDocumentTemplatePath("liquidation_form"), { student, date, birthDate } );
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    let fileBuffer = generatePdf(content, HtmlToPdfOptions);
     return fileBuffer;
 }
 
@@ -373,8 +374,8 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
         margin: { bottom: '5cm', top: '2cm' },
         displayHeaderFooter: true,
         headerTemplate: '<div></div>', footerTemplate }
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
-    return fileBuffer as Buffer;
+    let fileBuffer = generatePdf(content, renderSettings);
+    return fileBuffer;
 }
 
 export const generateCommitteeFinalCatalog = async (user: User, committeId: number): Promise<Buffer> => {
@@ -418,8 +419,8 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     // Set margins and footer
     let renderSettings = { ...HtmlToPdfOptions, margin: { bottom: '2cm', top: '1cm' },
         displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate }
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, renderSettings);
-    return fileBuffer as Buffer;
+    let fileBuffer = generatePdf(content, renderSettings);
+    return fileBuffer;
 }
 
 export const generateCommitteeCompositions = async () => {
@@ -442,8 +443,8 @@ export const generateCommitteeCompositions = async () => {
     });
     const sessionSettings = await SessionSettings.findOne();
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_compositions"), { groups, sessionSettings } );
-    let fileBuffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
-    return fileBuffer as Buffer;
+    let fileBuffer = generatePdf(content, HtmlToPdfOptions);
+    return fileBuffer;
 }
 
 export const generateCommitteeStudents = async () => {
@@ -465,6 +466,6 @@ export const generateCommitteeStudents = async () => {
     });
     const sessionSettings = await SessionSettings.findOne();
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_students"), { committees, sessionSettings } );
-    let fileBuffer: Buffer = HtmlToPdf.generatePdf({ content }, HtmlToPdfOptions);
+    let fileBuffer: Buffer = await generatePdf(content, HtmlToPdfOptions);
     return fileBuffer;
 }
