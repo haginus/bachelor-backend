@@ -67,7 +67,7 @@ export async function patchProfile(user: User, picture: Buffer, bio: string, web
   }
   const transaction = await sequelize.transaction();
   let oldProfile = await user.getProfile();
-  if(!oldProfile) oldProfile = await user.createProfile({ transaction });
+  if(!oldProfile) oldProfile = await user.createProfile();
   if(bio != null) oldProfile.bio = bio;
   if(website != null) oldProfile.website = website;
   if(picture) {
