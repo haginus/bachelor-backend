@@ -3,6 +3,9 @@ FROM node:14-slim
 # Install netcat (required for entrypoint script) and nano
 RUN apt-get update && apt-get -y install netcat nano
 
+# Install the Microsoft Fonts (required to render Times New Roman)
+RUN apt-get install -y ttf-mscorefonts-installer
+
 # Install latest chrome dev package and fonts to support major charsets (Chinese, Japanese, Arabic, Hebrew, Thai and a few others)
 # Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
 # installs, work.
