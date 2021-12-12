@@ -49,6 +49,17 @@ app.use('/documents', documentsRoutes);
 app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')))
 app.use(errorHandler());
 
+app.use((req, res) => {
+  if (req.accepts('html')) {
+    res.redirect(config.WEBSITE_URL);
+  } else if (req.accepts('json')) {
+    res.status(404).send({ message: 'Resursa cerută nu există.' });
+    return;
+  } else {
+    res.status(404).send("Resursa cerută nu există.");
+  }
+});
+
 // start app
 app.listen(config.PORT, function () {
   console.log(`Express is running on port ${config.PORT}`);
