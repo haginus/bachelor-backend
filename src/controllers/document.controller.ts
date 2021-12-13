@@ -54,6 +54,14 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
     if (user.type == 'student' && !(await checkFileSubmissionPeriod(document.category))) {
         throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
     }
+
+    try {
+        const ext = mime.extension(document.mimeType);
+        const documentPath = getStoragePath(`${documentId}.${ext}`);
+        fs.unlinkSync(documentPath);
+    } catch(err) {
+        // pass
+    }
     
     await document.destroy();
     return true;
