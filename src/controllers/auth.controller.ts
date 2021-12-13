@@ -47,6 +47,18 @@ export const loginWithEmailAndPassword = async (email: string, password: string)
     return createLoginResponse(user);
 }
 
+export const checkActivationCode = async (token: string) => {
+    const activationToken = await ActivationToken.findOne({ where: { token, used: false } });
+    if(!activationToken) {
+        throw new ResponseErrorUnauthorized('Token-ul de activare este invalid sau a fost deja folosit.', 'INVALID_TOKEN');
+    }
+    const user = await getUser({ id: activationToken.userId });
+    if(!user) {
+        throw new ResponseErrorInternal();
+    }
+    return { email: user.email };
+}
+
 export const changePasswordWithActivationCode = async (token: string, password: string) => {
     if(!password || password.length < 6) {
         throw new ResponseError('Parola trebuie să aibă cel puțin 6 caractere.', 'BAD_PASSWORD');

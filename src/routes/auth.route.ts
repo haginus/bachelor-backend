@@ -26,6 +26,13 @@ router.post('/change-password-token', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/check-password-token', (req, res, next) => {
+    const { token } = req.body;
+    AuthController.checkActivationCode(token)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.get('/session', (req, res, next) => {
     AuthController.getSessionSettings()
         .then(result => res.json(result))
