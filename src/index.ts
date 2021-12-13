@@ -2,7 +2,6 @@ import express from 'express';
 import *  as _ from './custom'
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import * as AuthController from './controllers/auth.controller';
 import authRoutes from './routes/auth.route';
 import studentRoutes from './routes/students.route';
 import teacherRoutes from './routes/teacher.route';
@@ -10,9 +9,7 @@ import topicsRoutes from './routes/topics.route';
 import adminRoutes from './routes/admin.route';
 import documentsRoutes from './routes/documents.route';
 import { config } from './config/config';
-import * as Mailer from './alerts/mailer';
-import { copyObject, ResponseError } from './util/util';
-import { ValidationError } from 'sequelize';
+import { copyObject } from './util/util';
 
 import isLoggedIn from './routes/middlewares/isLoggedIn';
 import errorHandler from './routes/middlewares/errorHandler';
