@@ -1,25 +1,13 @@
-<html>
-    <body>
-        <div class="card">
-            <div class="card-image centered">
-                <img src="https://fmi.unibuc.ro/wp-content/uploads/2020/05/sigla-fmi-1.png">
-            </div>
-            <div class="card-content">
-                <h2>Bun venit, <%= user.firstName %> <%= user.lastName %>!</h2>
-                <p>
-                    Ați fost înscris în Platforma de asociere între studenți și profesorii cordonatori a
-                    Facultății de Matematică și Informatică din cadrul Universității din București. <br><br>
-                    Pentru a finaliza înregistrarea, este nevoie să apăsați pe link-ul de mai jos:
-                </p>
-            </div>
-
-            <div class="card-actions">
-                <div class="centered">
-                    <a class="button" target="_blank" href="<%= url %>">Activați contul</a>
-                </div>
-            </div>
-        </div>
-        <%- include('./partials/footer.ejs') %>
-    </body>
-</html>
-<%- include('./styles/main.ejs') %>
+<% const header = include('./partials/email_header', { text: `Bun venit, ${user.firstName} ${user.lastName}!`}) %>
+<% const button = include('./partials/email_button', { text: "Activați contul", url }); %>
+<%- include('./partials/email_body', { subject: "Activați contul dvs.", body: `
+  ${ header }
+  <p>
+    Ați fost înscris în Platforma de asociere între studenți și profesori cordonatori a
+    Facultății de Matematică și Informatică din cadrul Universității din București.
+  </p>
+  <p>
+    Pentru a finaliza înregistrarea, este nevoie să apăsați pe link-ul de mai jos:
+  </p>
+  ${ button }
+` }) %>

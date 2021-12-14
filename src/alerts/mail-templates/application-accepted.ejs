@@ -1,25 +1,13 @@
-<html>
-    <body>
-        <div class="card">
-            <div class="card-image centered">
-                <img src="https://fmi.unibuc.ro/wp-content/uploads/2020/05/sigla-fmi-1.png">
-            </div>
-            <div class="card-content">
-                <h2>Salutare, <%= studentUser.firstName %> <%= studentUser.lastName %>!</h2>
-                <p>
-                    Vești bune! Profesorul <%= teacherUser.firstName %> <%= teacherUser.lastName %> 
-                    a acceptat cererea dvs. de asociere cu titlul „<%= application.title %>”. <br><br>
-                    Accesați următorul link pentru a afla mai multe:
-                </p>
-            </div>
-
-            <div class="card-actions">
-                <div class="centered">
-                    <a class="button" target="_blank" href="<%= url %>">Lucrarea mea</a>
-                </div>
-            </div>
-        </div>
-    </body>
-    <%- include('./partials/footer.ejs') %>
-</html>
-<%- include('./styles/main.ejs') %>
+<% const header = include('./partials/email_header', { text: `Salutare, ${studentUser.firstName} ${studentUser.lastName}!`}) %>
+<% const button = include('./partials/email_button', { text: "Lucrarea mea", url }); %>
+<%- include('./partials/email_body', { subject: "Asociere acceptată", body: `
+  ${ header }
+  <p>
+    Vești bune! Profesorul ${teacherUser.firstName} ${teacherUser.lastName} 
+    a acceptat cererea dvs. de asociere cu titlul „${application.title}”.
+  </p>
+  <p>
+    Accesați următorul link pentru a afla mai multe:
+  </p>
+  ${ button }
+` }) %>
