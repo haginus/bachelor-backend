@@ -68,3 +68,23 @@ export const sendRemovedPaperNotice = async (studentUser: User, teacherUser: Use
     console.log(err);
   }
 }
+
+export const testEmail = async (templateName: string) => {
+  const user = {
+    firstName: "John",
+    lastName: "Doe"
+  }
+  const user2 = {
+    firstName: "Jane",
+    lastName: "Doe"
+  }
+  const studentUser = user;
+  const teacherUser = user2;
+  const application = { 
+    title: "Titlu lucrare",
+    description: "Lorem ipdum dolor sit amet...",
+    usedTechnologies: "Lorem ipdum dolor sit amet..."
+  }
+  const url = '';
+  return renderFile(`./src/alerts/mail-templates/${templateName}.ejs`, { user, studentUser, teacherUser, application, url } );
+};

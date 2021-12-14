@@ -8,6 +8,7 @@ import teacherRoutes from './routes/teacher.route';
 import topicsRoutes from './routes/topics.route';
 import adminRoutes from './routes/admin.route';
 import documentsRoutes from './routes/documents.route';
+import devRoutes from './routes/dev.route';
 import { config } from './config/config';
 import { copyObject } from './util/util';
 
@@ -43,7 +44,12 @@ app.use('/teacher', teacherRoutes);
 app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
-app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')))
+app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')));
+
+if(process.env.NODE_ENV !== "production") {
+  app.use('/test', devRoutes);
+}
+
 app.use(errorHandler());
 
 app.use((req, res) => {
