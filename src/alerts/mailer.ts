@@ -28,9 +28,11 @@ export async function sendResetPasswordEmail(user: User, token: string) {
 export async function sendNewApplicationEmail(studentUser: User, teacherUser: User, application: Application) {
   const url = `${config.WEBSITE_URL}/teacher/applications/pending/${application.offerId}`;
   const html = await renderFile("./src/alerts/mail-templates/new-application.ejs", { studentUser, teacherUser, application, url } );
+  const name = `${studentUser.firstName} ${studentUser.lastName}`;
   let info = await transporter.sendMail({
     to: teacherUser.email,
-    subject: "Cerere de asociere nouă",
+    replyTo: studentUser.email,
+    subject: `Cerere de asociere nouă de la ${name}`,
     html
   });
 }
@@ -72,11 +74,13 @@ export const sendRemovedPaperNotice = async (studentUser: User, teacherUser: Use
 export const testEmail = async (templateName: string) => {
   const user = {
     firstName: "John",
-    lastName: "Doe"
+    lastName: "Doe",
+    email: "john.doe@gmail.com"
   }
   const user2 = {
     firstName: "Jane",
-    lastName: "Doe"
+    lastName: "Doe",
+    email: "hagiandrei.ah@gmail.com"
   }
   const studentUser = user;
   const teacherUser = user2;
