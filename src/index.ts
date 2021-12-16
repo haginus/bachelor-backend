@@ -17,7 +17,7 @@ import errorHandler from './routes/middlewares/errorHandler';
 import path from 'path';
 
 const app = express();
-app.use(cors())
+app.use(cors(config.CORS));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
