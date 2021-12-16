@@ -46,7 +46,7 @@ app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
 app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')));
 
-if(process.env.NODE_ENV !== "production") {
+if(!config.IS_PROD) {
   app.use('/test', devRoutes);
 }
 
