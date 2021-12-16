@@ -4,15 +4,16 @@ const router = express.Router();
 import * as AuthController from '../controllers/auth.controller';
 import * as UserController from '../controllers/user.controller';
 import isLoggedIn from './middlewares/isLoggedIn';
+import reCaptcha from './middlewares/reCaptcha';
 
-router.post('/login', (req, res, next) => {
+router.post('/login', reCaptcha(), (req, res, next) => {
     const { email, password } = req.body;
     AuthController.loginWithEmailAndPassword(email, password)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
 
-router.post('/reset-password', (req, res, next) => {
+router.post('/reset-password', reCaptcha(), (req, res, next) => {
     const { email } = req.body;
     AuthController.resetPassword(email)
         .then(result => res.json(result))

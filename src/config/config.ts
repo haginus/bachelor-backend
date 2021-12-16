@@ -7,6 +7,7 @@ export const config = {
     MAKE_DELAY: process.env.MAKE_DELAY,
     PORT: process.env.PORT || "3000",
     WEBSITE_URL: process.env.WEBSITE_URL,
+    RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
     COMPRESSION_LEVEL: Number(process.env.COMPRESSION_LEVEL) || 0,
     DISABLE_SEQUELIZE_LOGGING: process.env.DISABLE_SEQUELIZE_LOGGING === 'true',
     mailerConfig: {  
