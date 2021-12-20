@@ -113,6 +113,12 @@ router.post('/teachers/add-bulk', fileUpload(), function(req, res, next) {
         .catch(err => next(err));
 });
 
+router.post('/users/resend-activation-code', function(req, res, next) {
+    AdminController.resendUserActivationCode(req.body.id)
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
 // DOMAINS
 
 router.get('/domains', function (req, res, next) {

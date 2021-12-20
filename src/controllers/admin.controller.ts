@@ -265,8 +265,8 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
         await Profile.create({ userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
-        Mailer.sendWelcomeEmail(user, activationToken.token);
-        await transaction.commit();
+        await Mailer.sendWelcomeEmail(user, activationToken.token);
+        await transaction.rollback();
         return UserController.getUserData(user.id);
     } catch (err) {
         await transaction.rollback();
@@ -332,6 +332,16 @@ export const addTeacherBulk = async (file: Buffer) => {
     });
 
     return response;
+}
+
+export const resendUserActivationCode = async (userId: number) => {
+    const user = await User.findByPk(userId);
+    if(!user) {
+        throw new ResponseError("Utilizatorul nu există.");
+    }
+    const [activationToken, _] = await ActivationToken.findOrCreate({ where: { userId } });
+    await Mailer.sendWelcomeEmail(user, activationToken.token);
+    return true;
 }
 
 export const getDomains = () => {
