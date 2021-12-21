@@ -48,4 +48,10 @@ router.patch('/profile', isLoggedIn(), fileUpload(), (req, res, next) => {
         .catch(err => next(err));
 });
 
-export default router
+router.get('/user', isLoggedIn(), async (req, res, next) => {
+    AuthController.getCurrentUser(req._user)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+    });
+
+export default router;

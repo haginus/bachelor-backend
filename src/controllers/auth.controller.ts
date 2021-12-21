@@ -115,6 +115,16 @@ export const resetPassword = async (email: string) => {
     return { success: true };
 }
 
+export const getCurrentUser = async (user: User) => {
+    if(!user) {
+        throw new ResponseError('Nu sunteți autentificat.', 'NOT_LOGGED_IN');
+    }
+    let profile = await user.getProfile();
+    let resp = { ...copyObject(user), profile };
+    delete resp.password;
+    return resp;
+}
+
 export const getSessionSettings = () => {
     return SessionSettings.findOne();
 }

@@ -31,13 +31,6 @@ const delay = async function(req, res, next) {
 if(config.MAKE_DELAY)
   app.use(delay);
 
-app.get('/user/info', isLoggedIn(), async (req, res) => {
-  let user = req._user;
-  let profile = await user.getProfile();
-  let resp = { ...copyObject(user), profile }
-  res.json(resp);
-});
-
 app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);

@@ -265,12 +265,25 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
         await Profile.create({ userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
-        await Mailer.sendWelcomeEmail(user, activationToken.token);
-        await transaction.rollback();
+        try {
+            await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
+        } catch(err) {
+            throw new ResponseErrorInternal(
+                'Profesorul nu a putut fi creat deoarece serverul de e-mail este indisponibil. Contactați administratorul.',
+                'EMAIL_NOT_SENT'
+            );
+        }
+        await transaction.commit();
         return UserController.getUserData(user.id);
     } catch (err) {
         await transaction.rollback();
-        throw new ResponseError('Eroare de validare.', "VALIDATION_ERROR");
+        if(err instanceof ValidationError) {
+            if(err.errors[0].validatorKey == 'not_unique') {
+                throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
+            }
+            throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
+        }
+        throw err;
     }
 }
 
