@@ -82,3 +82,9 @@ export function safePath(...args: string[]): string {
     ensureDirectoryExists(resultedPath);
     return resultedPath;
 }
+
+export async function sleep(ms: number) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+}
