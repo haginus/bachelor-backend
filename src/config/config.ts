@@ -23,7 +23,9 @@ export const config = {
         auth: !process.env.MAILER_USER ? null : {
             user: process.env.MAILER_USER,
             pass: process.env.MAILER_PASSWORD
-        }
+        },
+        pool: true,
+        maxMessages: 15,
     },
     mailerOptions: {
         from: process.env.MAILER_FROM_ADDRESS
