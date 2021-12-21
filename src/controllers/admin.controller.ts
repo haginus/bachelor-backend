@@ -38,8 +38,14 @@ export const getStats = async (): Promise<Statistic[]> => {
 
 type SortOrder = 'ASC' | 'DESC';
 type Pagination = { limit?: number, offset?: number };
+export type StudentQueryFilters = {
+    domainId: number;
+    specializationId: number;
+    group: number;
+    promotion: number;
+}
 
-export const getStudents = async (sort, order, filter, page, pageSize) => {
+export const getStudents = async (sort, order, filter: StudentQueryFilters, page, pageSize) => {
     const limit = pageSize;
     const offset = page * pageSize;
     if (limit <= 0 || offset < 0) {
@@ -59,12 +65,21 @@ export const getStudents = async (sort, order, filter, page, pageSize) => {
             sortArray = [sort, order];
     }
 
+    const where = {};
+    Object.keys(filter).forEach(filterKey => {
+        const value = filter[filterKey];
+        if(value) {
+            where[filterKey] = value;
+        }
+    });
+
     let query = await User.findAndCountAll({
-        //where,
         attributes: { exclude: ['password'] },
         include: [
             {
-                model: sequelize.model('student'), required: true,
+                model: sequelize.model('student'),
+                required: true,
+                where,
                 include: [
                     sequelize.model('domain'),
                     sequelize.model('specialization')
