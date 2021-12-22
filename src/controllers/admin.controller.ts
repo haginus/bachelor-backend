@@ -381,7 +381,7 @@ export const getDomainsExtra = () => {
         attributes: {
             include: [
                 [literals.DOMAIN_STUDENT_NUMBER, 'studentNumber'],
-                [literals.DOMAIN_STUDENT_NUMBER, 'offerNumber']
+                [literals.DOMAIN_OFFER_NUMBER, 'offerNumber']
             ]
         }
     })
