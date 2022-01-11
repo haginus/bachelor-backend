@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.ts",
   "dependencies": {
+    "@sentry/node": "^6.16.1",
+    "@sentry/tracing": "^6.16.1",
     "@types/image-thumbnail": "^1.0.1",
     "archiver": "^5.3.0",
     "axios": "^0.24.0",

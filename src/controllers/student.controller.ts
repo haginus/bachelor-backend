@@ -35,7 +35,7 @@ export class StudentController {
       await transaction.commit();
     } catch (err) {
       await transaction.rollback();
-      throw new ResponseErrorInternal();
+      throw err;
     }
     return true;
   }
@@ -332,7 +332,7 @@ export class StudentController {
       paper.description = prevDesc;
       await paper.save();
       await transaction.rollback();
-      throw new ResponseErrorInternal();
+      throw err;
     }
   }
 
@@ -353,7 +353,7 @@ export class StudentController {
       await paper.save();
       return { success: true };
     } catch (err) {
-      throw new ResponseErrorInternal();
+      throw err;
     }
   }
 
@@ -483,7 +483,7 @@ export class StudentController {
     } catch (err) {
       await transaction.rollback();
       console.log(err);
-      throw new ResponseErrorInternal();
+      throw err;
     }
   }
 

@@ -223,7 +223,7 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     } catch (err) {
         console.log(err);
         await transaction.rollback(); // rollback if anything goes wrong
-        throw new ResponseErrorInternal();
+        throw err;
     }
 
     return newDocument;
