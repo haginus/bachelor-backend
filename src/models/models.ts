@@ -1529,7 +1529,7 @@ Paper.addScope('grades', {
   }]
 });
 
-sequelize.sync({ alter: true })
+sequelize.sync()
   .then(() => {
     SessionSettings.findOrCreate(
       {
