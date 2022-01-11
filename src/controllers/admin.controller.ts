@@ -20,15 +20,17 @@ interface Statistic {
 
 export const getStats = async (): Promise<Statistic[]> => {
     const studentPromise = Student.count();
+    const validatedStudentPromise = User.sum('validated', { where: { type: 'student' } });
     const teacherPromise = Teacher.count();
+    const validatedTeacherPromise = User.sum('validated', { where: { type: 'teacher' } });
     const paperPromise = Paper.count({ where: { submitted: true }});
     const assignedPaperPromise = Paper.count({ col: 'committeeId' });
     const committeePromise = Committee.scope('min').findAll();
-    const [studentCount, teacherCount, paperCount, assignedPaperCount, committees] = 
-        await Promise.all([studentPromise, teacherPromise, paperPromise, assignedPaperPromise, committeePromise]);
+    const [studentCount, validatedStudentCount, teacherCount, validatedTeacherCount, paperCount, assignedPaperCount, committees] = 
+        await Promise.all([studentPromise, validatedStudentPromise, teacherPromise, validatedTeacherPromise, paperPromise, assignedPaperPromise, committeePromise]);
     return [
-        { title: 'Studenți', content: studentCount, sectionPath: 'students' },
-        { title: 'Profesori', content: teacherCount, sectionPath: 'teachers' },
+        { title: 'Studenți', content: studentCount, extra: `din care ${validatedStudentCount} cu cont activ`, sectionPath: 'students' },
+        { title: 'Profesori', content: teacherCount, extra: `din care ${validatedTeacherCount} cu cont activ`, sectionPath: 'teachers' },
         { title: 'Lucrări', content: paperCount, extra: `din care ${assignedPaperCount} atribuite`, sectionPath: 'papers' },
         { title: 'Comisii', content: committees.length, sectionPath: 'committees' },
     ]
