@@ -1134,7 +1134,7 @@ Paper.init({
     }
   },
   description: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1024),
     allowNull: false,
     validate: {
       len: [5, 1024]
@@ -1529,7 +1529,7 @@ Paper.addScope('grades', {
   }]
 });
 
-sequelize.sync()
+sequelize.sync({ alter: true })
   .then(() => {
     SessionSettings.findOrCreate(
       {
