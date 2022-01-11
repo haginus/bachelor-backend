@@ -222,10 +222,9 @@ export class StudentController {
             Offer.associations.topics,
             {
               association: Offer.associations.teacher,
-              include: [{
-                association: Teacher.associations.user,
-                attributes: ["id", "title", "firstName", "lastName"]
-              }]
+              include: [
+                User.scope(['min', 'profile'])
+              ]
             },
           ],
           attributes: {
