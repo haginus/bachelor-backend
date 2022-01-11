@@ -139,7 +139,7 @@ export const addStudent = async (firstName, lastName, CNP, email, group, special
         await transaction.rollback(); // if anything goes wrong, rollback
         if(err instanceof ValidationError) {
             if(err.errors[0].validatorKey == 'not_unique') {
-                throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
+                throw new ResponseError('E-mailul introdus este deja luat: ' + email, 'VALIDATION_ERROR');
             }
             throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
         }
@@ -172,7 +172,7 @@ export const editStudent = async (id, firstName, lastName, CNP, group, specializ
     return UserController.getUserData(id);
 }
 
-export const deleteUser = async (id) => {
+export const deleteUser = async (id: number) => {
     let result = await User.destroy({ where: { id } });
     return result;
 }
@@ -219,7 +219,7 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
             });
     });
     let promises = users.map(user => {
-        let fundingForm: string = removeDiacritics((user.fundingForm || '').toLowerCase());
+        let fundingForm: string = removeDiacritics((user.fundingForm || '').trim().toLowerCase());
         if(fundingForm == 'buget') {
             fundingForm = 'budget';
         } else if(fundingForm == 'taxa') {
@@ -370,6 +370,48 @@ export const resendUserActivationCode = async (userId: number) => {
     const [activationToken, _] = await ActivationToken.findOrCreate({ where: { userId } });
     await Mailer.sendWelcomeEmail(user, activationToken.token);
     return true;
+}
+
+// Admins
+
+export const getAdmins = async () => {
+    return User.findAll({ where: { type: 'admin' } });
+}
+
+export const addAdmin = async (firstName: string, lastName: string, email: string) => {
+    const transaction = await sequelize.transaction();
+    try {
+        let user = await User.create({ firstName, lastName, email, type: 'admin' }, { transaction });
+        await Profile.create({ userId: user.id }, { transaction });
+        let token = crypto.randomBytes(64).toString('hex');
+        let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
+        try {
+            await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
+        } catch(err) {
+            throw new ResponseErrorInternal(
+                'Contul nu a putut fi creat deoarece serverul de e-mail este indisponibil. Contactați administratorul.',
+                'EMAIL_NOT_SENT'
+            );
+        }
+        await transaction.commit();
+        return UserController.getUserData(user.id);
+    } catch (err) {
+        await transaction.rollback();
+        if(err instanceof ValidationError) {
+            if(err.errors[0].validatorKey == 'not_unique') {
+                throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
+            }
+            throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
+        }
+        throw err;
+    }
+}
+
+export const editAdmin = async (id: number, firstName: string, lastName: string) => {
+    let userUpdate = await User.update({ firstName, lastName }, {
+        where: { id }
+    });
+    return UserController.getUserData(id);
 }
 
 export const getDomains = () => {
