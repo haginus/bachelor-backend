@@ -4,6 +4,7 @@ const router = express.Router();
 import * as AuthController from '../controllers/auth.controller';
 import * as UserController from '../controllers/user.controller';
 import isLoggedIn from './middlewares/isLoggedIn';
+import isType from './middlewares/isType';
 import reCaptcha from './middlewares/reCaptcha';
 
 router.post('/login', reCaptcha(), (req, res, next) => {
@@ -23,6 +24,19 @@ router.post('/reset-password', reCaptcha(), (req, res, next) => {
 router.post('/change-password-token', (req, res, next) => {
     const { token, password } = req.body;
     AuthController.changePasswordWithActivationCode(token, password)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.post('/impersonate', isLoggedIn(), isType('admin'), (req, res, next) => {
+    const { userId } = req.body;
+    AuthController.impersonateUser(req._user, +userId)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.post('/release', isLoggedIn(), (req, res, next) => {
+    AuthController.releaseImpersonation(req._impersonatedBy)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
@@ -49,7 +63,7 @@ router.patch('/profile', isLoggedIn(), fileUpload(), (req, res, next) => {
 });
 
 router.get('/user', isLoggedIn(), async (req, res, next) => {
-    AuthController.getCurrentUser(req._user)
+    AuthController.getCurrentUser(req._user, !!req._impersonatedBy)
         .then(result => res.json(result))
         .catch(err => next(err));
     });

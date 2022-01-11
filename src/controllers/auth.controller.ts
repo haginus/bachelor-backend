@@ -24,12 +24,13 @@ export const getUser = async (where: WhereOptions<User>) => {
     });
 }
 
-const createLoginResponse = async (user: User) => {
-    const token = jwt.sign({ id: user.id }, config.SECRET_KEY);
-    const profile = await user.getProfile();
-    let responseUser = { ...copyObject(user), profile };
-    delete responseUser.password; // remove the hashed password in order to send the response
-    return { token, user: responseUser };
+interface AdditionalPayload {
+    impersonatedBy?: number;
+}
+
+const createLoginResponse = async (user: User, additionalPayload: AdditionalPayload = {}) => {
+    const token = jwt.sign({ id: user.id, ...additionalPayload }, config.SECRET_KEY);
+    return { token, user: await getCurrentUser(user, !!additionalPayload.impersonatedBy) };
 }
 
 export const loginWithEmailAndPassword = async (email: string, password: string) => {
@@ -85,6 +86,25 @@ export const changePasswordWithActivationCode = async (token: string, password: 
     }
 }
 
+export async function impersonateUser(currentUser: User, wantedUserId: number) {
+    const user = await getUser({ id: wantedUserId }); 
+    if(!user)  {
+        throw new ResponseError("Utilizatorul nu există.");
+    }
+    return createLoginResponse(user, { impersonatedBy: currentUser.id });
+}
+
+export async function releaseImpersonation(impersonatedBy: number) {
+    if(!impersonatedBy) {
+        throw new ResponseErrorForbidden();
+    }
+    const user = await getUser({ id: impersonatedBy }); 
+    if(!user)  {
+        throw new ResponseError("Utilizatorul nu există.");
+    }
+    return createLoginResponse(user);
+}
+
 export const resetPassword = async (email: string) => {
     const user = await User.findOne({ where: { email } });
     if(user) {
@@ -115,12 +135,12 @@ export const resetPassword = async (email: string) => {
     return { success: true };
 }
 
-export const getCurrentUser = async (user: User) => {
+export const getCurrentUser = async (user: User, isImpersonated: boolean = false) => {
     if(!user) {
         throw new ResponseError('Nu sunteți autentificat.', 'NOT_LOGGED_IN');
     }
     let profile = await user.getProfile();
-    let resp = { ...copyObject(user), profile };
+    let resp = { ...copyObject(user), profile, isImpersonated };
     delete resp.password;
     return resp;
 }

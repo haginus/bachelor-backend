@@ -14,9 +14,10 @@ export default function() {
         token = token.slice(7).trimStart();  // get the value of the token
         try {
             const payload = jwt.verify(token, config.SECRET_KEY);
-            const { id } = <any> payload; 
+            const { id, impersonatedBy } = <any> payload; 
             let user = await getUser({ id });
             req._user = user;
+            req._impersonatedBy = impersonatedBy || null;
             next();
         } catch(err) {
             next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
