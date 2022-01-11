@@ -14,7 +14,7 @@ router.use(isType('student'));
 router.post('/validate', function (req, res, next) {
     const { topics } = req.body;
     StudentController.validateStudent(req._user, topics)
-        .then(_ => res.json(res.json({ success: true })))
+        .then(_ => res.json({ success: true }))
         .catch(err => next(err));
 });
 
