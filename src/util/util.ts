@@ -88,3 +88,14 @@ export async function sleep(ms: number) {
         setTimeout(resolve, ms);
     });
 }
+
+export function capitalizeString(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+/**
+ * Split by any of the delimitators in the array.
+ */
+export function multiSplit(str: string, delimitators: string[]): string[] {
+    return delimitators.reduce((prev, current) => prev.flatMap(val => val.split(current)), [str]).filter(s => !!s);
+}

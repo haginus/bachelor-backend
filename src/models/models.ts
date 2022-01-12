@@ -21,6 +21,8 @@ import {
   HasOneSetAssociationMixin
 } from "sequelize";
 
+import { capitalizeString, multiSplit } from '../util/util';
+
 export const sequelize = new Sequelize(config.DATABASE_STRING, {
   logging: !config.DISABLE_SEQUELIZE_LOGGING
 });
@@ -1547,6 +1549,18 @@ sequelize.sync()
       }
     }).then(() => {
       console.log('Database has synced correctly.');
+      User.findAll({ where: { type: 'student' }}).then(users => {
+        users.forEach(user => {
+          user.firstName =  multiSplit(user.firstName.trim(), [' ', '-'])
+            .map(name => capitalizeString(name))
+            .join('-');
+
+          user.lastName = multiSplit(user.lastName.trim(), [' ', '-'])
+            .map(name => capitalizeString(name))
+            .join('-');
+          user.save();
+        });
+      });
     });
   })
   .catch(error => console.log('This error occured', error));
