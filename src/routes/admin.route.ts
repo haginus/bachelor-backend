@@ -114,6 +114,28 @@ router.post('/teachers/add-bulk', fileUpload(), function(req, res, next) {
         .catch(err => next(err));
 });
 
+// ADMINS
+
+router.get('/admins', function (req, res, next) {
+    AdminController.getAdmins()
+        .then(admins => res.json(admins))
+        .catch(err => next(err));
+});
+
+router.post('/admins/add', function (req, res, next) {
+    let { firstName, lastName, email } = req.body;
+    AdminController.addAdmin(firstName, lastName, email)
+        .then(admin => res.json(admin))
+        .catch(err => next(err));
+});
+
+// router.post('/admins/edit', function (req, res, next) {
+//     let { id, firstName, lastName } = req.body;
+//     AdminController.editAdmin(+id, firstName, lastName)
+//         .then(admin => res.json(admin))
+//         .catch(err => next(err));
+// });
+
 router.post('/users/resend-activation-code', function(req, res, next) {
     AdminController.resendUserActivationCode(req.body.id)
         .then(result => res.json({ success: true }))
