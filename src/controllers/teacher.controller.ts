@@ -59,7 +59,6 @@ export const editOffer = async (user: User, offerId: number, domainId: number,
         offer.domainId = domainId;
         offer.limit = limit;
         offer.description = description;
-        console.log(offer.description)
         await offer.save({ transaction });
         await offer.setTopics(topicIds, { transaction });
         await transaction.commit();
@@ -91,6 +90,26 @@ export const addOffer = async (user: User, domainId: number, topicIds: number[],
         }
         else throw err;
     }
+}
+
+export async function deleteOffer(user: User, offerId: number): Promise<void> {
+    let offer = await Offer.findByPk(offerId, {
+        attributes: {
+            include: [
+                [literals.countOfferAcceptedApplications, "takenPlaces"]
+            ]
+        }
+    });
+    if(!offer) {
+        throw new ResponseError('Oferta nu există.');
+    }
+    if(offer.teacherId != user.teacher.id) {
+        throw new ResponseErrorForbidden();
+    }
+    if(offer.takenPlaces > 0) {
+        throw new ResponseError("Ofertele cu cereri acceptate nu pot fi șterse.");
+    }
+    return offer.destroy();
 }
 
 export const getApplications = async (user: User, offerId: number, state: string) => {

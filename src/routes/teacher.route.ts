@@ -37,6 +37,13 @@ router.post('/offers/add', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/offers/delete', (req, res, next) => {
+    const { id } = req.body;
+    TeacherController.deleteOffer(req._user, id)
+        .then(_ => res.json({ suceess: true }))
+        .catch(err => next(err));
+});
+
 router.get('/applications', (req, res, next) => {
     let offerId = parseInt(req.query.offerId as string);
     let state = req.query.state as string;
