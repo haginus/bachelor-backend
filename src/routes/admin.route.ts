@@ -122,12 +122,12 @@ router.get('/admins', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/admins/add', function (req, res, next) {
-    let { firstName, lastName, email } = req.body;
-    AdminController.addAdmin(firstName, lastName, email)
-        .then(admin => res.json(admin))
-        .catch(err => next(err));
-});
+// router.post('/admins/add', function (req, res, next) {
+//     let { firstName, lastName, email } = req.body;
+//     AdminController.addAdmin(firstName, lastName, email)
+//         .then(admin => res.json(admin))
+//         .catch(err => next(err));
+// });
 
 // router.post('/admins/edit', function (req, res, next) {
 //     let { id, firstName, lastName } = req.body;
