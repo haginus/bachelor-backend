@@ -201,7 +201,7 @@ export const acceptApplication = async (user: User, applicationId: number) => {
     });
 
     if(takenPlaces + 1 > application.offer.limit) {
-        throw new ResponseError("Limita ofertei a fost deja atinsă.", "LIMIT_REACHED", 403);
+        throw new ResponseError("Limita ofertei a fost deja atinsă. Creșteți limita și reîncercați.", "LIMIT_REACHED", 403);
     }
     application.accepted = true;
     const transaction = await sequelize.transaction();

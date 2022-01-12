@@ -175,8 +175,8 @@ export class StudentController {
     if (student.domainId != offer.domainId) {
       throw new ResponseErrorForbidden('Oferta nu vă este adresată.', 'DOMAIN_MISMATCH');
     }
-    // check if limit is higher than application number
-    if (offer.applications.length + 1 > offer.limit) {
+    // check if limit is higher than the accepted application number
+    if (offer.applications.filter(application => application.accepted).length + 1 > offer.limit) {
       throw new ResponseErrorForbidden('Oferta și-a atins numărul maxim de locuri.', 'BUSY_OFFER');
     }
     // check double applications
