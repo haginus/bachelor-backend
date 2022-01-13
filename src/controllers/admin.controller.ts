@@ -436,7 +436,7 @@ export const getDomain = (id) => {
         attributes: {
             include: [
                 [literals.DOMAIN_STUDENT_NUMBER, 'studentNumber'],
-                [literals.DOMAIN_STUDENT_NUMBER, 'offerNumber']
+                [literals.DOMAIN_OFFER_NUMBER, 'offerNumber']
             ]
         },
         where: { id }
