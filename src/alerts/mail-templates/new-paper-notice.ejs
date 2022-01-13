@@ -1,0 +1,20 @@
+<% const header = include('./partials/email_header', { text: `Salutare, ${studentUser.firstName} ${studentUser.lastName}!`}) %>
+<% const button = include('./partials/email_button', { text: "Lucrarea mea", url }); %>
+<%- include('./partials/email_body', { subject: "Asocierea dvs.", body: `
+  ${ header }
+  <p>
+    Profesorul ${teacherUser.firstName} ${teacherUser.lastName} 
+    s-a asociat cu dvs. adăugând lucrarea cu titlul „${paper.title}”.
+  </p>
+  <p>
+    În cazul în care aceasta este o greșeală, contactați profesorul pentru a-i cere să rupă asocierea la adresa
+    <a href="mailto:${studentUser.email}" target="_blank" style="font-weight: 600; text-decoration: none; color: #1757a6">
+      ${studentUser.email}
+    </a>
+    sau dând reply acestui e-mail.
+  </p>
+  <p>
+    Accesați următorul link pentru a afla mai multe:
+  </p>
+  ${ button }
+` }) %>

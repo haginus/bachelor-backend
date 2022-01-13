@@ -5,7 +5,7 @@ import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
-import { copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { canApply, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
 
 
 export const validateTeacher = async (user: User) => {
@@ -399,6 +399,83 @@ export const markGradesAsFinal = async (user: User, committeeId: number) => {
     committee.finalGrades = true;
     await committee.save();
     return { success: true };
+}
+
+export async function getStudents(names?: string, domainId?: number): Promise<User[]> {
+    const sessionSettings = await SessionSettings.findOne();
+    if(!canApply(sessionSettings)) {
+        throw new ResponseErrorForbidden();
+    }
+    const orClauses = (names?.split(' ') || [])
+        .map(name => ({
+            [Op.or]: [
+                { firstName: { [Op.substring]: name } },
+                { lastName: { [Op.substring]: name } },
+            ]
+        })
+        ).splice(0, 3);
+    const domainIdWhere = domainId ? { domainId } : { };
+    const orClausesWhere = orClauses.length > 0 ? { [Op.or]: orClauses } : { };
+    return User.scope("min").findAll({
+        where: { 
+            type: "student",
+            ...orClausesWhere,
+        },
+        include: [
+            {
+                association: User.associations.student,
+                attributes: {
+                    exclude: ["fundingForm"]
+                },
+                where: { ...domainIdWhere },
+                include: [ 
+                    Student.associations.paper,
+                    Student.associations.specialization,
+                    Student.associations.domain
+                ]
+            }
+        ],
+        limit: 10
+    });
+}
+
+export async function addPaper(user: User, studentId: number, title: string, description: string, topicIds: number[]) {
+    const sessionSettings = await SessionSettings.findOne();
+    if(!canApply(sessionSettings)) {
+        throw new ResponseError("Perioada de asociere s-a încheiat.");
+    }
+    const student = await Student.findByPk(studentId, {
+        include: [ 
+            Student.associations.user,
+            Student.associations.domain,
+            Student.associations.paper
+        ]
+    });
+    if(!student) {
+        throw new ResponseError("Studentul nu există.");
+    }
+    if(student.paper) {
+        throw new ResponseError("Studentul are deja o lucrare.");
+    }
+    const topics = await Topic.findAll({ where: { id: topicIds }});
+    if(topics.length == 0) {
+        throw new ResponseError("Lucrarea trebuie să aibă teme.");
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        const newPaper = await Paper.create(
+            { title, description, type: student.domain.paperType, studentId, teacherId: user.id },
+            { transaction }
+        );
+        await newPaper.setTopics(topics, { transaction });
+        await Application.destroy({ where: { studentId }}), { transaction };
+        await transaction.commit();
+        Mailer.sendAddedPaperNotice(student.user, user, newPaper);
+        return newPaper;
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
 }
 
 const literals = {

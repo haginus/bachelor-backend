@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { Teacher } from "../models/models";
+import { SessionSettings, Teacher } from "../models/models";
 
 export class ResponseError extends Error {
     httpStatusCode: number;
@@ -98,4 +98,9 @@ export function capitalizeString(str: string) {
  */
 export function multiSplit(str: string, delimitators: string[]): string[] {
     return delimitators.reduce((prev, current) => prev.flatMap(val => val.split(current)), [str]).filter(s => !!s);
+}
+
+export function canApply(sessionSettings: SessionSettings) {
+    const now = Date.now();
+    return new Date(sessionSettings.applyStartDate).getTime() <= now && now <= new Date(sessionSettings.applyEndDate).getTime();
 }

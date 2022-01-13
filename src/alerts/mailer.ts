@@ -1,7 +1,7 @@
 import { createTransport, Transporter } from "nodemailer";
 import { config } from '../config/config';
 import { renderFile } from 'ejs';
-import { Application, User } from "../models/models";
+import { Application, Paper, User } from "../models/models";
 import Mail from "nodemailer/lib/mailer";
 import { sleep } from "../util/util";
 
@@ -147,18 +147,24 @@ export async function sendAcceptedApplicationEmail(studentUser, teacherUser, app
   });
 }
 
-export const sendRemovedPaperNotice = async (studentUser: User, teacherUser: User) => {
-  try {
-    const url = `${config.WEBSITE_URL}/student/teachers`;
-    const html = await renderFile("./src/alerts/mail-templates/removed-paper-notice.ejs", { studentUser, teacherUser, url } );
-    let info = await mailSender.sendMail({
-      to: studentUser.email,
-      subject: "Asociere ruptă - Găsiți alt profesor",
-      html
-    });
-  } catch (err) {
-    console.log(err);
-  }
+export async function sendRemovedPaperNotice(studentUser: User, teacherUser: User) {
+  const url = `${config.WEBSITE_URL}/student/teachers`;
+  const html = await renderFile("./src/alerts/mail-templates/removed-paper-notice.ejs", { studentUser, teacherUser, url } );
+  let info = await mailSender.sendMail({
+    to: studentUser.email,
+    subject: "Asociere ruptă - Găsiți alt profesor",
+    html
+  });
+}
+
+export async function sendAddedPaperNotice(studentUser: User, teacherUser: User, paper: Paper) {
+  const url = `${config.WEBSITE_URL}/student/paper`;
+  const html = await renderFile("./src/alerts/mail-templates/new-paper-notice.ejs", { studentUser, teacherUser, paper, url } );
+  let info = await mailSender.sendMail({
+    to: studentUser.email,
+    subject: `Asocierea dvs. cu ${teacherUser.firstName} ${teacherUser.lastName}`,
+    html
+  });
 }
 
 export const testEmail = async (templateName: string) => {
@@ -179,8 +185,11 @@ export const testEmail = async (templateName: string) => {
     description: "Lorem ipdum dolor sit amet...",
     usedTechnologies: "Lorem ipdum dolor sit amet..."
   }
+  const paper = { 
+    title: "Titlu lucrare",
+  }
   const url = '';
-  return renderFile(`./src/alerts/mail-templates/${templateName}.ejs`, { user, studentUser, teacherUser, application, url } );
+  return renderFile(`./src/alerts/mail-templates/${templateName}.ejs`, { user, studentUser, teacherUser, application, paper, url } );
 };
 
 

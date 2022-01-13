@@ -99,6 +99,13 @@ router.post('/papers/remove', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.post('/papers/add', function (req, res, next) {
+    const { studentId, title, description, topicIds } = req.body;
+    TeacherController.addPaper(req._user, +studentId, title, description, topicIds)
+        .then(paper => res.json(paper))
+        .catch(err => next(err));
+});
+
 router.post('/papers/grade', function (req, res, next) {
     const { paperId, forPaper, forPresentation } = req.body;
     TeacherController.gradePaper(req._user, +paperId, +forPaper, +forPresentation)
@@ -124,6 +131,13 @@ router.post('/committees/:id/mark-grades-final', function (req, res, next) {
     
     TeacherController.markGradesAsFinal(req._user, +id)
         .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.get('/students/', function (req, res, next) {
+    const { name, domainId } = req.query;
+    TeacherController.getStudents(name as string, +domainId)
+        .then(students => res.json(students))
         .catch(err => next(err));
 });
 
