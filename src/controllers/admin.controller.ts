@@ -261,6 +261,8 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
     let sortArray: OrderItem = [ 'id', 'ASC'];
     if (['id', 'firstName', 'lastName', 'CNP', 'email'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
         sortArray = [ sort, order];
+    } else if(['offerNumber', 'paperNumber'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+        sortArray = [ Sequelize.literal(`\`teacher.${sort}\``), order];
     }
 
     const paperLiteral = Sequelize.literal(`(
