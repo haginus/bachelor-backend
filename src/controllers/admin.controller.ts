@@ -4,7 +4,7 @@ import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
 import bcrypt from "bcrypt";
-import { Op, OrderItem, ValidationError} from "sequelize";
+import { Op, OrderItem, Sequelize, ValidationError} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
@@ -263,9 +263,31 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
         sortArray = [ sort, order];
     }
 
+    const paperLiteral = Sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM papers AS paper
+        WHERE paper.teacherId = \`teacher\`.id
+    )`);
+
+    const offerLiteral = Sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM offers AS offer
+        WHERE offer.teacherId = \`teacher\`.id
+    )`);
+
     let query = await User.findAndCountAll({
         where: { type: "teacher" },
-        include: sequelize.model('teacher'),
+        include: [
+            {
+                association: User.associations.teacher,
+                attributes: {
+                    include: [
+                        [ paperLiteral, 'paperNumber' ],
+                        [ offerLiteral, 'offerNumber' ]
+                    ]
+                }
+            }
+        ],
         attributes: { exclude: ['password'] },
         limit,
         offset,
