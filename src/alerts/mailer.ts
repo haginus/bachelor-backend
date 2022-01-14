@@ -162,6 +162,7 @@ export async function sendAddedPaperNotice(studentUser: User, teacherUser: User,
   const html = await renderFile("./src/alerts/mail-templates/new-paper-notice.ejs", { studentUser, teacherUser, paper, url } );
   let info = await mailSender.sendMail({
     to: studentUser.email,
+    replyTo: teacherUser.email,
     subject: `Asocierea dvs. cu ${teacherUser.firstName} ${teacherUser.lastName}`,
     html
   });
