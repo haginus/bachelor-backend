@@ -786,6 +786,8 @@ export interface GetPapersFilter {
     isNotValid?: boolean;
     /** If papers must be submitted. */
     submitted?: boolean;
+    /** Paper type */
+    type?: PaperType;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -812,6 +814,9 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     }
     if(filter?.isNotValid != null) {
         where.isValid = filter.isNotValid ? false : { [Op.or]: [null, true] };
+    }
+    if(filter.type) {
+        where.type = filter.type;
     }
     where.submitted = true;
     if(filter?.submitted != null) {
@@ -893,6 +898,9 @@ export const validatePaper = async (paperId: number, validate: boolean) => {
     }
     if(paper.isValid != null) {
         throw "ALREADY_VALIDATED";
+    }
+    if(!paper.submitted) {
+        throw "PAPER_NOT_SUBMITTED";
     }
     paper.isValid = validate;
     if(validate) {
