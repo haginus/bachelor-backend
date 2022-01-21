@@ -11,6 +11,8 @@
     "axios": "^0.24.0",
     "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
     "dotenv": "^8.2.0",
@@ -24,6 +26,7 @@
     "nodemailer": "^6.4.18",
     "prompt": "^1.1.0",
     "puppeteer": "10.0.0",
+    "reflect-metadata": "^0.1.13",
     "sequelize": "^6.6.2",
     "typescript": "^4.2.4"
   },

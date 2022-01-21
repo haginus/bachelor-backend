@@ -7,6 +7,9 @@ import { generateFinalReport } from '../util/final-report';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import { PaperType } from '../models/models';
+import validateDto from './middlewares/validateDto';
+import { StudentGetQueryOptions } from '../dto/admin/StudentGetQueryOptions';
+import { StudentDto } from '../dto/admin/StudentDto';
 
 router.use(isLoggedIn());
 router.use(isType('admin'));
@@ -20,10 +23,8 @@ router.get('/stats', function (req, res, next) {
 
 // STUDENTS
 
-router.get('/students', function (req, res, next) {
-    let { sort, order, page, pageSize, domainId, specializationId, group, promotion } = req.query;
-    const filter = { domainId, specializationId, group, promotion } as any;
-    AdminController.getStudents(sort, order, filter, +page, +pageSize)
+router.get('/students', validateDto(StudentGetQueryOptions, "query"), function (req, res, next) {
+    AdminController.getStudents(req.query as any)
         .then(students => res.json(students))
         .catch(err => next(err));
 });
@@ -35,7 +36,7 @@ router.get('/student', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/students/add', function (req, res, next) {
+router.post('/students/add', validateDto(StudentDto), function (req, res, next) {
     let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
         studyForm, fundingForm, matriculationYear } = req.body;
     AdminController.addStudent(firstName, lastName, CNP, email, group,
@@ -44,7 +45,7 @@ router.post('/students/add', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/students/edit', function (req, res, next) {
+router.post('/students/edit', validateDto(StudentDto), function (req, res, next) {
     let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
         studyForm, fundingForm, matriculationYear } = req.body;
     AdminController.editStudent(id, firstName, lastName, CNP, group, specializationId,

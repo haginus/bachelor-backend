@@ -9,6 +9,7 @@ import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
+import { StudentGetQueryOptions } from "../dto/admin/StudentGetQueryOptions";
 var stream = require('stream');
 
 interface Statistic {
@@ -47,16 +48,18 @@ export type StudentQueryFilters = {
     promotion: number;
 }
 
-export const getStudents = async (sort, order, filter: StudentQueryFilters, page, pageSize) => {
-    const limit = pageSize;
-    const offset = page * pageSize;
+export const getStudents = async (options: StudentGetQueryOptions) => {
+    const limit = options.pageSize;
+    const offset = limit * options.page;
     if (limit <= 0 || offset < 0) {
         throw "INVALID_PARAMETERS";
     }
 
+    const sort = options.sort;
+    const order = options.order;
     let sortArray: OrderItem = ['id', 'ASC']
     if (['id', 'firstName', 'lastName', 'CNP', 'email', 'group', 'domain', 'promotion']
-        .includes(sort) && ['ASC', 'DESC'].includes(order)) {
+        .includes(sort)) {
         if (sort == 'group')
             sortArray = ['student', 'group', order];
         else if (sort == 'domain')
@@ -68,8 +71,8 @@ export const getStudents = async (sort, order, filter: StudentQueryFilters, page
     }
 
     const where = {};
-    Object.keys(filter).forEach(filterKey => {
-        const value = filter[filterKey];
+    Object.keys(options.filter).forEach(filterKey => {
+        const value = options.filter[filterKey];
         if(value) {
             where[filterKey] = value;
         }

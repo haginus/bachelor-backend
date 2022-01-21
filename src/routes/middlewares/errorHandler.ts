@@ -1,5 +1,6 @@
+import { ValidationError as DtoValidationError } from "class-validator";
 import { Request, Response, NextFunction } from "express";
-import { ValidationError } from "sequelize";
+import { ValidationError as SequelizeValidationError } from "sequelize";
 import { ResponseError, ResponseErrorInternal } from "../../util/util";
 
 // import * as Sentry from "@sentry/node";
@@ -13,9 +14,12 @@ import { ResponseError, ResponseErrorInternal } from "../../util/util";
 export default function () {
     return function (err: Error, req: Request, res: Response, next: NextFunction) {
         let shownError!: ResponseError;
-        if (err instanceof ValidationError) {
+        if (err instanceof SequelizeValidationError) {
             shownError = new ResponseError(err.errors[0].message);
-        } else if (!(err instanceof ResponseError)) {
+        } else if(err instanceof DtoValidationError) {
+            shownError = new ResponseError(extractErrorMessage(err)); 
+        }
+         else if (!(err instanceof ResponseError)) {
             //Sentry.captureException(err);
             console.log(err)
             shownError = new ResponseError('A apărut o eroare. Contactați administratorul.', 'INTERNAL_ERROR', 500);
@@ -28,4 +32,8 @@ export default function () {
         }
         res.status(shownError.httpStatusCode).json(shownError);
     }
+}
+
+function extractErrorMessage(error: DtoValidationError) {
+    return Object.values(error.constraints)[0];
 }
