@@ -4,6 +4,7 @@ import { renderFile } from 'ejs';
 import { Application, Paper, User } from "../models/models";
 import Mail from "nodemailer/lib/mailer";
 import { sleep } from "../util/util";
+import { ProblemReport } from "../controllers/user.controller";
 
 interface SendInterval {
   timeStart: number;
@@ -168,6 +169,17 @@ export async function sendAddedPaperNotice(studentUser: User, teacherUser: User,
   });
 }
 
+export async function sendFeedbackMail(user: User, report: ProblemReport) {
+  const html = await renderFile("./src/alerts/mail-templates/feedback.ejs", { user, report } );
+  let info = await mailSender.sendMail({
+    to: config.SYSADMIN_EMAIL,
+    cc: report.email,
+    replyTo: report.email,
+    subject: `[${report.type.toUpperCase()}] Tichet nou de la ${user.firstName} ${user.lastName}`,
+    html
+  });
+}
+
 export const testEmail = async (templateName: string) => {
   const user = {
     firstName: "John",
@@ -177,7 +189,7 @@ export const testEmail = async (templateName: string) => {
   const user2 = {
     firstName: "Jane",
     lastName: "Doe",
-    email: "hagiandrei.ah@gmail.com"
+    email: "jane.doe@gmail.com"
   }
   const studentUser = user;
   const teacherUser = user2;
@@ -189,8 +201,13 @@ export const testEmail = async (templateName: string) => {
   const paper = { 
     title: "Titlu lucrare",
   }
+  const report = {
+    type: "feedback",
+    description: "Lorem ipdum dolor sit amet...",
+    email: "john.doe@gmail.com",
+  }
   const url = '';
-  return renderFile(`./src/alerts/mail-templates/${templateName}.ejs`, { user, studentUser, teacherUser, application, paper, url } );
+  return renderFile(`./src/alerts/mail-templates/${templateName}.ejs`, { user, studentUser, teacherUser, application, paper, report, url } );
 };
 
 

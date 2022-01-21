@@ -66,6 +66,6 @@ router.get('/user', isLoggedIn(), async (req, res, next) => {
     AuthController.getCurrentUser(req._user, !!req._impersonatedBy)
         .then(result => res.json(result))
         .catch(err => next(err));
-    });
+});
 
 export default router;

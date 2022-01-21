@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import crypto from 'crypto';
 import { config } from "../config/config";
+import * as Mailer from '../alerts/mailer';
 
 const getUser = async (where) => {
   return User.findOne({
@@ -94,4 +95,18 @@ export async function patchProfile(user: User, picture: Buffer, bio: string, web
     transaction.rollback();
     throw new ResponseError("Câmpuri incorecte.");
   }
+}
+
+export async function sendFeedback(user: User, report: ProblemReport) {
+  if(!["data", "feedback", "bug", "question"].includes(report.type)) {
+    throw new ResponseError("Tip mesaj incorect.");
+  }
+  await Mailer.sendFeedbackMail(user, report);
+  return report;
+}
+
+export interface ProblemReport {
+  type: string;
+  description: string;
+  email: string;
 }
