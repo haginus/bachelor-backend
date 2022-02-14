@@ -101,6 +101,18 @@ export async function sendFeedback(user: User, report: ProblemReport) {
   if(!["data", "feedback", "bug", "question"].includes(report.type)) {
     throw new ResponseError("Tip mesaj incorect.");
   }
+  if(!user) {
+    if(!report.fullName) {
+      throw new ResponseError("Numele trebuie introdus pentru utilizatorii neautentificați.");
+    }
+    const parts = report.fullName.split(' ');
+    if(parts.length < 2) {
+      throw new ResponseError("Introduceți numele întreg.");
+    }
+    const lastName = parts[0];
+    const firstName = parts.slice(1).join(' ');
+    user = { firstName, lastName } as User;
+  }
   await Mailer.sendFeedbackMail(user, report);
   return report;
 }
@@ -109,4 +121,5 @@ export interface ProblemReport {
   type: string;
   description: string;
   email: string;
+  fullName?: string;
 }

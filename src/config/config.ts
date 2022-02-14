@@ -13,7 +13,7 @@ export const config = {
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
     COMPRESSION_LEVEL: Number(process.env.COMPRESSION_LEVEL) || 0,
     DISABLE_SEQUELIZE_LOGGING: process.env.DISABLE_SEQUELIZE_LOGGING === 'true',
-    SYSADMIN_EMAIL: process.env.SYSADMIN_EMAIL,
+    SYSADMIN_EMAIL: process.env.SYSADMIN_EMAIL || process.env.MAILER_FROM_ADDRESS,
     IS_PROD,
     CORS: {
         origin: process.env.CORS_ORIGIN || "*"

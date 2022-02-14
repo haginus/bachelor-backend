@@ -4,10 +4,11 @@ import { config } from "../../config/config";
 import { ResponseErrorUnauthorized } from "../../util/util";
 import { getUser } from '../../controllers/auth.controller'
 
-export default function() {
+export default function(options?: IsLoggedInOptions) {
     return async function (req: Request, res: Response, next: NextFunction) {
         let token = req.header('Authorization');
         if (!token || !token.startsWith('Bearer ')) {
+            if(options?.optional) return next();
             return next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
         }
         
@@ -16,6 +17,7 @@ export default function() {
             const payload = jwt.verify(token, config.SECRET_KEY);
             const { id, impersonatedBy } = <any> payload; 
             let user = await getUser({ id });
+            if(!user) throw '';
             req._user = user;
             req._impersonatedBy = impersonatedBy || null;
             next();
@@ -23,4 +25,8 @@ export default function() {
             next(new ResponseErrorUnauthorized('Nu sunteți autentificat.', 'NOT_LOGGED_IN'));
         }
     }
+}
+
+export interface IsLoggedInOptions {
+    optional: boolean
 }
