@@ -45,6 +45,7 @@ export type StudentQueryFilters = {
     specializationId: number;
     group: number;
     promotion: number;
+    email: string;
 }
 
 export const getStudents = async (sort, order, filter: StudentQueryFilters, page, pageSize) => {
@@ -67,21 +68,26 @@ export const getStudents = async (sort, order, filter: StudentQueryFilters, page
             sortArray = [sort, order];
     }
 
-    const where = {};
-    Object.keys(filter).forEach(filterKey => {
+    const studentWhere = {};
+    ['domainId', 'specializationId', 'group', 'promotion'].forEach(filterKey => {
         const value = filter[filterKey];
         if(value) {
-            where[filterKey] = value;
+            studentWhere[filterKey] = value;
         }
     });
+    const userWhere = {};
+    if(filter.email) {
+        userWhere['email'] = { [Op.substring]: filter.email };
+    }
 
     let query = await User.findAndCountAll({
+        where: userWhere,
         attributes: { exclude: ['password'] },
         include: [
             {
                 model: sequelize.model('student'),
                 required: true,
-                where,
+                where: studentWhere,
                 include: [
                     sequelize.model('domain'),
                     sequelize.model('specialization')
