@@ -214,6 +214,16 @@ router.post('/topics/delete', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/topics/bulk-delete', (req, res, next) => {
+    const { ids, moveId } = req.body;
+    if(!ids || !Array.isArray(ids)) {
+        return next(new ResponseError("ID-uri greșite."));
+    }
+    AdminController.bulkDeleteTopics(ids, moveId)
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
 // COMMITTEES
 
 router.get('/committees', function (req, res, next) {

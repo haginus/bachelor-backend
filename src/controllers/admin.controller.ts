@@ -4,7 +4,7 @@ import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
 import bcrypt from "bcrypt";
-import { Op, OrderItem, Sequelize, ValidationError} from "sequelize";
+import { Op, OrderItem, Sequelize, Transaction, ValidationError} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
@@ -582,7 +582,7 @@ export const editTopic = (id, name) => {
     return Topic.update({ name }, { where: { id } });
 }
 
-export const deleteTopic = async (id: number, moveId: number) => {
+export const deleteTopic = async (id: number, moveId: number, transaction?: Transaction) => {
     if(id == moveId) {
         throw new ResponseError("Nu puteți muta ofertele și lucrările în aceeași temă. ", "SAME_IDS", 401);
     }
@@ -591,7 +591,12 @@ export const deleteTopic = async (id: number, moveId: number) => {
     if(!moveTopic) {
         throw new ResponseError("Tema pentru mutare nu există", "BAD_MOVE_ID", 401);
     }
-    const transaction = await sequelize.transaction();
+    let isExternalTransaction = false;
+    if(transaction) {
+        isExternalTransaction = true;
+    } else {
+        transaction = await sequelize.transaction();
+    }
     try {
         // Update offer and paper topics in bulk using manual SQL query since sequelize doen't have this feature
         // First we need to get the offers and papers that have the moveId already (we will exclude them)
@@ -611,14 +616,32 @@ export const deleteTopic = async (id: number, moveId: number) => {
             AND paperId NOT IN (${excludedPaperIds});`,
             { transaction });
         await Topic.destroy({ where: { id }, transaction });
-        await transaction.commit();
+        if(!isExternalTransaction) {
+            await transaction.commit();
+        }
         return { success: true }
     } catch(err) {
         console.log(err)
-        await transaction.rollback();
+        if(!isExternalTransaction) {
+            await transaction.rollback();
+        }
         throw new ResponseError("A apărut o eroare. Contactați administratorul.", "INTERNAL_ERROR", 501)
     }
 }
+
+export const bulkDeleteTopics = async (ids: number[], moveId: number) => {
+    const transaction = await sequelize.transaction();
+    try {
+        for(let i = 0; i < ids.length; i++) {
+            await deleteTopic(ids[i], moveId, transaction);
+        }
+        transaction.commit();
+        return { success: true };
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
+};
 
 // COMMITTEES
 
