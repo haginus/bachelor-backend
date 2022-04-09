@@ -258,8 +258,8 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
 // Teachers
 
 export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, page: number, pageSize: number) => {
-    const limit = pageSize;
-    const offset = page * pageSize;
+    const limit = pageSize || 10;
+    const offset = page * pageSize || 0;
     if (limit <= 0 || offset < 0) {
         throw "INVALID_PARAMETERS";
     }
@@ -277,6 +277,27 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
         WHERE paper.teacherId = \`teacher\`.id
     )`);
 
+    const bachelorPaperLiteral = Sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM papers AS paper
+        WHERE paper.teacherId = \`teacher\`.id
+        and type = 'bachelor'
+    )`);
+
+    const diplomaPaperLiteral = Sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM papers AS paper
+        WHERE paper.teacherId = \`teacher\`.id
+        and type = 'diploma'
+    )`);
+
+    const masterPaperLiteral = Sequelize.literal(`(
+        SELECT COUNT(*)
+        FROM papers AS paper
+        WHERE paper.teacherId = \`teacher\`.id
+        and type = 'master'
+    )`);
+
     const offerLiteral = Sequelize.literal(`(
         SELECT COUNT(*)
         FROM offers AS offer
@@ -291,6 +312,9 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
                 attributes: {
                     include: [
                         [ paperLiteral, 'paperNumber' ],
+                        [ bachelorPaperLiteral, 'bachoolPaperNumber' ],
+                        [ diplomaPaperLiteral, 'diplomaPaperNumber' ],
+                        [ masterPaperLiteral, 'masterPaperNumber' ],
                         [ offerLiteral, 'offerNumber' ]
                     ]
                 }
