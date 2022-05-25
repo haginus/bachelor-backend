@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
 import * as Mailer from "../alerts/mailer";
-import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
+import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
 
 
 
@@ -88,7 +88,7 @@ export class StudentController {
               exclude: ['teacherId'],
               include: [
                 [StudentController.literals.countOfferAcceptedApplications, 'takenPlaces'],
-                [StudentController.literals.studentHasAppliendOffer(student.id), 'hasApplied']
+                [StudentController.literals.studentHasAppliedOffer(student.id), 'hasApplied']
               ],
             },
             include: [{
@@ -121,7 +121,7 @@ export class StudentController {
             AND
             application.accepted = 1
     )`),
-    studentHasAppliendOffer(studentId) {
+    studentHasAppliedOffer(studentId) {
       return Sequelize.literal(`(
             SELECT COUNT(*)
             FROM applications AS application
@@ -293,8 +293,8 @@ export class StudentController {
 
   /** Check if student can edit paper. */
   private static checkEditPaper = (paper: Paper, sessionSettings: SessionSettings) => {
-    const today = new Date().setHours(0, 0, 0, 0);
-    const endDateSecretary = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
+    const today = Date.now();
+    const endDateSecretary = inclusiveDate(sessionSettings.fileSubmissionEndDate).getTime();
     const paperCreatedAt = new Date(paper.createdAt);
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
     return (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary) &&
@@ -341,7 +341,7 @@ export class StudentController {
       throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
     }
     const sessionSettings = await SessionSettings.findOne();
-    if (Date.now() > new Date(sessionSettings.paperSubmissionEndDate).getTime() || paper.isValid) {
+    if (Date.now() > inclusiveDate(sessionSettings.paperSubmissionEndDate).getTime() || paper.isValid) {
       throw new ResponseErrorForbidden("Nu vă mai puteți înscrie/retrage din această sesiune.");
     }
     try {
@@ -500,11 +500,7 @@ export class StudentController {
     if (sessionSettings == null) { // settings not set
       return false;
     }
-    const today = new Date().getTime();
-    const start = new Date(sessionSettings.applyStartDate).getTime();
-    const end = new Date(sessionSettings.applyEndDate).getTime();
-
-    return start <= today && today <= end;
+    return canApply(sessionSettings);
   }
 
 

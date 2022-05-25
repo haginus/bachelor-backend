@@ -9,7 +9,7 @@ import { Model } from "sequelize/types";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
+import { inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 
@@ -299,14 +299,14 @@ export const checkFileSubmissionPeriod = async (category: DocumentCategory, sess
     if (sessionSettings == null) { // settings not set
         return false;
     }
-    const today = new Date().setHours(0, 0, 0, 0);
+    const today = Date.now();
     let startDate: number, endDate: number;
     if(category == 'secretary_files') {
-      startDate = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
-      endDate = new Date(sessionSettings.fileSubmissionEndDate).setHours(0, 0, 0, 0);
+      startDate = new Date(sessionSettings.fileSubmissionStartDate).getTime();
+      endDate = inclusiveDate(sessionSettings.fileSubmissionEndDate).getTime();
     } else if(category == 'paper_files') {
-      startDate = new Date(sessionSettings.fileSubmissionStartDate).setHours(0, 0, 0, 0);
-      endDate = new Date(sessionSettings.paperSubmissionEndDate).setHours(0, 0, 0, 0);
+      startDate = new Date(sessionSettings.fileSubmissionStartDate).getTime();
+      endDate = inclusiveDate(sessionSettings.paperSubmissionEndDate).getTime();
     }
     return startDate <= today && today <= endDate;
 }

@@ -102,5 +102,10 @@ export function multiSplit(str: string, delimitators: string[]): string[] {
 
 export function canApply(sessionSettings: SessionSettings) {
     const now = Date.now();
-    return new Date(sessionSettings.applyStartDate).getTime() <= now && now <= new Date(sessionSettings.applyEndDate).getTime();
+    return new Date(sessionSettings.applyStartDate).getTime() <= now && now <= inclusiveDate(sessionSettings.applyEndDate).getTime();
+}
+
+export function inclusiveDate(dateStr: string | Date) {
+    const date = new Date(dateStr);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 }
