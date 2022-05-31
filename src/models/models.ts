@@ -572,10 +572,9 @@ interface SessionSettingsAttributes {
   fileSubmissionEndDate: Date;
   paperSubmissionEndDate: Date;
   allowGrading: boolean;
-  timezoneOffset: number;
 }
 
-interface SessionSettingsCreationAttributes extends Optional<SessionSettingsAttributes, "lock" | "timezoneOffset"> {} 
+interface SessionSettingsCreationAttributes extends Optional<SessionSettingsAttributes, "lock"> {} 
 
 export class SessionSettings extends Model<SessionSettingsAttributes, SessionSettingsCreationAttributes> implements SessionSettingsAttributes {
   lock?: 'X';
@@ -587,7 +586,6 @@ export class SessionSettings extends Model<SessionSettingsAttributes, SessionSet
   fileSubmissionEndDate: Date;
   paperSubmissionEndDate: Date;
   allowGrading: boolean;
-  timezoneOffset: number;
 }
 
 
@@ -669,12 +667,6 @@ SessionSettings.init({
   allowGrading: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
-  },
-  timezoneOffset: {
-    type: DataTypes.VIRTUAL,
-    get() {
-      return new Date().getTimezoneOffset();
-    }
   }
 },
 {

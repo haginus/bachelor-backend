@@ -102,10 +102,25 @@ export function multiSplit(str: string, delimitators: string[]): string[] {
 
 export function canApply(sessionSettings: SessionSettings) {
     const now = Date.now();
-    return new Date(sessionSettings.applyStartDate).getTime() <= now && now <= inclusiveDate(sessionSettings.applyEndDate).getTime();
+    return parseDate(sessionSettings.applyStartDate).getTime() <= now && now <= inclusiveDate(sessionSettings.applyEndDate).getTime();
 }
 
 export function inclusiveDate(dateStr: string | Date) {
     const date = new Date(dateStr);
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+}
+
+export function parseDate(dateStr: string | Date) {
+    const date = new Date(dateStr);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function stringifyDate(date: Date) {
+    const offset = Math.abs(date.getTimezoneOffset());
+    const hourOffset = ('' + Math.floor(offset / 60)).padStart(2, '0');
+    const minuteOffset = ('' + offset % 60).padStart(2, '0');
+    const sign = date.getTimezoneOffset() > 0 ? '-' : '+';
+    const dateStr = `${date.getFullYear()}-${('' + (date.getMonth() + 1)).padStart(2, '0')}-${('' + date.getDate()).padStart(2, '0')}`;
+    const timeStr = `${('' + date.getHours()).padStart(2, '0')}:${('' + date.getMinutes()).padStart(2, '0')}:${('' + date.getSeconds()).padStart(2, '0')}`;
+    return `${dateStr}T${timeStr}${sign}${hourOffset}:${minuteOffset}`;
 }

@@ -9,7 +9,7 @@ import { Model } from "sequelize/types";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
+import { inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 
@@ -302,10 +302,10 @@ export const checkFileSubmissionPeriod = async (category: DocumentCategory, sess
     const today = Date.now();
     let startDate: number, endDate: number;
     if(category == 'secretary_files') {
-      startDate = new Date(sessionSettings.fileSubmissionStartDate).getTime();
+      startDate = parseDate(sessionSettings.fileSubmissionStartDate).getTime();
       endDate = inclusiveDate(sessionSettings.fileSubmissionEndDate).getTime();
     } else if(category == 'paper_files') {
-      startDate = new Date(sessionSettings.fileSubmissionStartDate).getTime();
+      startDate = parseDate(sessionSettings.fileSubmissionStartDate).getTime();
       endDate = inclusiveDate(sessionSettings.paperSubmissionEndDate).getTime();
     }
     return startDate <= today && today <= endDate;

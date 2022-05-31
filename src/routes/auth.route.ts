@@ -3,6 +3,7 @@ import fileUpload, { UploadedFile } from 'express-fileupload';
 const router = express.Router();
 import * as AuthController from '../controllers/auth.controller';
 import * as UserController from '../controllers/user.controller';
+import { SessionSettingsDto } from '../dto/SessionSettingsDto';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import reCaptcha from './middlewares/reCaptcha';
@@ -50,7 +51,7 @@ router.post('/check-password-token', (req, res, next) => {
 
 router.get('/session', (req, res, next) => {
     AuthController.getSessionSettings()
-        .then(result => res.json(result))
+        .then(result => res.json(new SessionSettingsDto(result)))
         .catch(err => next(err));
 });
 
