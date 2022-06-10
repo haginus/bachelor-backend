@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -7,8 +7,9 @@ import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
+import { copyObject, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
+import fs from 'fs';
 var stream = require('stream');
 
 interface Statistic {
@@ -916,7 +917,7 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     const sessionSettings = await SessionSettings.findOne();
     rows = await Promise.all(JSON.parse(JSON.stringify(rows)).map(async paper  => {
         let newPaper = JSON.parse(JSON.stringify(paper));
-        newPaper.student = paper.student.user;
+        newPaper.student = { ...paper.student.user, generalAverage: paper.student.generalAverage };
         newPaper.teacher = paper.teacher.user;
         if(!minified) {
             newPaper.requiredDocuments = await DocumentController.getPaperRequiredDocuments(paper.id, sessionSettings);
@@ -944,10 +945,21 @@ const checkRequiredDocuments = (requiredDocs: PaperRequiredDocument[], documents
 }
 
 /** Validate/Invalidate a paper by its ID. */
-export const validatePaper = async (paperId: number, validate: boolean) => {
-    const paper = await Paper.scope('documents').findOne({ where: { id: paperId } });
+export const validatePaper = async (paperId: number, validate: boolean, generalAverage: number) => {
+    const paper = await Paper.scope(['documents', 'student', 'teacher']).findOne({
+        include: [
+            {
+                association: Paper.associations.student,
+                include: [StudentExtraData, Domain, Specialization ]
+            }
+        ],
+        where: { id: paperId }
+    });
     if(!paper) {
         throw "NOT_FOUND";
+    }
+    if(validate && (!generalAverage || generalAverage < 1 || generalAverage > 10)) {
+        throw new ResponseError("Media generală este invalidă.", "GENERAL_AVERAGE_INVALID");
     }
     if(paper.isValid != null) {
         throw "ALREADY_VALIDATED";
@@ -965,6 +977,40 @@ export const validatePaper = async (paperId: number, validate: boolean) => {
     } else {
         paper.committeeId = null;
     }
+    if(validate) {
+        paper.student.generalAverage = generalAverage;
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        await paper.save({ transaction} );
+        await paper.student.save({ transaction });
+        const sessionSettings = SessionSettings.findOne();
+        let data = {
+            ...copyObject(paper.student),
+            extra: StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
+            paper: copyObject(paper),
+            sessionSettings: copyObject(sessionSettings)
+        }
+        const doc = await Document.findOne({ where: { paperId: paper.id, name: 'sign_up_form', type: 'signed' }, transaction });
+        let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
+        fs.writeFileSync(DocumentController.getStoragePath(`${doc.id}.pdf`), signUpFormBuffer);
+        await transaction.commit();
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
+    return true;
+}
+
+export const undoPaperValidation = async (paperId: number) => {
+    const paper = await Paper.findOne({ where: { id: paperId } });
+    if(!paper) {
+        throw "NOT_FOUND";
+    }
+    if(paper.isValid == null) {
+        throw "BAD_REQUEST";
+    }
+    paper.isValid = null;
     await paper.save();
     return true;
 }

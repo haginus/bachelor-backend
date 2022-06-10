@@ -47,7 +47,7 @@
             <span style="margin-left: 8px;"></span>
             Grupa: <%= student.group %>
             <br><br>
-            M.G. .........
+            M.G. <%= student.generalAverage ? student.generalAverage.toFixed(2) : '.........' %>
         </p>
         
     </div>

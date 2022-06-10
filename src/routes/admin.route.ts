@@ -320,8 +320,15 @@ router.get('/papers', function (req, res, next) {
 });
 
 router.post('/papers/validate', (req, res, next) => {
-    const { paperId, validate } = req.body;
-    AdminController.validatePaper(paperId, validate)
+    const { paperId, validate, generalAverage } = req.body;
+    AdminController.validatePaper(paperId, validate, parseFloat(generalAverage))
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
+router.post('/papers/validate/undo', (req, res, next) => {
+    const { paperId } = req.body;
+    AdminController.undoPaperValidation(paperId)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });

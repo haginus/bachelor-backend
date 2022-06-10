@@ -215,9 +215,10 @@ interface StudentAttributes {
   studyForm: StudyForm;
   matriculationYear: string;
   fundingForm: FundingForm;
+  generalAverage: number;
 }
 
-interface StudentCreationAttributes extends Optional<StudentAttributes, "id"> {}
+interface StudentCreationAttributes extends Optional<StudentAttributes, "id" | "generalAverage"> {}
 
 export class Student extends Model<StudentAttributes, StudentCreationAttributes> implements StudentAttributes {
   public id: number;
@@ -230,6 +231,7 @@ export class Student extends Model<StudentAttributes, StudentCreationAttributes>
   public studyForm: StudyForm;
   public matriculationYear: string;
   public fundingForm: FundingForm;
+  public generalAverage: number;
 
   public user?: User;
   public paper?: Paper;
@@ -953,7 +955,10 @@ Student.init({
     validate: {
       isIn: [['if', 'ifr', 'id']],
     }
-  }
+  },
+  generalAverage: {
+    type: DataTypes.DOUBLE,
+  },
 }, {
   timestamps: false,
   sequelize,
@@ -1269,7 +1274,7 @@ StudentExtraData.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      is: /^[A-Z](a-z)?\.( [A-Z][a-z]?\.){0,2}$/
+      is: /^[A-Z][a-z]?\.( [A-Z][a-z]?\.){0,2}$/
     }
   },
   fatherName: {
@@ -1529,7 +1534,7 @@ Paper.addScope('grades', {
   }]
 });
 
-sequelize.sync()
+sequelize.sync({ alter: true })
   .then(() => {
     SessionSettings.findOrCreate(
       {
