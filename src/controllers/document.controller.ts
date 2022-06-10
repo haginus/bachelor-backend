@@ -273,16 +273,7 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
         if (!doc.onlyFor) { // if document is required for everyone
             return true;
         }
-        if (doc.onlyFor.married && !isMarried) { // if document requires married status and student is not married
-            return false;
-        }
-        if (doc.onlyFor.paperType && doc.onlyFor.paperType != paperType) { // if doc requires a different paper type
-            return false;
-        }
-        if (doc.onlyFor.previousPromotions && !isPreviousPromotion) { // if doc requires a previous promotion and student is in current promotion
-            return false;
-        }
-        return true; // if all tests passed then student needs to have this document
+        return doc.onlyFor(paper, sessionSettings);
     }).map(doc => {
         let sentDoc = { ...doc }
         delete sentDoc['onlyFor']; // remove the onlyFor attribute

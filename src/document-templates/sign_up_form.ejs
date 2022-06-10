@@ -175,70 +175,6 @@
     <p class="italic"><%= student.paper.title %></p>
 
     <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
-    <% let isPrevPromotion = student.sessionSettings.currentPromotion != student.promotion; 
-    %>
-    <p>
-        Depun la dosarul de înscriere<i><%= isPrevPromotion ? ' (vor fi transmise de absolvenți în format electronic)' : ''%></i>:
-    </p>
-    <ul>
-        <%if (student.domain.type == 'master') { %>
-            <li>Diploma de licenţă</li>
-        <% } %>
-        <li>
-            <span>Diploma de bacalaureat</span>
-            <% if(!isPrevPromotion) { %>
-                <span> - copie certificată conform cu originalul</span>
-                <i> (va fi adăugată la dosar de către secretarul de an)</i>
-            <% } %>
-        </li>
-        <li>2 fotografii color, pe hârtie fotografică, dimensiunea 3/4 <i>(vor fi aduse de absolvent la ridicarea adeverintei de licență)</i></li>
-        <li>
-            <span>Certificatul de naștere</span>
-            <% if(!isPrevPromotion) { %>
-                <span> - copie certificată conform cu originalul</span>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } %>
-        </li>
-        <li>
-            <span>Certificatul de căsătorie</span>
-            <% if(!isPrevPromotion) { %>
-                <span> - copie certificată conform cu originalul (unde este cazul)</span>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } else { %>
-                <span> (unde este cazul)</span>
-            <% } %>
-        <li>
-            <span>Certificatul de competență lingvistică</span>
-            <% if(!isPrevPromotion) { %>
-                <span> - copie certificată conform cu originalul</span>
-                <i> (va fi adăugată la dosar de către secretarul de an)</i>
-            <% } %>
-        </li>
-        <li>
-            <span>Copie CI</span>
-            <% if(!isPrevPromotion) { %>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } %>
-        </li>
-        <li>
-            <span>Declarația pe propria răspundere că lucrarea de <%= paperTypeString %> este rezultatul muncii mele</span>
-            <% if(!isPrevPromotion) { %>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } %>
-        </li>
-        <li>
-            <span>Lucrarea de <%= paperTypeString %> și referatul coordonatorului științific <b>(în format pdf)</b></span>
-            <% if(!isPrevPromotion) { %>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } %>
-        </li>
-        <li>
-            <span>Fișa de lichidare</span>
-            <% if(!isPrevPromotion) { %>
-                <i> (va fi transmisă de absolvent în format electronic)</i>
-            <% } %>
-        </li>
-    </ul>
 
     <p>
         <b>Declarația absolventului:</b> <br>
@@ -334,7 +270,7 @@
     }
 
     .footer-container {
-        margin-top: 0.5cm;
+        margin-top: 1.5cm;
     }
 
     .header-container {

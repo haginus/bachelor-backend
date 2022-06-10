@@ -1,4 +1,4 @@
-import { DocumentCategory, DomainType, UploadPerspective } from "./models/models"
+import { DocumentCategory, DomainType, Paper, SessionSettings, UploadPerspective } from "./models/models"
 
 // 'signed' cannot exist without 'generated', 'copy' is exclusive
 export type PaperRequiredDocumentTypes = { generated: true, signed?: boolean } | { copy: true } 
@@ -11,11 +11,7 @@ export interface PaperRequiredDocument {
     acceptedMimeTypes: string;
     acceptedExtensions?: string[]; // will be calculated using mime
     uploadBy: UploadPerspective;
-    onlyFor?: {
-        married?: boolean,
-        paperType?: DomainType,
-        previousPromotions?: boolean
-    }
+    onlyFor?: (paper: Paper, sessionSettings: SessionSettings) => boolean; 
 }
 
 export const paperRequiredDocuments: PaperRequiredDocument[] = [
@@ -65,7 +61,7 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf,image/png,image/jpeg',
-      onlyFor: { married: true },
+      onlyFor: (paper) => ['married', 're_married', 'widow'].includes(paper.student.studentExtraDatum?.civilState),
       uploadBy: 'student'
     },
     {
@@ -74,7 +70,7 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf,image/png,image/jpeg',
-      onlyFor: { previousPromotions: true, paperType: 'bachelor' },
+      onlyFor: (paper) => ['bachelor', 'diploma'].includes(paper.type),
       uploadBy: 'student'
     },
     {
@@ -83,7 +79,6 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf,image/png,image/jpeg',
-      onlyFor: { previousPromotions: true },
       uploadBy: 'student'
     },
     {
@@ -92,7 +87,15 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf,image/png,image/jpeg',
-      onlyFor: { previousPromotions: true, paperType: 'master' },
+      onlyFor: (paper) => paper.type == 'master',
+      uploadBy: 'student'
+    },
+    {
+      title: 'Formular absolventi.unibuc.ro',
+      name: 'graduate_form',
+      category: 'secretary_files',
+      types: { copy: true },
+      acceptedMimeTypes: 'application/pdf',
       uploadBy: 'student'
     },
     {
@@ -101,7 +104,16 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'paper_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf',
-      onlyFor: { paperType: 'bachelor' },
+      onlyFor: (paper) => paper.type == 'bachelor',
+      uploadBy: 'student'
+    },
+    {
+      title: 'Proiect de diplomă',
+      name: 'paper',
+      category: 'paper_files',
+      types: { copy: true },
+      acceptedMimeTypes: 'application/pdf',
+      onlyFor: (paper) => paper.type == 'diploma',
       uploadBy: 'student'
     },
     {
@@ -110,7 +122,7 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'paper_files',
       types: { copy: true },
       acceptedMimeTypes: 'application/pdf',
-      onlyFor: { paperType: 'master' },
+      onlyFor: (paper) => paper.type == 'master',
       uploadBy: 'student'
     },
     {

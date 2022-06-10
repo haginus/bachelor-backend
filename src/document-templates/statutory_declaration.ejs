@@ -3,13 +3,11 @@
         <title>Declarație pe proprie răspundere</title>
     </head>
     <body>
-        <p class="teacher-approval">
-            Avizul profesorului coordonator __________________
-        </p>
+        <p class="teacher-approval"></p>
         <h1>Declarație</h1>
         <p class="main">
             Subsemnatul/Subsemnata <b><%= student.user.lastName %> <%= student.user.firstName %></b>, candidat la examenul de 
-            <b>licență/diplomă</b>, sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>,
+            <b>licență/diplomă/disertație</b>, sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>,
             la <b>Facultatea de Matematică şi Informatică</b>, 
             programul de studii <%= student.specialization.name %>, declar pe propria răspundere că lucrarea de faţă 
             este rezultatul muncii mele, pe baza cercetărilor mele şi pe baza informaţiilor
