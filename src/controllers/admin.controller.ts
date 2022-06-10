@@ -842,6 +842,10 @@ export interface GetPapersFilter {
     submitted?: boolean;
     /** Paper type */
     type?: PaperType;
+    /** Student domain */
+    domainId?: number;
+    /** Student study form */
+    studyForm?: StudyForm;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -895,6 +899,14 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
                 [Op.in]: committeeDomainIds
             }
         }
+    }
+
+    if(filter.domainId != null) {
+        studentWhere = {...studentWhere, domainId: filter.domainId };
+    }
+
+    if(filter.studyForm != null) {
+        studentWhere = {...studentWhere, studyForm: filter.studyForm };
     }
 
     let count = await Paper.count({where});
