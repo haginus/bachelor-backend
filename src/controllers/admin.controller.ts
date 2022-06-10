@@ -867,7 +867,11 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         where.isValid = filter.isValid;
     }
     if(filter?.isNotValid != null) {
-        where.isValid = filter.isNotValid ? false : { [Op.or]: [null, true] };
+        if(filter?.isValid == false && filter?.isNotValid == false) {
+            where.isValid = null;
+        } else {
+            where.isValid = filter.isNotValid ? false : { [Op.or]: [null, true] };
+        }
     }
     if(filter.type) {
         where.type = filter.type;
@@ -979,25 +983,27 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
     }
     if(validate) {
         paper.student.generalAverage = generalAverage;
-    }
-    const transaction = await sequelize.transaction();
-    try {
-        await paper.save({ transaction} );
-        await paper.student.save({ transaction });
-        const sessionSettings = SessionSettings.findOne();
-        let data = {
-            ...copyObject(paper.student),
-            extra: StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
-            paper: copyObject(paper),
-            sessionSettings: copyObject(sessionSettings)
+        const transaction = await sequelize.transaction();
+        try {
+            await paper.save({ transaction} );
+            await paper.student.save({ transaction });
+            const sessionSettings = SessionSettings.findOne();
+            let data = {
+                ...copyObject(paper.student),
+                extra: StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
+                paper: copyObject(paper),
+                sessionSettings: copyObject(sessionSettings)
+            }
+            const doc = await Document.findOne({ where: { paperId: paper.id, name: 'sign_up_form', type: 'signed' }, transaction });
+            let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
+            fs.writeFileSync(DocumentController.getStoragePath(`${doc.id}.pdf`), signUpFormBuffer);
+            await transaction.commit();
+        } catch(err) {
+            await transaction.rollback();
+            throw err;
         }
-        const doc = await Document.findOne({ where: { paperId: paper.id, name: 'sign_up_form', type: 'signed' }, transaction });
-        let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
-        fs.writeFileSync(DocumentController.getStoragePath(`${doc.id}.pdf`), signUpFormBuffer);
-        await transaction.commit();
-    } catch(err) {
-        await transaction.rollback();
-        throw err;
+    } else {
+        await paper.save();
     }
     return true;
 }
