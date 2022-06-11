@@ -909,7 +909,16 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         studentWhere = {...studentWhere, studyForm: filter.studyForm };
     }
 
-    let count = await Paper.count({where});
+    let count = await Paper.count({
+        where,
+        include: [
+            {
+                association: Paper.associations.student,
+                where: studentWhere,
+                required: true
+            }
+        ]
+    });
 
     let scopes = ['student', 'teacher', 'topics'];
     if(!minified) {
