@@ -3,8 +3,9 @@ version: '3.5'
 services:
   bachelor-backend:
     build:
-        context: .
-        dockerfile: ./docker/Dockerfile
+      context: .
+      dockerfile: ./docker/Dockerfile
+    restart: unless-stopped
     depends_on:
       - bachelor-db
     volumes:
@@ -23,13 +24,15 @@ services:
 
   bachelor-db:
     image: mysql
+    restart: unless-stopped
     expose:
-        - 3306
+      - 3306
     environment:
-        MYSQL_ROOT_PASSWORD: 12345678
-        MYSQL_DATABASE: bachelor
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: bachelor
     volumes:
       - mysql_data:/var/lib/mysql
+    
 
 volumes:
   mysql_data:
