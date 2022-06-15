@@ -52,21 +52,19 @@
         
     </div>
     
+
+    <% 
+        const PAPER_TYPES = {
+            master: 'disertație',
+            bachelor: 'licență',
+            diploma: 'diplomă',
+        }
+        let paperTypeString = PAPER_TYPES[student.paper.type];
+    %>
+    
     <p class="title">
         FIȘĂ DE ÎNSCRIERE <br>
-        pentru examenul de finalizare a studiilor
-            <% let paperTypeString;
-            switch (student.domain.type) {
-                case 'bachelor' : %>
-                        (LICENȚĂ)
-                        <% paperTypeString = 'licență';
-                        break;
-                case 'master' : %>
-                        (DISERTAȚIE)
-                        <% paperTypeString = 'disertație';
-                        break;
-            } %>
-        <br>
+        pentru examenul de finalizare a studiilor <br>
         sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>
     </p>
 
@@ -170,11 +168,11 @@
 
 
     <p class="bold">
-        Prezint și susțin lucrarea de <%= paperTypeString %> cu titlul:
+        Titlul lucrării de <%= paperTypeString %>:
     </p>
     <p class="italic"><%= student.paper.title %></p>
 
-    <p>Coordonator științific: <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
+    <p><b>Coordonator științific:</b> <%= student.paper.teacher.lastName %> <%= student.paper.teacher.firstName %></p>
 
     <p>
         <b>Declarația absolventului:</b> <br>

@@ -3,7 +3,9 @@
         <title>Declarație pe proprie răspundere</title>
     </head>
     <body>
-        <p class="teacher-approval"></p>
+        <p class="teacher-approval">
+            (Acest document se leagă împreună cu lucrarea de licență/diplomă/disertație)
+        </p>
         <h1>Declarație</h1>
         <p class="main">
             Subsemnatul/Subsemnata <b><%= student.user.lastName %> <%= student.user.firstName %></b>, candidat la examenul de 
@@ -41,6 +43,7 @@
     .teacher-approval {
         text-align: right;
         margin-bottom: 1cm;
+        font-size: 16px;
     }
 
     h1 {
