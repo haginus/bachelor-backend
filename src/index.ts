@@ -45,6 +45,13 @@ if(!config.IS_PROD) {
   app.use('/test', devRoutes);
 }
 
+app.get('/status', (req, res) => {
+  res.send({
+    status: 'ok',
+    version: require('../package.json').version
+  });
+});
+
 app.use(errorHandler());
 
 app.use((req, res) => {
