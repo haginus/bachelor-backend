@@ -10,8 +10,8 @@ services:
       - bachelor-db
     volumes:
       - .env:/usr/src/bachelor-backend/.env
-      - /usr/src/bachelor-backend/static/profile
-      - /usr/src/bachelor-backend/storage
+      - app_profile:/usr/src/bachelor-backend/static/profile
+      - app_storage:/usr/src/bachelor-backend/storage
     ports:
       - 3000:3000
     environment: 
@@ -36,6 +36,8 @@ services:
 
 volumes:
   mysql_data:
+  app_storage:
+  app_profile:
 
 networks:
   default:
