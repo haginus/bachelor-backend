@@ -2,7 +2,7 @@ import { Student, User, Topic, Teacher, Offer, Application, Paper, Domain, seque
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as AuthController from './auth.controller';
-import { Model, Op, Sequelize, ValidationError } from "sequelize";
+import { Model, Op, Sequelize, Transaction, ValidationError } from "sequelize";
 import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
@@ -321,7 +321,7 @@ export class StudentController {
       if (titleUpdated) {
         const extraData = await user.student.getStudentExtraDatum();
         if (extraData != null) {
-          await StudentController.generatePaperDocuments(user, extraData, sessionSettings);
+          await StudentController.generatePaperDocuments(user, extraData, sessionSettings, transaction);
         }
       }
       await transaction.commit();
@@ -394,7 +394,7 @@ export class StudentController {
           fields: ["locality", "county", "street", "streetNumber", "building", "stair", "floor", "apartment"]
         }); // update address
         if (dataUpdated || addressUpdated) {
-          await StudentController.generatePaperDocuments(user, data, sessionSettings);
+          await StudentController.generatePaperDocuments(user, data, sessionSettings, transaction);
         }
         await transaction.commit();
       } catch (err) {
@@ -412,7 +412,7 @@ export class StudentController {
         let extraDataModel = await StudentExtraData.create(newMainData, { transaction });
         let addressModel = await Address.create(newAddress, { transaction });
         await extraDataModel.setAddress(addressModel, { transaction });
-        await StudentController.generatePaperDocuments(user, data, sessionSettings);
+        await StudentController.generatePaperDocuments(user, data, sessionSettings, transaction);
         await transaction.commit();
       } catch (err) {
         await transaction.rollback();
@@ -426,7 +426,7 @@ export class StudentController {
     return { success: true }
   }
 
-  public static generatePaperDocuments = async (user: User, extraData: StudentExtraData, sessionSettings: SessionSettings) => {
+  public static generatePaperDocuments = async (user: User, extraData: StudentExtraData, sessionSettings: SessionSettings, transaction?: Transaction) => {
     const student = copyObject(user.student);
     student.user = copyObject(user);
     let paper = await StudentController.getPaper(user);
@@ -434,7 +434,9 @@ export class StudentController {
       throw "BAD_REQUEST";
     }
 
-    const transaction = await sequelize.transaction();
+    const ownTransaction = !transaction;
+
+    transaction = transaction || (await sequelize.transaction());
     try {
       // delete old generated and signed documents
       await Document.destroy({
@@ -478,9 +480,9 @@ export class StudentController {
 
       fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
 
-      await transaction.commit();
+      if(ownTransaction) await transaction.commit();
     } catch (err) {
-      await transaction.rollback();
+      if(ownTransaction) await transaction.rollback();
       console.log(err);
       throw err;
     }
