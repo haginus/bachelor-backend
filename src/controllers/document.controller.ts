@@ -192,7 +192,7 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     const category = requiredDoc.category;
 
     // Check if document category can be uploaded
-    if (perspective != 'committee' && !(await checkFileSubmissionPeriod(category, sessionSettings))) {
+    if (perspective == 'student' && !(await checkFileSubmissionPeriod(category, sessionSettings))) {
         throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
     }
 
