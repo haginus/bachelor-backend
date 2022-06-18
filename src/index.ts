@@ -48,7 +48,8 @@ if(!config.IS_PROD) {
 app.get('/status', (req, res) => {
   res.send({
     status: 'ok',
-    version: require('../package.json').version
+    version: require('../package.json').version,
+    commitId: require('child_process').execSync('git rev-parse HEAD').toString().trim()
   });
 });
 
