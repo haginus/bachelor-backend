@@ -797,13 +797,14 @@ export const setCommitteePapers = async (id: number, paperIds: number[]) => {
         throw "BAD_REQUEST";
     }
     const memberIds = committee.members.map(m => m.id); // get member IDs
+    const isMasterCommittee = committee.domains.some(domain => domain.type == 'master');
     const papers = await Paper.findAll({ where: {
         id: {
             [Op.in]: paperIds
         }
     }}); // find all papers and check if the coordinating teacher is in committee
     papers.forEach(paper => {
-        if(memberIds.includes(paper.teacherId)) {
+        if(!isMasterCommittee && memberIds.includes(paper.teacherId)) {
             throw new ResponseError(`Lucrarea "${paper.title}" nu poate fi atribuită, deoarece profesorul coordonator face parte din comisie.`);
         }
         if(!paper.submitted || (paper.isValid != null && !paper.isValid)) {
