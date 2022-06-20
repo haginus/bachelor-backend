@@ -4,7 +4,7 @@ import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
 import crypto from 'crypto';
 import bcrypt from "bcrypt";
-import { Op, OrderItem, Sequelize, Transaction, ValidationError} from "sequelize";
+import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
 import { copyObject, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
@@ -846,6 +846,8 @@ export interface GetPapersFilter {
     domainId?: number;
     /** Student study form */
     studyForm?: StudyForm;
+    /** Paper title */
+    title?: string;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -860,7 +862,7 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         pagination.limit = pageSize;
         pagination.offset = page * pageSize;
     }
-    let where: any = { };
+    let where: WhereOptions<Paper> = { };
     if(filter?.assigned != null) {
         where.committeeId = filter.assigned ? { [Op.ne]: null } : null;
     }
@@ -879,6 +881,9 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     }
     if(filter.type) {
         where.type = filter.type;
+    }
+    if(filter.title) {
+        where.title = { [Op.substring]: filter.title };
     }
     where.submitted = true;
     if(filter?.submitted != null) {
