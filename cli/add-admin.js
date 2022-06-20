@@ -7,13 +7,13 @@ var lastEnteredPassowrd = '';
 const properties = [
     {
         name: 'firstName',
-        validator: /^[a-zA-Z\s\-]+$/,
+        validator: /^[\w\s\-]+$/u,
         required: true,
         warning: 'First name must be only letters, spaces, or dashes',
     },
     {
         name: 'lastName',
-        validator: /^[a-zA-Z\s\-]+$/,
+        validator: /^[\w\s\-]+$/u,
         required: true,
         warning: 'Last name must be only letters, spaces, or dashes',
     },
