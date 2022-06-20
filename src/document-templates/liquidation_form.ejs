@@ -50,12 +50,19 @@
         <% 
             let domainType = student.domain.type;
             let domainTypeString = domainType == 'bachelor' ? 'licență' : (domainType == 'master' ? 'master' : '');
+            const PAPER_TYPES = {
+                master: 'disertație',
+                bachelor: 'licență',
+                diploma: 'diplomă',
+            }
+            let paperTypeString = PAPER_TYPES[student.paper.type];
         %>
         Subsemnatul (a) <%= student.user.lastName %> <%= student.user.firstName %>, născut(ă) în <%= birthDate %>,
         în localitatea <%= student.extra.placeOfBirthLocality %>,
         judeţul/sectorul <%= student.extra.placeOfBirthCounty %>, țara <%= student.extra.placeOfBirthCountry %>, 
-        având codul Numeric Personal <%= student.user.CNP %>, absolvent(ă) de studii universitare de <%= domainTypeString %>
-        în sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>,
+        având codul numeric personal <%= student.user.CNP %>, absolvent(ă) de studii universitare de <%= domainTypeString %>,
+        programul de studii <%= student.specialization.name %>,
+        cu examen de <%= paperTypeString %> promovat în sesiunea <span style="text-transform: uppercase;"><%= student.sessionSettings.sessionName %></span>,
         vă rog să binevoiți a-mi aproba eliberarea diplomei de studii. <br> <br>
         Domiciliez în localitatea <%= student.extra.address.locality %>, sector/judeţ <%= student.extra.address.county %>,
         strada <%= student.extra.address.street %>, numărul <%= student.extra.address.streetNumber %>,
