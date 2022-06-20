@@ -7,16 +7,27 @@ export const autoAssignPapers = async () => {
         include: [{
             model: Teacher.scope('defaultScope'),
             as: 'members',
-            include: [User.scope("min"), Teacher.associations.offers]
+            include: [
+                User.scope("min"),
+                Teacher.associations.offers,
+                {
+                    association: Teacher.associations.papers,
+                    include: [Paper.associations.topics]
+                }
+            ]
         }]
     });
     const committees: ExtendedCommittee[] = copyObject(committeesDb);
     // Get topics for each committee
     committees.forEach(committee => {
         committee.topicIds = removeDuplicates(committee.members.flatMap(member => {
-            return member.offers.flatMap(offer => {
+            const paperTopics = member.papers.flatMap(paper => 
+                paper.topics.map(topic => topic.id)
+            );
+            const offerTopics = member.offers.flatMap(offer => {
                 return offer.topics.map(topic => topic.id);
             });
+            return [...paperTopics, ...offerTopics];
         }));
         committee.domainIds = committee.domains.map(domain => domain.id);
         committee.addedPaperIds = [];
@@ -25,14 +36,14 @@ export const autoAssignPapers = async () => {
 
     const papers = copyObject<ExtendedPaper[]>(await Paper
         .scope(['topics', 'teacher', 'student'])
-        .findAll({ where: { submitted: true, isValid: {[Op.or]: [null, true]}, type: 'bachelor', committeeId: null } })
+        .findAll({ where: { submitted: true, isValid: {[Op.or]: [null, true]}, type: ['bachelor', 'diploma'], committeeId: null } })
     ).map(paper => {
         const paperTopics = paper.topics.map(topic => topic.id);
         let compatibleWith = [];
         committees.forEach((committee, committeeIdx) => {
             const paperTeacherInCommittee = committee.members.findIndex(member => member.id == paper.teacher.id) >= 0;
             const domainCompatibility = committee.domainIds.includes(paper.student.domainId);
-            if(!paperTeacherInCommittee && domainCompatibility && arrayIntersection(committee.topicIds, paperTopics)) {
+            if(!paperTeacherInCommittee && domainCompatibility && arrayIntersection(committee.topicIds, paperTopics).length > 0) {
                 compatibleWith.push(committeeIdx);
             }
         });
