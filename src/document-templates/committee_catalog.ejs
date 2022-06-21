@@ -117,7 +117,7 @@
                         <td><%= i + 1 %>.</td>
                         <td class="upper">
                             <%= paper.student.user.lastName %>
-                            <%= paper.student.studentExtraDatum.parentInitial %>
+                            <%= paper.student.studentExtraDatum?.parentInitial %>
                             <%= paper.student.user.firstName %>
                         </td>
                         <td class="upper"><%= paper.title %> – <%= paper.teacher.user.lastName %> <%= paper.teacher.user.firstName %></td>
