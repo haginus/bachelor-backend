@@ -1,6 +1,6 @@
 <% function gradeAverageString(grade) {
     if(grade == null) {
-        return 'ABSENT';
+        return committee.finalGrades ? 'ABSENT' : '';
     }
     let gradeTwoDecimals = grade.toFixed(2); // grade is of format x.yz
     let supraunitaryPart = parseInt(grade); // x
@@ -126,12 +126,12 @@
                             if(member.committeeMember.role == 'secretary') continue;
                             let grade = paper.grades.find(grade => grade.teacherId == member.id);
                             let forPaper, forPresentation;
-                            if(!grade) {
-                                forPaper = '-';
-                                forPresentation = '-';
-                            } else {
+                            if(grade) {
                                 forPaper = grade.forPaper;
                                 forPresentation = grade.forPresentation;
+                            } else {
+                                forPaper = committee.finalGrades ? '-' : '';
+                                forPresentation = committee.finalGrades ? '-' : '';
                             }
                         %>
                             <td><%= forPaper %></td>
