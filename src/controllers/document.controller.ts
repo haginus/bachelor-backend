@@ -471,7 +471,7 @@ export const generateCommitteeStudentsExcel = async () => {
             rows = [[ '', '', '', '']];
         }
 
-        const sheet = wb.addWorksheet(committee.name);
+        const sheet = wb.addWorksheet('COMISIA_' + committee.id);
         sheet.addTable({
             name: 'StudentTable' + committee.id,
             ref: 'A1',
