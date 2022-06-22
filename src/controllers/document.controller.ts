@@ -12,6 +12,7 @@ import { UploadedFile } from "express-fileupload";
 import { inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
+import ExcelJS from 'exceljs';
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
@@ -446,6 +447,49 @@ export const generateCommitteeCompositions = async () => {
     return fileBuffer;
 }
 
+export const generateCommitteeStudentsExcel = async () => {
+    const committees = await Committee.findAll({
+        include: [{
+            model: Paper.scope(['teacher', 'student']),
+            include: [{ // also include domains
+                association: Paper.associations.student,
+                include: [Student.associations.domain]
+            }]
+        }]
+    });
+    sortCommittees(committees);
+    const wb = new ExcelJS.Workbook();
+    committees.forEach(committee => {
+        let rows: [string, string, string, string][] = committee.papers.map(paper => {
+            const name = paper.student.user.fullName;
+            const teacherName = paper.teacher.user.fullName;
+            const title = paper.title;
+            const domain = paper.student.domain.name;
+            return [name, teacherName, title, domain];
+        });
+        if(rows.length == 0) {
+            rows = [[ '', '', '', '']];
+        }
+
+        const sheet = wb.addWorksheet(committee.name);
+        sheet.addTable({
+            name: 'StudentTable' + committee.id,
+            ref: 'A1',
+            headerRow: true,
+            columns: [
+                { name: 'Nume și prenume' },
+                { name: 'Profesor coordonator' },
+                { name: 'Titlul lucrării' },
+                { name: 'Domeniul' },
+            ],
+            rows
+        });
+    });
+    const buffer = (await wb.xlsx.writeBuffer());
+    return buffer as Buffer;
+}
+
+
 export const generateCommitteeStudents = async () => {
     const committees = await Committee.findAll({
         include: [{
@@ -456,15 +500,27 @@ export const generateCommitteeStudents = async () => {
             }]
         }]
     });
-    committees.sort((c1, c2) => {
-        const d1Type = c1.domains[0].type;
-        const d2Type = c2.domains[0].type;
-        // sort by domain type, then by name
-        return d1Type < d2Type ? -1 : (d1Type > d2Type ? 1 :
-            c1.name <= c2.name ? -1 : 1);
-    });
+    sortCommittees(committees);
     const sessionSettings = await SessionSettings.findOne();
     const content = await ejs.renderFile(getDocumentTemplatePath("committee_students"), { committees, sessionSettings } );
     let fileBuffer: Buffer = await generatePdf(content, HtmlToPdfOptions);
     return fileBuffer;
+}
+
+const sortCommittees = (committees: Committee[]) => {
+    return committees.sort((c1, c2) => {
+        const d1Type = c1.domains[0].type;
+        const d2Type = c2.domains[0].type;
+
+        const nameAndNumber = (name: string): [string, number] => {
+            const numberPart = name.match(/\d+/)[0];
+            return [name.replace(numberPart, ''), parseInt(numberPart)];
+        }
+
+        const n1 = nameAndNumber(c1.name);
+        const n2 = nameAndNumber(c2.name);
+
+        return d1Type < d2Type ? -1 : (d1Type > d2Type ? 1 :
+            n1[0] < n2[0] ? -1 : (n1[0] > n2[0] ? 1 : n1[1] <= n2[1] ? -1 : 1));
+    });
 }

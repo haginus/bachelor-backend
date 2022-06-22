@@ -822,6 +822,10 @@ export const generateCommitteeCompositions = () => {
     return DocumentController.generateCommitteeCompositions();
 }
 
+export const generateCommitteeStudentsExcel = () => {
+    return DocumentController.generateCommitteeStudentsExcel();
+}
+
 export const generateCommitteeStudents = () => {
     return DocumentController.generateCommitteeStudents();
 }

@@ -284,6 +284,8 @@ router.get('/committees/documents/:documentName', async (req, res, next) => {
             result = await AdminController.generateCommitteeCompositions();
         } else if(documentName == 'committee_students') {
             result = await AdminController.generateCommitteeStudents();
+        } else if(documentName == 'committee_students_excel') {
+            result = await AdminController.generateCommitteeStudentsExcel();
         } else {
             throw new ResponseError("Documentul cerut nu există.");
         }
