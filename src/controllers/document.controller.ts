@@ -513,7 +513,7 @@ const sortCommittees = (committees: Committee[]) => {
         const d2Type = c2.domains[0].type;
 
         const nameAndNumber = (name: string): [string, number] => {
-            const numberPart = name.match(/\d+/)[0];
+            const numberPart = (name.match(/\d+/) || '')[0];
             return [name.replace(numberPart, ''), parseInt(numberPart)];
         }
 
