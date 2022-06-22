@@ -1135,7 +1135,7 @@ Paper.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      len: [3, 128]
+      len: [3, 256]
     }
   },
   description: {
