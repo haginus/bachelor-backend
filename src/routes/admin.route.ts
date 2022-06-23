@@ -298,7 +298,7 @@ router.get('/committees/documents/:documentName', async (req, res, next) => {
 
 // PAPERS
 router.get('/papers', function (req, res, next) {
-    let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, isNotValid, submitted, type, domainId, studyForm, title, minified } = req.query;
+    let { sort, order, page, pageSize, assigned, assignedTo, forCommittee, isValid, isNotValid, submitted, type, domainId, studyForm, title, studentName, minified } = req.query;
     let filter = {
         assigned: assigned != undefined ? assigned == 'true' || assigned == '1' : null,
         assignedTo: assignedTo != undefined ? Number(assignedTo) : null,
@@ -309,7 +309,8 @@ router.get('/papers', function (req, res, next) {
         type: type != undefined ? ["bachelor", "diploma", "master"].includes(type as string) ? type as PaperType : null : null,
         title: title != undefined ? title as string : null,
         domainId: domainId != undefined ? Number(domainId) : null,
-        studyForm: studyForm != undefined ? ["if", "ifr", "id"].includes(studyForm as string) ? studyForm as StudyForm : null : null
+        studyForm: studyForm != undefined ? ["if", "ifr", "id"].includes(studyForm as string) ? studyForm as StudyForm : null : null,
+        studentName: studentName != undefined ? studentName as string : null,
     }
     let pageAsNumber = Number(page);
     let pageSizeAsNumber = Number(pageSize);

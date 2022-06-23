@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
-import { SessionSettings, Teacher } from "../models/models";
+import { sequelize, SessionSettings, Teacher } from "../models/models";
+import { Op, Sequelize } from "sequelize";
 
 export class ResponseError extends Error {
     httpStatusCode: number;
@@ -123,4 +124,22 @@ export function stringifyDate(date: Date) {
     const dateStr = `${date.getFullYear()}-${('' + (date.getMonth() + 1)).padStart(2, '0')}-${('' + date.getDate()).padStart(2, '0')}`;
     const timeStr = `${('' + date.getHours()).padStart(2, '0')}:${('' + date.getMinutes()).padStart(2, '0')}:${('' + date.getSeconds()).padStart(2, '0')}`;
     return `${dateStr}T${timeStr}${sign}${hourOffset}:${minuteOffset}`;
+}
+
+
+export function makeNameClause(name: string) {
+    const names = name.toLocaleLowerCase().split(' ');
+    const orClauses = names.map(name => {
+        const likeName = `%${name}%`;
+        return {
+          [Op.or]: [
+            { firstName: Sequelize.where(Sequelize.fn('lower', Sequelize.col('firstName')), 'LIKE', likeName) },
+            { lastName: Sequelize.where(Sequelize.fn('lower', Sequelize.col('lastName')), 'LIKE', likeName) },
+          ]
+        }
+    }).splice(0, 3);
+
+    return {
+        [Op.or]: orClauses
+    }
 }

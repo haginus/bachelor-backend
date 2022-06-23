@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { copyObject, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
+import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 var stream = require('stream');
@@ -853,6 +853,8 @@ export interface GetPapersFilter {
     studyForm?: StudyForm;
     /** Paper title */
     title?: string;
+    /** Student name */
+    studentName: string;
 }
 
 export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPapersFilter,
@@ -867,7 +869,9 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         pagination.limit = pageSize;
         pagination.offset = page * pageSize;
     }
-    let where: WhereOptions<Paper> = { };
+    let where: WhereOptions<Paper> = {};
+    let studentWhere: WhereOptions<Student> = {};
+    let userWhere: WhereOptions<User> = {};
     if(filter?.assigned != null) {
         where.committeeId = filter.assigned ? { [Op.ne]: null } : null;
     }
@@ -894,7 +898,6 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     if(filter?.submitted != null) {
         where.submitted = filter.submitted;
     }
-    let studentWhere = {};
     if(filter.forCommittee != null) {
         const committee = await Committee.findOne({ 
             where: { id: filter.forCommittee },
@@ -919,13 +922,23 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
         studentWhere = {...studentWhere, studyForm: filter.studyForm };
     }
 
+    if(filter.studentName != null) {
+        userWhere = { ...userWhere, ...makeNameClause(filter.studentName) }
+    }
+    console.log(userWhere)
+
     let count = await Paper.count({
         where,
         include: [
             {
                 association: Paper.associations.student,
                 where: studentWhere,
-                required: true
+                required: true,
+                include: [{
+                    model: User,
+                    required: true,
+                    where: userWhere
+                }]
             }
         ]
     });
@@ -945,7 +958,12 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
             {
                 association: Paper.associations.student,
                 where: studentWhere,
-                required: true
+                required: true,
+                include: [{
+                    model: User,
+                    required: true,
+                    where: userWhere
+                }]
             }
         ]
     });
