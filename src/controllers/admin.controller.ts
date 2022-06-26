@@ -1003,7 +1003,7 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
         include: [
             {
                 association: Paper.associations.student,
-                include: [StudentExtraData, Domain, Specialization ]
+                include: [StudentExtraData, Domain, Specialization, User ]
             }
         ],
         where: { id: paperId }
@@ -1036,10 +1036,10 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
         try {
             await paper.save({ transaction} );
             await paper.student.save({ transaction });
-            const sessionSettings = SessionSettings.findOne();
+            const sessionSettings = await SessionSettings.findOne();
             let data = {
                 ...copyObject(paper.student),
-                extra: StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
+                extra: await StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
                 paper: copyObject(paper),
                 sessionSettings: copyObject(sessionSettings)
             }
