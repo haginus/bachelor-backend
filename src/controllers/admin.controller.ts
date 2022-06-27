@@ -999,7 +999,7 @@ const checkRequiredDocuments = (requiredDocs: PaperRequiredDocument[], documents
 }
 
 /** Validate/Invalidate a paper by its ID. */
-export const validatePaper = async (paperId: number, validate: boolean, generalAverage: number) => {
+export const validatePaper = async (paperId: number, validate: boolean, generalAverage?: number, ignoreRequiredDocs: boolean = false) => {
     const paper = await Paper.scope(['documents', 'student', 'teacher']).findOne({
         include: [
             {
@@ -1022,16 +1022,15 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
         throw "PAPER_NOT_SUBMITTED";
     }
     paper.isValid = validate;
+
     if(validate) {
-        const requiredDocs = (await DocumentController.getPaperRequiredDocuments(paperId, null))
-            .filter(doc => doc.uploadBy == 'student');
-        if(!checkRequiredDocuments(requiredDocs, paper.documents)) {
-            throw "MISSING_DOCUMENTS"
+        if(!ignoreRequiredDocs) {
+            const requiredDocs = (await DocumentController.getPaperRequiredDocuments(paperId, null))
+                .filter(doc => doc.uploadBy == 'student');
+            if(!checkRequiredDocuments(requiredDocs, paper.documents)) {
+                throw "MISSING_DOCUMENTS"
+            }
         }
-    } else {
-        paper.committeeId = null;
-    }
-    if(validate) {
         paper.student.generalAverage = generalAverage;
         const transaction = await sequelize.transaction();
         try {
@@ -1053,6 +1052,7 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
             throw err;
         }
     } else {
+        paper.committeeId = null;
         await paper.save();
     }
     return true;

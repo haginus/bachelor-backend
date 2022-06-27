@@ -326,8 +326,8 @@ router.get('/papers', function (req, res, next) {
 });
 
 router.post('/papers/validate', (req, res, next) => {
-    const { paperId, validate, generalAverage } = req.body;
-    AdminController.validatePaper(paperId, validate, parseFloat(generalAverage))
+    const { paperId, validate, generalAverage, ignoreRequiredDocs } = req.body;
+    AdminController.validatePaper(paperId, validate, parseFloat(generalAverage), ignoreRequiredDocs)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
