@@ -286,6 +286,9 @@ export const getStudentPapers = async (user: User) => {
 
 export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType,
     perspective: UploadPerspective, paperId: number) => {
+    if(!['teacher', 'committee'].includes(perspective)) {
+        throw new ResponseErrorForbidden();
+    }
     return DocumentController.uploadPaperDocument(user, documentFile, name, type, perspective, paperId);
 }
 

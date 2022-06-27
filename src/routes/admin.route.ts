@@ -339,6 +339,14 @@ router.post('/papers/validate/undo', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/papers/documents/upload', fileUpload(), (req, res, next) => {
+    const { paperId, name, type } = req.body;
+    AdminController.uploadPaperDocument(req._user, req.files.file as UploadedFile,
+        name, type, +paperId)
+        .then(document => res.json(document))
+        .catch(err => next(err));
+});
+
 // SESSION SETTINGS
 
 router.post('/session', (req, res, next) => {

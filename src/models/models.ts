@@ -465,7 +465,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
 }
 
 export type DocumentType = 'generated' | 'signed' | 'copy';
-export type UploadPerspective = 'student' | 'teacher' | 'committee';
+export type UploadPerspective = 'student' | 'teacher' | 'committee' | 'admin';
 export type DocumentCategory = 'secretary_files' | 'paper_files';
 
 interface DocumentAttributes {

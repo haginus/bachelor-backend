@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -10,6 +10,7 @@ import { PaperRequiredDocument } from "../paper-required-documents";
 import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
+import { UploadedFile } from "express-fileupload";
 var stream = require('stream');
 
 interface Statistic {
@@ -1068,6 +1069,10 @@ export const undoPaperValidation = async (paperId: number) => {
     paper.isValid = null;
     await paper.save();
     return true;
+}
+
+export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType, paperId: number) => {
+    return DocumentController.uploadPaperDocument(user, documentFile, name, type, 'admin', paperId);
 }
 
 // SESSION SETTINGS

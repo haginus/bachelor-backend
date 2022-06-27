@@ -44,6 +44,10 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
             if(!isMember) {
                 throw new ResponseErrorForbidden();
             }
+        } if(user.type == 'student') {
+            if(document.paper.studentId != user.id) {
+                throw new ResponseErrorForbidden();
+            }
         } else {
             throw new ResponseErrorForbidden();
         }
@@ -178,7 +182,7 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
     const uploadedBy = user.id;
     const requiredDoc = requiredDocuments
-        .find(doc => doc.name == name && doc.uploadBy == perspective); // find uploaded doc name in required list
+        .find(doc => doc.name == name && (perspective == 'admin' || doc.uploadBy == perspective)); // find uploaded doc name in required list
     if (!requiredDoc) { // if it is not then throw error
         throw new ResponseError('Document invalid.', 'INVALID_DOCUMENT');
     }
@@ -201,33 +205,35 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
 
     const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
 
-    if (type == 'signed') { // if uploaded document type is signed
-        if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
-            throw new ResponseErrorForbidden('Nu puteți încărca un semnat fără generat.', "MISSING_GENERATED_DOCUMENT");
-        }
-        if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
-            throw new ResponseErrorForbidden('Documentul este deja semnat.', "ALREADY_SIGNED");
-        }
-    }
-
-    if (type == 'copy') { // if uploaded document type is copy
-        if (paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
-            throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
-        }
-    }
-
     const transaction = await sequelize.transaction(); // start a db transaction
-    const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
     try {
+        if(perspective == 'admin') {
+            const oldDocuments = paperDocuments.filter(doc => doc.type == type);
+            oldDocuments.forEach(doc => doc.destroy({ transaction }));
+        } else {
+            if (type == 'signed') { // if uploaded document type is signed
+                if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
+                    throw new ResponseErrorForbidden('Nu puteți încărca un semnat fără generat.', "MISSING_GENERATED_DOCUMENT");
+                }
+                if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
+                    throw new ResponseErrorForbidden('Documentul este deja semnat.', "ALREADY_SIGNED");
+                }
+            }
+            if (type == 'copy') { // if uploaded document type is copy
+                if (paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
+                    throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
+                }
+            }
+        }
+        const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
         fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
         await transaction.commit(); // commit if everything is fine
+        return newDocument;
     } catch (err) {
         console.log(err);
         await transaction.rollback(); // rollback if anything goes wrong
         throw err;
     }
-
-    return newDocument;
 }
 
 
@@ -254,21 +260,6 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
     if (!sessionSettings) { // if sessionSettings was not provided
         sessionSettings = await AuthController.getSessionSettings();
     }
-
-    const extraData = paper.student.studentExtraDatum;
-
-    let isMarried: boolean;
-    let isPreviousPromotion: boolean;
-    let paperType: DomainType;
-
-    if (!extraData) { // if student didn't set up extraData, we assume the following
-        isMarried = false;
-    } else { // else we get the data we need
-        isMarried = ['married', 're_married', 'widow'].includes(extraData.civilState);
-    }
-
-    isPreviousPromotion = sessionSettings?.currentPromotion != paper.student.promotion; // check if student is in different promotion
-    paperType = paper.student.domain.type; // paper type is the same as student domain type
 
     return paperRequiredDocuments.filter(doc => {
         if (!doc.onlyFor) { // if document is required for everyone
