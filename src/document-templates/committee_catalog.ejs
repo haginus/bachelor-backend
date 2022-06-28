@@ -5,7 +5,7 @@
     let gradeTwoDecimals = grade.toFixed(2); // grade is of format x.yz
     let supraunitaryPart = parseInt(grade); // x
     let subunitaryPart = gradeTwoDecimals - supraunitaryPart; // 0.yz
-    let result = gradeTwoDecimals + ' (';
+    let result = gradeTwoDecimals.replace('.', ',') + ' (';
     switch (supraunitaryPart) {
         case 1:
             result += 'unu';
@@ -96,7 +96,7 @@
                     <% for(let i = 0; i < committee.members.length; i++) {
                         let member = committee.members[i];
                         if(member.committeeMember.role == 'secretary') continue;
-                        %>
+                    %>
                         <th class="upper" colspan="2"><%= member.user.lastName %> <%= member.user.firstName %></th>
                     <% } %>
                         <th rowspan="2">Media</th>
@@ -105,15 +105,15 @@
                     <% for(let i = 0; i < committee.members.length; i++) {
                         let member = committee.members[i];
                         if(member.committeeMember.role == 'secretary') continue;
-                        %>
-                        <th>Notă pentru lucrare</th>
-                        <th>Notă pentru susținerea lucrării</th>
+                    %>
+                        <th class="grade">Notă pentru lucrare</th>
+                        <th class="grade">Notă pentru susținerea lucrării</th>
                     <% } %>
                 </tr>
                 <% for(let i = 0; i < group.length; i++) {
                     let paper = group[i];
                 %>
-                    <tr>
+                    <tr class="paper-row">
                         <td><%= i + 1 %>.</td>
                         <td class="upper">
                             <%= paper.student.user.lastName %>
@@ -134,8 +134,8 @@
                                 forPresentation = committee.finalGrades ? '-' : '';
                             }
                         %>
-                            <td><%= forPaper %></td>
-                            <td><%= forPresentation %></td>
+                            <td class="grade"><%= forPaper %></td>
+                            <td class="grade"><%= forPresentation %></td>
                         <% } %>
                         <td><%= gradeAverageString(paper.gradeAverage) %></td>
                     </tr>
@@ -233,6 +233,14 @@
         tr {
             page-break-inside: avoid;
             page-break-after: auto
+        }
+
+        .paper-row td {
+            height: 36pt;
+        }
+
+        tr .grade {
+            width: 6%;
         }
 
     </style>
