@@ -54,7 +54,8 @@ export function sortMembersByTitle(members: Teacher[]) {
         "P": 0,
         "C": 1,
         "L": 2,
-        "A": 3
+        "A": 3,
+        "D": 4,
     }
     return sorted.sort((a, b) => {
         if(a.committeeMember.role == "president") {
