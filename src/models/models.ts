@@ -20,6 +20,7 @@ import {
   HasManySetAssociationsMixin,
   HasOneSetAssociationMixin
 } from "sequelize";
+import { toFixedTruncate } from '../util/util';
 
 export const sequelize = new Sequelize(config.DATABASE_STRING, {
   logging: !config.DISABLE_SEQUELIZE_LOGGING
@@ -1165,7 +1166,7 @@ Paper.init({
         grades.forEach(grade => {
           sum += (grade.forPaper + grade.forPresentation) / 2;
         });
-        return sum / grades.length;
+        return toFixedTruncate(sum / grades.length, 2);
       }
       return null;
     }

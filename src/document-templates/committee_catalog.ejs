@@ -4,7 +4,7 @@
     }
     let gradeTwoDecimals = grade.toFixed(2); // grade is of format x.yz
     let supraunitaryPart = parseInt(grade); // x
-    let subunitaryPart = gradeTwoDecimals - supraunitaryPart; // 0.yz
+    let subunitaryPart = gradeTwoDecimals.split('.')[1]; // yz
     let result = gradeTwoDecimals.replace('.', ',') + ' (';
     switch (supraunitaryPart) {
         case 1:
@@ -40,7 +40,7 @@
             break;
     }
     if(subunitaryPart) {
-        result += ` ${subunitaryPart * 100}%`;
+        result += ` ${subunitaryPart}%`;
     }
     result += ')';
     return result;
