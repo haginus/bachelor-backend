@@ -8,6 +8,7 @@ import path from 'path';
 import { UploadedFile } from "express-fileupload";
 import * as Mailer from "../alerts/mailer";
 import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
+import { redisHSet } from "../util/redis";
 
 
 
@@ -396,6 +397,7 @@ export class StudentController {
         if (dataUpdated || addressUpdated) {
           await StudentController.generatePaperDocuments(user, data, sessionSettings, transaction);
         }
+        redisHSet('paperRequiredDocs', student.paper?.id, null);
         await transaction.commit();
       } catch (err) {
         console.log(err)

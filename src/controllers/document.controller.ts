@@ -13,6 +13,7 @@ import { inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, Respon
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
+import { redisHGet, redisHSet } from "../util/redis";
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
@@ -239,6 +240,11 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
 
 export const getPaperRequiredDocuments = async (paperId: number, sessionSettings?: SessionSettings):
     Promise<PaperRequiredDocument[]> => { 
+    
+    const cachedList = await redisHGet<PaperRequiredDocument[]>('paperRequiredDocs', paperId);
+    if(cachedList) {
+        return cachedList;
+    }
 
     const paper = await Paper.findOne({
         include: [
@@ -261,7 +267,7 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
         sessionSettings = await AuthController.getSessionSettings();
     }
 
-    return paperRequiredDocuments.filter(doc => {
+    const result = paperRequiredDocuments.filter(doc => {
         if (!doc.onlyFor) { // if document is required for everyone
             return true;
         }
@@ -273,6 +279,8 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
             .map(mimeType => mime.extension(mimeType)).filter(t => t) as string[]; // remove not found mimeType extensions (false)
         return sentDoc;
     });
+    redisHSet('paperRequiredDocs', paperId, result);
+    return result;
 }
 
 export const checkFileSubmissionPeriod = async (category: DocumentCategory, sessionSettings?: SessionSettings) => {

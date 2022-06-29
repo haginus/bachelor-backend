@@ -11,6 +11,7 @@ import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseEr
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
+import { redisDel, redisSet } from "../util/redis";
 var stream = require('stream');
 
 interface Statistic {
@@ -1077,11 +1078,14 @@ export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name
 
 // SESSION SETTINGS
 
-export const changeSessionSettings = async (settings) => {
+export const changeSessionSettings = async (settings: SessionSettings) => {
     // Get the old settings
     let oldSettings = await SessionSettings.findOne();
     // If settings are set, do update query
     if(oldSettings) {
+        if(oldSettings.currentPromotion != settings.currentPromotion) {
+            redisDel('paperRequiredDocs');
+        }
         return SessionSettings.update(settings, { where: { lock: 'X' } });
     } else { // else do create query
         return SessionSettings.create(settings)

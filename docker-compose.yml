@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     depends_on:
       - bachelor-db
+      - redis
     volumes:
       - .env:/usr/src/bachelor-backend/.env
       - app_profile:/usr/src/bachelor-backend/static/profile
@@ -21,6 +22,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: 12345678
       MYSQL_DATABASE: bachelor
+      REDIS_URL: redis://redis:6379
 
   bachelor-db:
     image: mysql
@@ -33,6 +35,10 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     
+  redis:
+    image: redis
+    expose:
+      - 6379
 
 volumes:
   mysql_data:

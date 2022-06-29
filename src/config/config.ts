@@ -32,5 +32,6 @@ export const config = {
     mailerOptions: {
         from: process.env.MAILER_FROM_ADDRESS
     },
+    REDIS_URL: process.env.REDIS_URL,
     PROJECT_ROOT: path.join(__dirname, '..', '..')
 }
