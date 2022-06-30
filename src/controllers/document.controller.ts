@@ -360,7 +360,7 @@ export const generateCommitteeCatalog = async (user: User, committeId: number): 
         return committee.papers.filter(paper => {
             let paperGroup: Group = [ paper.student.promotion, paper.student.studyForm, paper.student.specialization.name ];
             return equalGroups(group, paperGroup);
-        });
+        }).sort(paperComparator);
     });
 
     // Get session settings
@@ -393,7 +393,7 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     let paperGroups = groupArr.map(group => {
         return committee.papers.filter(paper => {
             let paperGroup: Group = [ null, paper.student.studyForm, paper.student.specialization.name ];
-            return equalGroups(group, paperGroup);
+            return paper.gradeAverage != null && equalGroups(group, paperGroup);
         });
     });
 
@@ -404,7 +404,10 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
         let promotionItems = [];
         // For every promotion, get the papers
         promotions.forEach(promotion => {
-            let result = { promotion, items: paperGroup.filter((paper => paper.student.promotion == promotion)) };
+            let result = { 
+                promotion, 
+                items: paperGroup.filter((paper => paper.student.promotion == promotion)).sort(paperComparator)
+            };
             promotionItems.push(result);
         });
         return promotionItems;
@@ -420,6 +423,15 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
         displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate }
     let fileBuffer = generatePdf(content, renderSettings);
     return fileBuffer;
+}
+
+const getPaperFullName = (paper: Paper) => {
+    const student = paper.student;
+    return `${student.user.lastName} ${student.studentExtraDatum?.parentInitial} ${student.user.firstName}`;
+}
+
+const paperComparator = (a: Paper, b: Paper) => {
+    return getPaperFullName(a) < getPaperFullName(b) ? -1 : 1;
 }
 
 export const generateCommitteeCompositions = async () => {
