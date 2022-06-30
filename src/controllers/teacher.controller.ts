@@ -281,7 +281,7 @@ export const getStudentPapers = async (user: User) => {
         paper.student = { ...paper.student.user };
         paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
         delete paper.grades;
-        if(!paper.committee.finalGrades) paper.gradeAverage = null;
+        if(!paper.committee || !paper.committee?.finalGrades) paper.gradeAverage = null;
         return paper;
     }));
 }
