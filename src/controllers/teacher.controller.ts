@@ -5,7 +5,7 @@ import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
-import { canApply, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { arrayMap, canApply, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
 
 
 export const validateTeacher = async (user: User) => {
@@ -257,7 +257,7 @@ export const getDomains = () => {
 
 export const getStudentPapers = async (user: User) => {
     let papers = await user.teacher.getPapers({
-        scope: ['committee', 'topics'],
+        scope: ['committee', 'topics', 'gradesMin'],
         include: [
             {
                 model: Document,
@@ -280,6 +280,8 @@ export const getStudentPapers = async (user: User) => {
         let required = await DocumentController.getPaperRequiredDocuments(paper.id);
         paper.student = { ...paper.student.user };
         paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
+        delete paper.grades;
+        if(!paper.committee.finalGrades) paper.gradeAverage = null;
         return paper;
     }));
 }
@@ -336,7 +338,7 @@ export const getCommittees = async (user: User) => {
 export const getCommittee = async (user: User, committeeId: number) => {
     const committee = await Committee.findOne({
         where: { id: committeeId },
-        include: [Paper.scope(['student', 'teacher', 'documents', 'grades', 'topics'])]
+        include: [Paper.scope(['student', 'teacher', 'documentsPaperFiles', 'gradesMin', 'topics'])]
     });
     if(!committee) {
         throw "NOT_FOUND";
@@ -353,12 +355,15 @@ export const getCommittee = async (user: User, committeeId: number) => {
         return parsedMember;
     });
 
+    const memberDict = arrayMap(resp.members as Teacher[], (member) => member.id)
+
     resp.papers = await Promise.all(resp.papers.map(async paper => {
         let parsedPaper: any = { ...paper }
         parsedPaper.student = paper.student?.user;
         parsedPaper.teacher = paper.teacher?.user;
         let required = await DocumentController.getPaperRequiredDocuments(paper.id);
         parsedPaper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
+        paper.grades.forEach(grade => { grade.teacher = memberDict[grade.teacherId]});
         return parsedPaper;
     }));
     return resp;

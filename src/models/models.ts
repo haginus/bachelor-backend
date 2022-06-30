@@ -1237,6 +1237,14 @@ Paper.addScope('documents', {
   include: [ sequelize.model("document") ]
 });
 
+Paper.addScope('documentsPaperFiles', {
+  include: [{ 
+    model: sequelize.model("document"),
+    required: false,
+    where: { category: 'paper_files' }
+  }]
+});
+
 Paper.addScope('topics', {
   include: [{
     association: Paper.associations.topics,
@@ -1510,6 +1518,8 @@ PaperGrade.init({
   }
 });
 
+PaperGrade.addScope("min", { include: [] });
+
 Committee.belongsToMany(Teacher, { through: sequelize.model('committeeMember'), as: 'members' });
 Teacher.belongsToMany(Committee, { through: sequelize.model('committeeMember') });
 
@@ -1532,6 +1542,13 @@ PaperGrade.belongsTo(Teacher);
 Paper.addScope('grades', {
   include: [{
     association: Paper.associations.grades
+  }]
+});
+
+Paper.addScope('gradesMin', {
+  include: [{
+    model: PaperGrade.scope('min'),
+    as: 'grades'
   }]
 });
 

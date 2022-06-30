@@ -150,3 +150,10 @@ export function toFixedTruncate(number: number, digits: number) {
     let m = number.toString().match(re);
     return m ? parseFloat(m[1]) : number.valueOf();
 };
+
+export function arrayMap<T, K extends keyof any>(arr: T[], getKey: (item: T) => K) {
+    return arr.reduce((map, val) => {
+      map[getKey(val)] = val;
+      return map;
+    }, {} as Record<K, T>);
+  }
