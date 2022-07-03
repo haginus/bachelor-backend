@@ -31,6 +31,7 @@
   },
   "scripts": {
     "start:dev": "nodemon src/index.ts",
+    "serve": "nodemon src/index.ts",
     "build": "tsc",
     "postbuild": "cp -R src/document-templates build/document-templates && cp -R src/alerts/mail-templates build/alerts/mail-templates",
     "start": "node build/index.js",
