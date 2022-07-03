@@ -5,7 +5,7 @@ import { generatePdf } from './../util/generate-pdf'
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
-import { Model } from "sequelize/types";
+import { Op } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
@@ -534,4 +534,76 @@ const sortCommittees = (committees: Committee[]) => {
         return d1Type < d2Type ? -1 : (d1Type > d2Type ? 1 :
             n1[0] < n2[0] ? -1 : (n1[0] > n2[0] ? 1 : n1[1] <= n2[1] ? -1 : 1));
     });
+}
+
+export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
+    let papers = await Paper.scope(['grades']).findAll({
+        include: [{
+            association: Paper.associations.student,
+            include: [
+                User.scope('min'), 
+                StudentExtraData,
+                Specialization, 
+                Domain
+            ]
+        }],
+        where: { committeeId: { [Op.ne]: null } } 
+    });
+
+    if(mode == 'centralizing') {
+        papers = papers.filter(paper => paper.gradeAverage && paper.gradeAverage >= 6);
+    }
+
+    let groupArr: Group[] = papers.map(paper => {
+        return [ null, paper.student.studyForm, paper.student.specialization.name ];
+    });
+    // Get unique values of groupArr
+    groupArr = groupArr.filter((firstGroup, i, arr) =>
+        arr.findIndex(secondGroup => equalGroups(firstGroup, secondGroup)) == i);
+    
+    // For each group, get the corresponding papers
+    let paperGroups = groupArr.map(group => {
+        return papers.filter(paper => {
+            let paperGroup: Group = [ null, paper.student.studyForm, paper.student.specialization.name ];
+            return paper.gradeAverage != null && equalGroups(group, paperGroup);
+        });
+    });
+
+    // Group the previous results by promotion
+    let paperPromotionGroups = paperGroups.map(paperGroup => {
+        // Get unique promotions in group
+        let promotions = new Set(paperGroup.map(paper => paper.student.promotion));
+        let promotionItems = [];
+        // For every promotion, get the papers
+        promotions.forEach(promotion => {
+            let result = { 
+                promotion, 
+                items: paperGroup.filter((paper => paper.student.promotion == promotion)).sort(paperComparator)
+            };
+            promotionItems.push(result);
+        });
+        return promotionItems;
+    });
+
+    // Get session settings
+    const sessionSettings = await SessionSettings.findOne();
+
+    const content = await ejs.renderFile(getDocumentTemplatePath("final_catalog"), { paperPromotionGroups, sessionSettings, mode } );
+    const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("signature_footer"), { 
+        people: [
+            { position: 'DECAN', name: 'Prof. Dr. Ioana Leuștean', stamp: true },
+            { position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
+            { position: 'Întocmit', name: '' },
+        ] 
+    });
+    // Set margins and footer
+    let renderSettings = { 
+        ...HtmlToPdfOptions, 
+        margin: { bottom: '6cm', top: '1cm' },
+        displayHeaderFooter: true, 
+        headerTemplate: '<div></div>', 
+        footerTemplate 
+    }
+    let fileBuffer = generatePdf(content, renderSettings);
+    return fileBuffer;
 }

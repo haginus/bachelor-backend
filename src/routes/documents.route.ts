@@ -46,6 +46,17 @@ router.get('/committee/:document', isType(['admin', 'teacher']), async (req, res
     }
 });
 
+router.get('/final_catalog', isType('admin'), (req, res, next) => {
+    let { mode } = req.query;
+    mode = mode || 'final';
+    if(!['centralizing', 'final'].includes(mode as string)) {
+        throw new ResponseError('Parametrul de mod este incorect.');
+    }
+    DocumentController.generateFinalCatalog(mode as any)
+        .then(result => res.send(result))
+        .catch(err => next(err));
+});
+
 // router.get('/test', async (req, res) => {
 //     res.contentType("application/pdf");
 //     let r = await DocumentController.generateCommitteeCompositions();
