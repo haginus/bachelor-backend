@@ -40,16 +40,17 @@ export const generateFinalReport = (): Promise<Buffer> => {
             totalSize += domain.list.length;
         });
         const studentDocs = await getStudentDataAndDocs();
-        studentDocs.forEach(student => {
+        const studentDocsTotal = studentDocs.length;
+        studentDocs.forEach(({ docs, ...student}, index) => {
+            console.log("Preparing data for student %s / %s", index + 1, studentDocsTotal);
             const fullName = student.user.fullName;
             const domain = student.domain;
             const domainType = DOMAIN_TYPES[domain.type];
             let forJson = copyObject(student);
-            delete forJson['docs'];
             archive.append(JSON.stringify(forJson, null, 4), 
                 { name: `Studenți/${domain.name}_${domainType}/${student.group}_${fullName}/Date.json` });
             
-            student.docs.forEach(doc => {
+            docs.forEach(doc => {
                 archive.append(doc.buffer, 
                     { name: `Studenți/${domain.name}_${domainType}/${student.group}_${fullName}/${doc.title}.${doc.extension}` });
                 totalSize += doc.buffer.length;
