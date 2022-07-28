@@ -7,6 +7,7 @@ import { generateFinalReport } from '../util/final-report';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import { PaperType, StudyForm } from '../models/models';
+import fs from "fs";
 
 router.use(isLoggedIn());
 router.use(isType('admin'));
@@ -358,7 +359,10 @@ router.post('/session', (req, res, next) => {
 
 router.get('/session/report', (req, res, next) => {
     generateFinalReport()
-        .then(buffer => res.send(buffer))
+        .then(reportPath => {
+            res.setHeader("content-type", "archive/zip");
+            fs.createReadStream(reportPath).pipe(res);
+        })
         .catch(err => next(err));
 });
 

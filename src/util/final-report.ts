@@ -10,15 +10,21 @@ import { DOMAIN_TYPES } from './constants';
 import { copyObject, safePath } from './util';
 import { config } from '../config/config';
 
-
-export const generateFinalReport = (): Promise<Buffer> => {
+/**
+ * 
+ * @returns path to the report
+ */
+export const generateFinalReport = (): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         console.log('Report generation started...');
         const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
         console.log("Temporary report location: ", destination);
         let bufferStream = fs.createWriteStream(destination);
 
-        bufferStream.on('close', () => resolve(fs.readFileSync(destination)));
+        bufferStream.on('close', () => {
+            console.log("Report generation finished. File available at:", destination);
+            resolve(destination)
+        });
 
         const archive = archiver('zip', {
             zlib: { level: config.COMPRESSION_LEVEL } 
@@ -58,8 +64,10 @@ export const generateFinalReport = (): Promise<Buffer> => {
         });
 
         archive.on('progress', (progress) => {
-            let percent = progress.fs.processedBytes / totalSize * 100;
-            console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(progress.fs.processedBytes), bytesToSize(totalSize), percent, progress.entries.processed, progress.entries.total);
+            let percent = progress.entries.processed / progress.entries.total;
+            let pseudoSize = totalSize * percent;
+            let percentStr = (percent * 100).toFixed(2);
+            console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(pseudoSize), bytesToSize(totalSize), percentStr, progress.entries.processed, progress.entries.total);
         });
 
         archive.pipe(bufferStream);
@@ -103,7 +111,10 @@ const getStudentDataAndDocs = async () => {
             Domain,
             StudentExtraData,
             Specialization,
-            { model: Paper.scope(['documents', 'teacher', 'committee', 'grades']), required: true }
+            { 
+                model: Paper.scope(['documents', 'teacher', 'committee', 'grades']),
+                required: true
+            }
         ]
     });
     const sessionSettings = await SessionSettings.findOne();
@@ -137,4 +148,4 @@ function bytesToSize(bytes: number) {
     if (bytes == 0) return '0 Byte';
     let i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
- };
+};
