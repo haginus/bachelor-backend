@@ -4,32 +4,40 @@ import * as DocumentController from '../controllers/document.controller';
 import { Committee, Domain, Paper, SessionSettings, Specialization, Student, StudentExtraData, User } from '../models/models';
 import ejs from 'ejs';
 import fs from 'fs';
+import os from 'os';
 import mime from 'mime-types';
 import { DOMAIN_TYPES } from './constants';
-import { copyObject } from './util';
+import { copyObject, safePath } from './util';
 import { config } from '../config/config';
 
 
 export const generateFinalReport = (): Promise<Buffer> => {
     return new Promise(async (resolve, reject) => {
-        var bufferStream = new stream.PassThrough();
-        let buffers = [];
-        bufferStream.on('data', (data) => buffers.push(data));
-        bufferStream.on('close', () => resolve(Buffer.concat(buffers)));
+        console.log('Report generation started...');
+        const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
+        console.log("Temporary report location: ", destination);
+        let bufferStream = fs.createWriteStream(destination);
+
+        bufferStream.on('close', () => resolve(fs.readFileSync(destination)));
 
         const archive = archiver('zip', {
             zlib: { level: config.COMPRESSION_LEVEL } 
         });
+
+        let totalSize: number = 0;
         const committeeDocs = await getCommitteeDocuments();
         archive.append(committeeDocs.committeeCompositions, { name: `Comisii/Componeță comisii.pdf` });
         archive.append(committeeDocs.committeeStudents, { name: `Comisii/Repartizarea studenților pe comisii.pdf` });
         committeeDocs.list.forEach(committee => {
             archive.append(committee.catalog, { name: `Comisii/${committee.name}/Catalog.pdf` });
             archive.append(committee.finalCatalog, { name: `Comisii/${committee.name}/Catalog final.pdf` });
+            totalSize += committee.catalog.length;
+            totalSize += committee.finalCatalog.length;
         });
         const studentLists = await generateStudentList();
         studentLists.forEach(domain => {
             archive.append(domain.list, { name: `Studenți/${domain.name}_${domain.type}/Listă.html` });
+            totalSize += domain.list.length;
         });
         const studentDocs = await getStudentDataAndDocs();
         studentDocs.forEach(student => {
@@ -44,8 +52,15 @@ export const generateFinalReport = (): Promise<Buffer> => {
             student.docs.forEach(doc => {
                 archive.append(doc.buffer, 
                     { name: `Studenți/${domain.name}_${domainType}/${student.group}_${fullName}/${doc.title}.${doc.extension}` });
+                totalSize += doc.buffer.length;
             });
         });
+
+        archive.on('progress', (progress) => {
+            let percent = progress.fs.processedBytes / totalSize * 100;
+            console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(progress.fs.processedBytes), bytesToSize(totalSize), percent, progress.entries.processed, progress.entries.total);
+        });
+
         archive.pipe(bufferStream);
         archive.finalize();
     });
@@ -80,6 +95,7 @@ const generateStudentList = async () => {
 }
 
 const getStudentDataAndDocs = async () => {
+    console.log('Getting student data and docs...');
     const students = await Student.findAll({
         include: [
             { model: User, attributes: { exclude: ['password'] } }, 
@@ -90,7 +106,7 @@ const getStudentDataAndDocs = async () => {
         ]
     });
     const sessionSettings = await SessionSettings.findOne();
-    return Promise.all(students.map(async student => {
+    const result = await Promise.all(students.map(async student => {
         const paper = student.paper;
         const requiredDocs = await DocumentController.getPaperRequiredDocuments(paper.id, sessionSettings);
         const docs = requiredDocs
@@ -111,5 +127,13 @@ const getStudentDataAndDocs = async () => {
             .filter(doc => doc.buffer != null);
         return { ...copyObject(student), docs };
     }));
-    
+    console.log('Getting student data and docs... OK!');
+    return result;
 }
+
+function bytesToSize(bytes: number) {
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes == 0) return '0 Byte';
+    let i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+ };
