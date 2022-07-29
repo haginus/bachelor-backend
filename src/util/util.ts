@@ -156,4 +156,15 @@ export function arrayMap<T, K extends keyof any>(arr: T[], getKey: (item: T) => 
       map[getKey(val)] = val;
       return map;
     }, {} as Record<K, T>);
-  }
+}
+
+export function sortArr<T>(arr: T[], compareFns: ((a: T, b: T) => number)[]) {
+    arr.sort((a, b) => {
+        for(let fn of compareFns) {
+            const result = fn(a, b);
+            if(result != 0) return result;
+        }
+        return 0;
+    });
+    return arr;
+}

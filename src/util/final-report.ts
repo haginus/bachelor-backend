@@ -7,9 +7,10 @@ import fs from 'fs';
 import os from 'os';
 import mime from 'mime-types';
 import { DOMAIN_TYPES } from './constants';
-import { copyObject, ResponseError, ResponseErrorUnauthorized, safePath } from './util';
+import { copyObject, ResponseError, ResponseErrorUnauthorized, safePath, sortArr } from './util';
 import { config } from '../config/config';
 import jwt from "jsonwebtoken";
+import { Op } from 'sequelize';
 
 export let finalReportGenerationStatus = {
     isGenerating: false,
@@ -75,6 +76,14 @@ export const generateFinalReport = (): Promise<string> => {
         });
 
         let totalSize: number = 0;
+
+        const centralizingCatalog = await DocumentController.generateFinalCatalog('centralizing');
+        const finalCatalog = await DocumentController.generateFinalCatalog('final');
+        archive.append(centralizingCatalog, { name: `Catalog centalizator.pdf` });
+        archive.append(finalCatalog, { name: `Catalog final.pdf` });
+        totalSize += centralizingCatalog.length;
+        totalSize += finalCatalog.length;
+
         const committeeDocs = await getCommitteeDocuments();
         archive.append(committeeDocs.committeeCompositions, { name: `Comisii/Componeță comisii.pdf` });
         archive.append(committeeDocs.committeeStudents, { name: `Comisii/Repartizarea studenților pe comisii.pdf` });
@@ -138,9 +147,24 @@ const generateStudentList = async () => {
     const domains = await Domain.findAll({
         include: [{
             model: Student,
-            include: [User, StudentExtraData, Specialization, Paper.scope(['teacher', 'grades', 'committee'])]
+            include: [
+                User,
+                StudentExtraData,
+                Specialization,
+                {
+                    model: Paper.scope(['teacher', 'grades', 'committee']),
+                    where: { committeeId: { [Op.ne]: null }}
+                }
+            ]
         }]
     });
+    domains.forEach(domain => {
+        sortArr(domain.students, [
+            (a, b) => a.specialization.name.localeCompare(b.specialization.name),
+            (a, b) => a.group.localeCompare(b.group),
+            (a, b) => a.user.fullName.localeCompare(b.user.fullName),
+        ]);
+    })
     return Promise.all(domains.map(async domain => {
         const list = await ejs
             .renderFile(DocumentController.getDocumentTemplatePath("final-report/student_list"), { domain } );
@@ -158,7 +182,8 @@ const getStudentDataAndDocs = async () => {
             Specialization,
             { 
                 model: Paper.scope(['documents', 'teacher', 'committee', 'grades']),
-                required: true
+                required: true,
+                where: { committeeId: { [Op.ne]: null }}
             }
         ]
     });
