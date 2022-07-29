@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -1099,9 +1099,35 @@ export const beginNewSession = async (user: User, password: string) => {
     }
     const transaction = await sequelize.transaction();
     try {
-        await Offer.destroy({ where: { id: { [Op.ne]: null } }, transaction });
+        const studentUsers = await User.findAll({
+            include: [
+                {
+                    model: Student,
+                    required: true,
+                    include: [
+                        { 
+                            model: Paper.scope(['grades']),
+                        }
+                    ]
+                }
+            ]
+        });
+
+        for(user of studentUsers) {
+            if(!user.student.paper) continue;
+            const paperId = user.student.paper.id;
+            if(user.student.paper.gradeAverage >= 6) {
+                await user.destroy({ transaction });
+            } else {
+                await Student.update({ generalAverage: null }, { where: { id: user.id }, transaction });
+                await Paper.update({ submitted: false }, { where: { id: paperId }, transaction });
+                await Document.destroy({ where: { paperId }, transaction });
+                await PaperGrade.destroy({ where: { paperId }, transaction });
+            }
+        };
+        await Document.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
         await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction });
-        await User.destroy({ where: { type: 'student' }, transaction });
+        await Offer.destroy({ where: { id: { [Op.ne]: null }, limit: 100000 }, transaction });
         let sessionName = 'Sesiune nouă';
         let allowGrading = false;
         await SessionSettings.update({ sessionName, allowGrading }, { where: { lock: 'X' }, transaction });
