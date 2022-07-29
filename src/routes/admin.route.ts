@@ -3,11 +3,18 @@ const router = express.Router();
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import * as AdminController from '../controllers/admin.controller';
 import { ResponseError } from '../util/util';
-import { generateFinalReport } from '../util/final-report';
+import { generateFinalReport, getGerationStatus, getLatestReportAccessToken, getReport } from '../util/final-report';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import { PaperType, StudyForm } from '../models/models';
 import fs from "fs";
+
+router.get('/session/report/download', (req, res, next) => {
+    const reportPath = getReport(req.query.token as string);
+    res.setHeader('Content-Disposition', 'attachment; filename=Raport final.zip');
+    res.setHeader("content-type", "archive/zip");
+    fs.createReadStream(reportPath).pipe(res);
+});
 
 router.use(isLoggedIn());
 router.use(isType('admin'));
@@ -358,12 +365,20 @@ router.post('/session', (req, res, next) => {
 });
 
 router.get('/session/report', (req, res, next) => {
+    res.send(getGerationStatus());
+});
+
+router.post('/session/report', (req, res, next) => {
     generateFinalReport()
-        .then(reportPath => {
-            res.setHeader("content-type", "archive/zip");
-            fs.createReadStream(reportPath).pipe(res);
+        .then(_ => {
+            res.send({ success: true });
         })
         .catch(err => next(err));
+});
+
+router.get('/session/report/token', (req, res, next) => {
+    const result = getLatestReportAccessToken();
+    res.send(result);
 });
 
 router.post('/session/new', (req, res, next) => {

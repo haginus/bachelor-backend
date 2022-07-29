@@ -7,8 +7,40 @@ import fs from 'fs';
 import os from 'os';
 import mime from 'mime-types';
 import { DOMAIN_TYPES } from './constants';
-import { copyObject, safePath } from './util';
+import { copyObject, ResponseError, ResponseErrorUnauthorized, safePath } from './util';
 import { config } from '../config/config';
+import jwt from "jsonwebtoken";
+
+export let finalReportGenerationStatus = {
+    isGenerating: false,
+    progress: 0,
+    lastGeneratedOn: null as number,
+    lastReportPath: null as string
+}
+
+export function getLatestReportAccessToken() {
+    const reportPath = finalReportGenerationStatus.lastReportPath;
+    if(reportPath == null) {
+        throw new ResponseError("Nu este niciun raport de accesat.");
+    }
+    const token = jwt.sign({ reportPath }, config.SECRET_KEY, { expiresIn: 60 });
+    return { token };
+}
+
+export function getGerationStatus() {
+    return finalReportGenerationStatus;
+}
+
+export function getReport(token: string): string {
+    try {
+        const payload = jwt.verify(token, config.SECRET_KEY);
+        if(payload['reportPath'] != finalReportGenerationStatus.lastReportPath) throw '';
+        return finalReportGenerationStatus.lastReportPath;
+    } catch(e) {
+        throw new ResponseErrorUnauthorized();
+    }
+
+}
 
 /**
  * 
@@ -17,13 +49,25 @@ import { config } from '../config/config';
 export const generateFinalReport = (): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         console.log('Report generation started...');
+        finalReportGenerationStatus = {
+            isGenerating: true,
+            progress: 0,
+            lastGeneratedOn: Date.now(),
+            lastReportPath: null
+        }
         const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
         console.log("Temporary report location: ", destination);
         let bufferStream = fs.createWriteStream(destination);
 
         bufferStream.on('close', () => {
             console.log("Report generation finished. File available at:", destination);
-            resolve(destination)
+            finalReportGenerationStatus = {
+                isGenerating: false,
+                progress: 1,
+                lastGeneratedOn: Date.now(),
+                lastReportPath: destination
+            }
+            resolve(destination);
         });
 
         const archive = archiver('zip', {
@@ -67,6 +111,7 @@ export const generateFinalReport = (): Promise<string> => {
             let percent = progress.entries.processed / progress.entries.total;
             let pseudoSize = totalSize * percent;
             let percentStr = (percent * 100).toFixed(2);
+            finalReportGenerationStatus.progress = percent;
             console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(pseudoSize), bytesToSize(totalSize), percentStr, progress.entries.processed, progress.entries.total);
         });
 
