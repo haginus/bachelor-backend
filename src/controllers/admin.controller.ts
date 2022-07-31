@@ -628,14 +628,14 @@ export const deleteTopic = async (id: number, moveId: number, transaction?: Tran
         // Update offer and paper topics in bulk using manual SQL query since sequelize doen't have this feature
         // First we need to get the offers and papers that have the moveId already (we will exclude them)
         // Pay attention to escapes since not having them can cause SQL injections!!!
-        let [results, _] = await sequelize.query(`SELECT offerId FROM OfferTopics WHERE topicId = ${sequelize.escape(moveId)};`);
+        let [results, _] = await sequelize.query(`SELECT offerId FROM OfferTopics WHERE topicId = ${sequelize.escape(moveId)};`, { transaction });
         let excludedOfferIds = results.map(result => (result as any).offerId).join(',') || 0;
         await sequelize.query(`
             UPDATE OfferTopics SET topicId = ${sequelize.escape(moveId)}
             WHERE topicId = ${sequelize.escape(id)}
             AND offerId NOT IN (${excludedOfferIds});`,
             { transaction });
-        [results, _] = await sequelize.query(`SELECT paperId FROM paperTopics WHERE topicId = ${sequelize.escape(moveId)};`);
+        [results, _] = await sequelize.query(`SELECT paperId FROM paperTopics WHERE topicId = ${sequelize.escape(moveId)};`, { transaction });
         let excludedPaperIds = results.map(result => (result as any).paperId).join(',') || 0;
         await sequelize.query(`
             UPDATE paperTopics SET topicId = ${sequelize.escape(moveId)}
@@ -657,7 +657,9 @@ export const deleteTopic = async (id: number, moveId: number, transaction?: Tran
 }
 
 export const bulkDeleteTopics = async (ids: number[], moveId: number) => {
-    const transaction = await sequelize.transaction();
+    const transaction = await sequelize.transaction({
+        isolationLevel: Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED
+    });
     try {
         for(let i = 0; i < ids.length; i++) {
             await deleteTopic(ids[i], moveId, transaction);
