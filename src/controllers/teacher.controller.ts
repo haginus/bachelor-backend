@@ -5,7 +5,7 @@ import * as DocumentController from './/document.controller';
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
-import { arrayMap, canApply, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
 
 
 export const validateTeacher = async (user: User) => {
@@ -165,7 +165,8 @@ export const getApplications = async (user: User, offerId: number, state: string
     });
 
     result = copyObject<any>(result).map(application => {
-        application.student = application.student.user;
+        // application.student = application.student.user;
+        application.student = changeUserTree(application.student);
         return application;
     });
 
@@ -278,7 +279,7 @@ export const getStudentPapers = async (user: User) => {
 
     return Promise.all(JSON.parse(JSON.stringify(papers)).map(async paper => {
         let required = await DocumentController.getPaperRequiredDocuments(paper.id);
-        paper.student = { ...paper.student.user };
+        paper.student = changeUserTree(paper.student);
         paper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
         delete paper.grades;
         if(!paper.committee || !paper.committee?.finalGrades) paper.gradeAverage = null;
@@ -359,8 +360,8 @@ export const getCommittee = async (user: User, committeeId: number) => {
 
     resp.papers = await Promise.all(resp.papers.map(async paper => {
         let parsedPaper: any = { ...paper }
-        parsedPaper.student = paper.student?.user;
-        parsedPaper.teacher = paper.teacher?.user;
+        parsedPaper.student = changeUserTree(paper.student);
+        parsedPaper.teacher = changeUserTree(paper.teacher);
         let required = await DocumentController.getPaperRequiredDocuments(paper.id);
         parsedPaper.requiredDocuments = required.filter(doc => doc.category == 'paper_files');
         paper.grades.forEach(grade => { grade.teacher = memberDict[grade.teacherId]});

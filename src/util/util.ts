@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { sequelize, SessionSettings, Teacher } from "../models/models";
+import { sequelize, SessionSettings, Student, Teacher } from "../models/models";
 import { Op, Sequelize } from "sequelize";
 
 export class ResponseError extends Error {
@@ -167,4 +167,15 @@ export function sortArr<T>(arr: T[], compareFns: ((a: T, b: T) => number)[]) {
         return 0;
     });
     return arr;
+}
+
+export function changeUserTree(studentOrTeacher: Student | Teacher) {
+    if(!studentOrTeacher) return null;
+    const user = studentOrTeacher.user;
+    delete studentOrTeacher.user;
+    if('group' in studentOrTeacher) {
+        return { ...user, student: studentOrTeacher };
+    } else {
+        return { ...user, teacher: studentOrTeacher };
+    }
 }
