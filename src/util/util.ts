@@ -189,4 +189,10 @@ export function groupBy<T>(collection: T[], key: keyof T | ((item: T) => any)) {
       storage[group].push(item); 
       return storage;
     }, {} as Record<string, T[]>);
-  }
+}
+
+export function compare(a: any, b: any, equalCase: number = 0) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return equalCase;
+}

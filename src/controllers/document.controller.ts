@@ -9,11 +9,11 @@ import { Op } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { groupBy, inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
+import { compare, groupBy, inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
-import { getSessionSettings, redisHGet, redisHSet } from "../util/redis";
+import { redisHGet, redisHSet } from "../util/redis";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../util/constants";
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
@@ -619,6 +619,7 @@ export async function generatePaperList() {
     });
     const wb = new ExcelJS.Workbook();
     let rows = papers.map(paper => {
+        const id = paper.id;
         const studentName = paper.student.user.fullName;
         const teacherName = paper.teacher.user.fullName;
         const title = paper.title;
@@ -626,11 +627,12 @@ export async function generatePaperList() {
         const specialization = paper.student.specialization.name;
         const domain = paper.student.domain.name + ', ' + DOMAIN_TYPES[paper.student.domain.type];
         const committee = paper.committee?.name || '';
-        return [studentName, teacherName, title, paperType, specialization, domain, committee];
+        return [id, studentName, teacherName, title, paperType, specialization, domain, committee];
     });
+    rows.sort((r1, r2) => compare(r1[6], r2[6], compare(r1[5], r2[5], compare(r1[1], r2[1]))));
     const groupedRows = [
         ['Toți studenții', rows],
-        ...Object.entries(groupBy(rows, (row) => row[5]))
+        ...Object.entries(groupBy(rows, (row) => row[6]))
     ] as [string, typeof rows][];
     groupedRows.forEach(([groupName, rows], index) => {
         const sheet = wb.addWorksheet(groupName.substring(0, 31));
@@ -639,6 +641,7 @@ export async function generatePaperList() {
             ref: 'A1',
             headerRow: true,
             columns: [
+                { name: 'ID lucrare' },
                 { name: 'Nume și prenume' },
                 { name: 'Profesor coordonator' },
                 { name: 'Titlul lucrării' },
