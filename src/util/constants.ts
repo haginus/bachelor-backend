@@ -23,6 +23,6 @@ export const USER_TYPES = {
 
 export const PAPER_TYPES = {
     bachelor: "licență",
-    diploma: "diploma",
+    diploma: "diplomă",
     master: "disertație",
 }
