@@ -9,11 +9,12 @@ import { Op } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
+import { groupBy, inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
-import { redisHGet, redisHSet } from "../util/redis";
+import { getSessionSettings, redisHGet, redisHSet } from "../util/redis";
+import { DOMAIN_TYPES, PAPER_TYPES } from "../util/constants";
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
@@ -606,4 +607,49 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
     }
     let fileBuffer = generatePdf(content, renderSettings);
     return fileBuffer;
+}
+
+export async function generatePaperList() {
+    const papers = await Paper.scope(['teacher', 'student', 'committee']).findAll({
+        where: { submitted: true },
+        include: [{
+            association: Paper.associations.student,
+            include: [Student.associations.domain, Student.associations.specialization]
+        }]
+    });
+    const wb = new ExcelJS.Workbook();
+    let rows = papers.map(paper => {
+        const studentName = paper.student.user.fullName;
+        const teacherName = paper.teacher.user.fullName;
+        const title = paper.title;
+        const paperType = PAPER_TYPES[paper.type];
+        const specialization = paper.student.specialization.name;
+        const domain = paper.student.domain.name + ', ' + DOMAIN_TYPES[paper.student.domain.type];
+        const committee = paper.committee?.name || '';
+        return [studentName, teacherName, title, paperType, specialization, domain, committee];
+    });
+    const groupedRows = [
+        ['Toți studenții', rows],
+        ...Object.entries(groupBy(rows, (row) => row[5]))
+    ] as [string, typeof rows][];
+    groupedRows.forEach(([groupName, rows], index) => {
+        const sheet = wb.addWorksheet(groupName.substring(0, 31));
+        sheet.addTable({
+            name: 'StudentTable' + index,
+            ref: 'A1',
+            headerRow: true,
+            columns: [
+                { name: 'Nume și prenume' },
+                { name: 'Profesor coordonator' },
+                { name: 'Titlul lucrării' },
+                { name: 'Tipul lucrării' },
+                { name: 'Specializarea' },
+                { name: 'Domeniul' },
+                { name: 'Comisia' },
+            ],
+            rows
+        });
+    });
+    const buffer = (await wb.xlsx.writeBuffer());
+    return buffer as Buffer;
 }

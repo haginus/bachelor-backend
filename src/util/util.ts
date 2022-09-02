@@ -179,3 +179,14 @@ export function changeUserTree(studentOrTeacher: Student | Teacher) {
         return { ...user, teacher: studentOrTeacher };
     }
 }
+
+export function groupBy<T>(collection: T[], key: keyof T | ((item: T) => any)) {
+    const getValue = typeof key === "function" ? key : (item: T) => item[key];
+  
+    return collection.reduce((storage, item) => {
+      const group = getValue(item);
+      storage[group] = storage[group] || [];
+      storage[group].push(item); 
+      return storage;
+    }, {} as Record<string, T[]>);
+  }

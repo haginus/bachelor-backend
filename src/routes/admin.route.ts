@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import fileUpload, { UploadedFile } from 'express-fileupload';
 import * as AdminController from '../controllers/admin.controller';
+import * as DocumentController from '../controllers/document.controller';
 import { ResponseError } from '../util/util';
 import { generateFinalReport, getGerationStatus, getLatestReportAccessToken, getReport } from '../util/final-report';
 import isLoggedIn from './middlewares/isLoggedIn';
@@ -385,6 +386,12 @@ router.post('/session/new', (req, res, next) => {
     const { password } = req.body;
     AdminController.beginNewSession(req._user, password)
         .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.get('/reports/paper_list', (_, res, next) => {
+    DocumentController.generatePaperList()
+        .then(result => res.send(result))
         .catch(err => next(err));
 });
 
