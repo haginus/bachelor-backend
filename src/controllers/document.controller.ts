@@ -472,15 +472,16 @@ export const generateCommitteeStudentsExcel = async () => {
     sortCommittees(committees);
     const wb = new ExcelJS.Workbook();
     committees.forEach(committee => {
-        let rows: [string, string, string, string][] = committee.papers.map(paper => {
+        let rows: [string, string, string, string, string][] = committee.papers.map(paper => {
             const name = paper.student.user.fullName;
             const teacherName = paper.teacher.user.fullName;
             const title = paper.title;
             const domain = paper.student.domain.name;
-            return [name, teacherName, title, domain];
+            const email = paper.student.user.email;
+            return [name, teacherName, title, domain, email];
         });
         if(rows.length == 0) {
-            rows = [[ '', '', '', '']];
+            rows = [[ '', '', '', '', '' ]];
         }
 
         const sheet = wb.addWorksheet('COMISIA_' + committee.id);
@@ -493,6 +494,7 @@ export const generateCommitteeStudentsExcel = async () => {
                 { name: 'Profesor coordonator' },
                 { name: 'Titlul lucrării' },
                 { name: 'Domeniul' },
+                { name: 'E-mail' }
             ],
             rows
         });
