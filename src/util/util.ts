@@ -196,3 +196,9 @@ export function compare(a: any, b: any, equalCase: number = 0) {
     if (a > b) return 1;
     return equalCase;
 }
+
+export function truncateInMiddle(str: string, maxLength: number) {
+    if(str.length <= maxLength) return str;
+    const halfLength = Math.floor(maxLength / 2);
+    return str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength + 3);
+}
