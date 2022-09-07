@@ -202,3 +202,7 @@ export function truncateInMiddle(str: string, maxLength: number) {
     const halfLength = Math.floor(maxLength / 2);
     return str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength + 3);
 }
+
+export function removeCharacters(str: string, characters: string[]) {
+    return str.split('').filter(c => !characters.includes(c)).join('');
+}

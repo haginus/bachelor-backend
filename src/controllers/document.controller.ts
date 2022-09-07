@@ -9,7 +9,7 @@ import { Op } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { compare, groupBy, inclusiveDate, parseDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, truncateInMiddle } from "../util/util";
+import { compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, truncateInMiddle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
@@ -483,8 +483,8 @@ export const generateCommitteeStudentsExcel = async () => {
         if(rows.length == 0) {
             rows = [[ '', '', '', '', '' ]];
         }
-
-        const sheet = wb.addWorksheet(truncateInMiddle(committee.name, 31));
+        const name = removeCharacters(committee.name, ['/', '\\', '?', '*', ':', '[', ']']);
+        const sheet = wb.addWorksheet(truncateInMiddle(name, 31));
         sheet.addTable({
             name: 'StudentTable' + committee.id,
             ref: 'A1',
