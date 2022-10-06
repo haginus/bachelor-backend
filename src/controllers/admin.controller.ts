@@ -1122,14 +1122,15 @@ export const beginNewSession = async (user: User, password: string) => {
                 await user.destroy({ transaction });
             } else {
                 await Student.update({ generalAverage: null }, { where: { id: user.id }, transaction });
+                await StudentExtraData.destroy({ where: { studentId: user.id }, transaction });
                 await Paper.update({ submitted: false }, { where: { id: paperId }, transaction });
                 await Document.destroy({ where: { paperId }, transaction });
                 await PaperGrade.destroy({ where: { paperId }, transaction });
             }
         };
         await Document.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
-        await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction });
-        await Offer.destroy({ where: { id: { [Op.ne]: null }, limit: 100000 }, transaction });
+        await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
+        await Application.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
         let sessionName = 'Sesiune nouă';
         let allowGrading = false;
         await SessionSettings.update({ sessionName, allowGrading }, { where: { lock: 'X' }, transaction });
