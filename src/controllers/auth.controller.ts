@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
-import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize } from "../models/models";
+import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize, SignUpRequestCreationAttributes, Profile, SignUpRequest } from "../models/models";
 import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../alerts/mailer';
@@ -147,4 +147,11 @@ export const getCurrentUser = async (user: User, isImpersonated: boolean = false
 
 export const getSessionSettings = () => {
     return SessionSettings.findOne();
+}
+
+export const signUp = async (data: SignUpRequestCreationAttributes) => {
+    if(await User.findOne({ where: { email: data.email } })) {
+        throw new ResponseError('Acest e-mail este deja înregistrat.', 'EMAIL_EXISTS');
+    }
+    return SignUpRequest.create(data);
 }

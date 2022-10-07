@@ -69,4 +69,10 @@ router.get('/user', isLoggedIn(), async (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/sign-up', reCaptcha(), async (req, res, next) => {
+    AuthController.signUp(req.body)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 export default router;

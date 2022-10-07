@@ -565,6 +565,43 @@ export class PaperGrade extends Model<PaperGradeAttributes> implements PaperGrad
   public paper?: Paper;
 }
 
+export interface SignUpRequestAttributes {
+  id: number;
+  firstName: string;
+  lastName: string;
+  CNP: string;
+  email: string;
+  identificationCode: string;
+  matriculationYear: string;
+  specializationId: number;
+  promotion: string;
+  group: string;
+  studyForm: StudyForm;
+  fundingForm: FundingForm;
+}
+
+export interface SignUpRequestCreationAttributes extends Optional<SignUpRequestAttributes, "id"> {}
+
+export class SignUpRequest extends Model<SignUpRequestAttributes, SignUpRequestCreationAttributes> implements SignUpRequestAttributes {
+  id: number;
+  firstName: string;
+  lastName: string;
+  CNP: string;
+  email: string;
+  identificationCode: string;
+  matriculationYear: string;
+  specializationId: number;
+  promotion: string;
+  group: string;
+  studyForm: StudyForm;
+  fundingForm: FundingForm;
+
+  static associations: {
+    domain: Association<SignUpRequest, Domain>;
+    specialization: Association<SignUpRequest, Specialization>;
+  }
+}
+
 interface SessionSettingsAttributes {
   lock?: 'X';
   sessionName: string;
@@ -590,7 +627,6 @@ export class SessionSettings extends Model<SessionSettingsAttributes, SessionSet
   paperSubmissionEndDate: Date;
   allowGrading: boolean;
 }
-
 
 SessionSettings.init({
   lock: { // table with one row
@@ -1551,6 +1587,71 @@ Paper.addScope('gradesMin', {
     as: 'grades'
   }]
 });
+
+SignUpRequest.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  CNP: {
+    type: DataTypes.STRING,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  identificationCode: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  matriculationYear: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  specializationId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  promotion: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  group: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  studyForm: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['if', 'ifr', 'id']],
+    }
+  },
+  fundingForm: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['budget', 'tax']],
+    }
+  },
+}, {
+  timestamps: false,
+  sequelize,
+  modelName: "signUpRequest",
+});
+
+Specialization.hasMany(SignUpRequest);
+SignUpRequest.belongsTo(Specialization);
 
 sequelize.sync()
   .then(() => {
