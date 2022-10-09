@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -120,13 +120,13 @@ export const getStudent = (id: number) => {
 }
 
 export const addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
-    studyForm, fundingForm, matriculationYear) => {
+    studyForm, fundingForm, matriculationYear, t?: Transaction) => {
     let specialization = await Specialization.findOne({ where: { id: specializationId } });
     if (!specialization) {
         throw "SPECIALIZATION_NOT_FOUND";
     }
     let domainId = specialization.domainId;
-    const transaction = await sequelize.transaction();
+    const transaction = t || await sequelize.transaction();
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
         // create student entity
@@ -143,11 +143,11 @@ export const addStudent = async (firstName, lastName, CNP, email, group, special
                 'EMAIL_NOT_SENT'
             );
         }
-        await transaction.commit(); // commit changes
+        if(!t) await transaction.commit(); // commit changes
         return UserController.getUserData(user.id); // return user data
     } catch (err) {
         console.log(err)
-        await transaction.rollback(); // if anything goes wrong, rollback
+        if(!t) await transaction.rollback(); // if anything goes wrong, rollback
         if(err instanceof ValidationError) {
             if(err.errors[0].validatorKey == 'not_unique') {
                 throw new ResponseError('E-mailul introdus este deja luat: ' + email, 'VALIDATION_ERROR');
@@ -471,6 +471,40 @@ export const editAdmin = async (id: number, firstName: string, lastName: string)
         where: { id }
     });
     return UserController.getUserData(id);
+}
+
+// Requests
+export const getSignUpRequests = async () => {
+    return SignUpRequest.findAll();
+}
+
+export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpRequest) => {
+    let request = await SignUpRequest.findByPk(id);
+    if(!request) {
+        throw new ResponseError('Cererea nu există.');
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        await request.update({ ...additionalChanges }, { transaction });
+        await addStudent(request.firstName, request.lastName, request.CNP, request.email, request.group, request.specializationId,
+            request.identificationCode, request.promotion, request.studyForm, request.fundingForm, request.matriculationYear,
+            transaction);
+        await SignUpRequest.destroy({ where: { id }, transaction });
+        await transaction.commit();
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
+    return true;
+}
+
+export const declineSignUpRequest = async (id: number) => {
+    let request = await SignUpRequest.findByPk(id);
+    if(!request) {
+        throw new ResponseError('Cererea nu există.');
+    }
+    await SignUpRequest.destroy({ where: { id } });
+    return true;
 }
 
 export const getDomains = () => {

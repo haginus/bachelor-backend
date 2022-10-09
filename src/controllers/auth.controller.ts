@@ -150,8 +150,8 @@ export const getSessionSettings = () => {
 }
 
 export const signUp = async (data: SignUpRequestCreationAttributes) => {
-    if(await User.findOne({ where: { email: data.email } })) {
-        throw new ResponseError('Acest e-mail este deja înregistrat.', 'EMAIL_EXISTS');
+    if(await User.findOne({ where: { email: data.email } }) || await SignUpRequest.findOne({ where: { email: data.email }})) {
+        throw new ResponseError('Acest e-mail este deja înregistrat sau cererea este în curs de procesare.', 'EMAIL_EXISTS');
     }
     return SignUpRequest.create(data);
 }

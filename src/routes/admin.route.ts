@@ -146,8 +146,30 @@ router.get('/admins', function (req, res, next) {
 //         .catch(err => next(err));
 // });
 
+// REQUESTS
+
+router.get('/sign-up-requests', function (req, res, next) {
+    AdminController.getSignUpRequests()
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.post('/sign-up-requests/:id/decline', function (req, res, next) {
+    let { id } = req.params;
+    AdminController.declineSignUpRequest(+id)
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
+router.post('/sign-up-requests/:id/accept', function (req, res, next) {
+    let { id } = req.params;
+    AdminController.acceptSignUpRequest(+id, req.body)
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
 router.post('/users/resend-activation-code', function(req, res, next) {
-    AdminController.resendUserActivationCode(req.body.id)
+    AdminController.declineSignUpRequest(req.body.id)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });

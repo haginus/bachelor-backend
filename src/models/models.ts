@@ -1648,6 +1648,12 @@ SignUpRequest.init({
   timestamps: false,
   sequelize,
   modelName: "signUpRequest",
+  defaultScope: {
+    include: [{
+      model: Specialization,
+      include: [Domain]
+    }]
+  }
 });
 
 Specialization.hasMany(SignUpRequest);
