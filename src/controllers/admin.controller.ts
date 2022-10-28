@@ -232,7 +232,7 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
                 resolve(null);
             });
     });
-    let promises = users.map(user => {
+    let promises = users.map(async user => {
         let fundingForm: string = removeDiacritics((user.fundingForm || '').trim().toLowerCase());
         if(fundingForm == 'buget') {
             fundingForm = 'budget';
@@ -241,19 +241,31 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
         } else {
             throw new ResponseError('Câmpul "formă de finanțare" trebuie să fie buget/taxă.');
         }
-        return addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group,
-            specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+        const email = user.email.trim();
+        const existing = await User.findOne({ where: { email }, include: [Student] });
+        if(existing && existing.student.specializationId == specializationId) return { 
+            isNew: false, 
+            student: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+        }
+        return {
+            isNew: true,
+            student: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+        }
     });
 
 
     let results = await Promise.allSettled(promises);
     let totalStudents = users.length;
 
-    let response = { students: [], totalStudents, addedStudents: 0 };
+    let response = { students: [], totalStudents, addedStudents: 0, editedStudents: 0 };
 
     results.forEach(result => {
         if (result.status == 'fulfilled') {
-            response.addedStudents++;
+            if(result.value.isNew) {
+                response.addedStudents++;
+            } else {
+                response.editedStudents++;
+            }
             response.students.push(result.value);
         }
     });
