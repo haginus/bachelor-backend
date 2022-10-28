@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../alerts/mailer';
@@ -121,8 +121,9 @@ export const getStudent = (id: number) => {
     });
 }
 
-export const addStudent = async (firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
-    studyForm, fundingForm, matriculationYear, t?: Transaction) => {
+export const addStudent = async (firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number, 
+    identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, t?: Transaction) => {
+    email = email.trim();
     let specialization = await Specialization.findOne({ where: { id: specializationId } });
     if (!specialization) {
         throw "SPECIALIZATION_NOT_FOUND";
@@ -336,6 +337,7 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
 export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string) => {
     const transaction = await sequelize.transaction();
     try {
+        email = email.trim();
         let user = await User.create({ title, firstName, lastName, CNP, email, type: 'teacher' }, { transaction });
         await Teacher.create({ id: user.id, userId: user.id }, { transaction });
         await Profile.create({ userId: user.id }, { transaction });
