@@ -268,6 +268,7 @@ export const getStudentPapers = async (user: User) => {
             {
                 required: true,
                 model: Student,
+                attributes: ['promotion', 'group', 'studyForm', 'domainId', 'specializationId'],
                 include: [
                     User.scope(["min", "profile"]),
                     Domain,
