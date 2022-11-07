@@ -1,5 +1,5 @@
 import { Document, DocumentCategory, DomainType, DocumentType, Paper, sequelize, SessionSettings,
-    StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization } from "../models/models";
+    StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest } from "../models/models";
 import ejs from 'ejs';
 import { generatePdf } from './../util/generate-pdf'
 import fs from 'fs';
@@ -14,7 +14,7 @@ import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
 import { redisHGet, redisHSet } from "../util/redis";
-import { DOMAIN_TYPES, PAPER_TYPES } from "../util/constants";
+import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../util/constants";
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
@@ -654,6 +654,56 @@ export async function generatePaperList() {
             ],
             rows
         });
+    });
+    const buffer = (await wb.xlsx.writeBuffer());
+    return buffer as Buffer;
+}
+
+export async function generateSignUpRequestExcel() {
+    const requests = (await SignUpRequest.findAll({ 
+        include: [{ model: Specialization, include: [Domain] }]
+    })).sort((r1, r2) => compare(r1.specialization.domain.name, r2.specialization.domain.name, 
+                            compare(r1.specialization.name, r2.specialization.name,
+                                compare(r1.group, r2.group, 
+                                    compare(r1.lastName, r2.lastName, 
+                                        compare(r1.firstName, r2.firstName))))));
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Cereri');
+    sheet.addTable({
+        name: 'Table1',
+        ref: 'A1',
+        headerRow: true,
+        columns: [
+            { name: 'ID' },
+            { name: 'Nume și prenume' },
+            { name: 'CNP' },
+            { name: 'Număr matricol' },
+            { name: 'An înmatriculare' },
+            { name: 'Promoție' },
+            { name: 'Domeniu' },
+            { name: 'Specializare' },
+            { name: 'Forma de învățământ' },
+            { name: 'Grupă' },
+            { name: 'Formă de finanțare' },
+            { name: 'E-mail' },
+        ],
+        rows: requests.map(request => {
+            const domain = request.specialization.domain;
+            return [
+                request.id,
+                request.lastName + ' ' + request.firstName,
+                request.CNP,
+                request.identificationCode,
+                request.matriculationYear,
+                request.promotion,
+                domain.name + ' ' + DOMAIN_TYPES[domain.type],
+                request.specialization.name,
+                STUDY_FORMS[request.studyForm],
+                request.group,
+                FUNDING_FORMS[request.fundingForm],
+                request.email,
+            ];
+        })
     });
     const buffer = (await wb.xlsx.writeBuffer());
     return buffer as Buffer;

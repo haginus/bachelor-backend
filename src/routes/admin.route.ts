@@ -154,6 +154,12 @@ router.get('/sign-up-requests', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.get('/sign-up-requests/excel', function (req, res, next) {
+    DocumentController.generateSignUpRequestExcel()
+        .then(result => res.send(result))
+        .catch(err => next(err));
+});
+
 router.post('/sign-up-requests/:id/decline', function (req, res, next) {
     let { id } = req.params;
     AdminController.declineSignUpRequest(+id)

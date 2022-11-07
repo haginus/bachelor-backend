@@ -72,6 +72,7 @@ export class Specialization extends Model<SpecializationAttributes, Specializati
   studyYears: string;
 
   studentNumber?: number;
+  domain?: Domain;
 }
 
 interface ActivationTokenAttributes {
@@ -596,8 +597,9 @@ export class SignUpRequest extends Model<SignUpRequestAttributes, SignUpRequestC
   studyForm: StudyForm;
   fundingForm: FundingForm;
 
+  specialization?: Specialization;
+
   static associations: {
-    domain: Association<SignUpRequest, Domain>;
     specialization: Association<SignUpRequest, Specialization>;
   }
 }
