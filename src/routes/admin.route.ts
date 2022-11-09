@@ -175,7 +175,7 @@ router.post('/sign-up-requests/:id/accept', function (req, res, next) {
 });
 
 router.post('/users/resend-activation-code', function(req, res, next) {
-    AdminController.declineSignUpRequest(req.body.id)
+    AdminController.resendUserActivationCode(req.body.id)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
