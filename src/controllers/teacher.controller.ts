@@ -288,6 +288,10 @@ export const getStudentPapers = async (user: User) => {
     }));
 }
 
+export const getStudentPapersExcel = async (user: User) => {
+    return DocumentController.generatePaperList({ teacherId: user.teacher.id });
+}
+
 export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType,
     perspective: UploadPerspective, paperId: number) => {
     if(!['teacher', 'committee'].includes(perspective)) {

@@ -84,6 +84,12 @@ router.get('/papers', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.get('/papers/excel', function (req, res, next) {
+    TeacherController.getStudentPapersExcel(req._user)
+        .then(buffer => res.send(buffer))
+        .catch(err => next(err));
+});
+
 router.post('/papers/documents/upload', fileUpload(), function (req, res, next) {
     const { paperId, perspective, name, type } = req.body;
     TeacherController.uploadPaperDocument(req._user, req.files.file as UploadedFile,

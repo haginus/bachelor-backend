@@ -414,8 +414,7 @@ export class Application extends Model<ApplicationAttributes, ApplicationCreatio
   }
 }
 
-
-interface PaperAttributes {
+export interface PaperAttributes {
   id: number;
   studentId: number;
   teacherId: number;

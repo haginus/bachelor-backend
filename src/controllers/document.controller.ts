@@ -1,11 +1,11 @@
 import { Document, DocumentCategory, DomainType, DocumentType, Paper, sequelize, SessionSettings,
-    StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest } from "../models/models";
+    StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes } from "../models/models";
 import ejs from 'ejs';
 import { generatePdf } from './../util/generate-pdf'
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
-import { Op } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
@@ -611,9 +611,9 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
     return fileBuffer;
 }
 
-export async function generatePaperList() {
+export async function generatePaperList(where: WhereOptions<PaperAttributes> = { submitted: true }) {
     const papers = await Paper.scope(['teacher', 'student', 'committee']).findAll({
-        where: { submitted: true },
+        where,
         include: [{
             association: Paper.associations.student,
             include: [Student.associations.domain, Student.associations.specialization]
@@ -629,7 +629,8 @@ export async function generatePaperList() {
         const specialization = paper.student.specialization.name;
         const domain = paper.student.domain.name + ', ' + DOMAIN_TYPES[paper.student.domain.type];
         const committee = paper.committee?.name || '';
-        return [id, studentName, teacherName, title, paperType, specialization, domain, committee];
+        const email = paper.student.user.email;
+        return [id, studentName, teacherName, title, paperType, specialization, domain, committee, email];
     });
     rows.sort((r1, r2) => compare(r1[6], r2[6], compare(r1[5], r2[5], compare(r1[1], r2[1]))));
     const groupedRows = [
@@ -651,6 +652,7 @@ export async function generatePaperList() {
                 { name: 'Specializarea' },
                 { name: 'Domeniul' },
                 { name: 'Comisia' },
+                { name: 'Email' },
             ],
             rows
         });
