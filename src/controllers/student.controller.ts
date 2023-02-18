@@ -9,10 +9,7 @@ import { UploadedFile } from "express-fileupload";
 import * as Mailer from "../alerts/mailer";
 import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
 import { redisHSet } from "../util/redis";
-
-
-
-const getStoragePath = DocumentController.getStoragePath;
+import * as PaperController from "./paper.controller";
 
 export interface GetTeacherOffersFilters {
   teacherName?: string;
@@ -303,37 +300,11 @@ export class StudentController {
   }
 
   public static editPaper = async (user: User, title: string, description: string, topicIds: number[]) => {
-    const transaction = await sequelize.transaction();
-    const paper = user.student.paper;
-    if (!paper) {
+    const paperId = user.student.paper?.id;
+    if(!paperId) {
       throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
     }
-    const sessionSettings = await SessionSettings.findOne();
-    if (!StudentController.checkEditPaper(paper, sessionSettings)) {
-      throw new ResponseErrorForbidden("Nu puteți edita lucrarea acum.");
-    }
-    const titleUpdated = paper.title != title;
-    let prevTitle = paper.title, prevDesc = paper.description;
-    try {
-      paper.title = title;
-      paper.description = description;
-      await paper.save(); // out of transaction is intentional
-      await paper.setTopics(topicIds, { transaction });
-      if (titleUpdated) {
-        const extraData = await user.student.getStudentExtraDatum();
-        if (extraData != null) {
-          await StudentController.generatePaperDocuments(user, extraData, sessionSettings, transaction);
-        }
-      }
-      await transaction.commit();
-      return { success: true, documentsGenerated: titleUpdated };
-    } catch (err) {
-      paper.title = prevTitle;
-      paper.description = prevDesc;
-      await paper.save();
-      await transaction.rollback();
-      throw err;
-    }
+    return PaperController.editPaper(user, paperId, title, description, topicIds);
   }
 
   public static submitPaper = async (user: User, submit: boolean) => {
@@ -381,6 +352,10 @@ export class StudentController {
       throw new ResponseError('Date invalide.', 'INVALID_DATA');
     }
     const transaction = await sequelize.transaction(); // initialize a SQL transaction
+    const studentPaper = await Paper.findOne({ 
+      where: { studentId: student.id }, 
+      include: [{ model: Teacher, include: [User] }] 
+    });
     if (oldData) { // if data exists
       try {
         let [dataUpdated] = await StudentExtraData.update(newMainData, {
@@ -395,7 +370,7 @@ export class StudentController {
           fields: ["locality", "county", "street", "streetNumber", "building", "stair", "floor", "apartment"]
         }); // update address
         if (dataUpdated || addressUpdated) {
-          await StudentController.generatePaperDocuments(user, data, sessionSettings, transaction);
+          await PaperController.generatePaperDocuments(PaperController.mapPaper(studentPaper), data, sessionSettings, transaction);
         }
         redisHSet('paperRequiredDocs', student.paper?.id, null);
         await transaction.commit();
@@ -414,7 +389,7 @@ export class StudentController {
         let extraDataModel = await StudentExtraData.create(newMainData, { transaction });
         let addressModel = await Address.create(newAddress, { transaction });
         await extraDataModel.setAddress(addressModel, { transaction });
-        await StudentController.generatePaperDocuments(user, data, sessionSettings, transaction);
+        await PaperController.generatePaperDocuments(PaperController.mapPaper(studentPaper), data, sessionSettings, transaction);
         await transaction.commit();
       } catch (err) {
         await transaction.rollback();
@@ -426,68 +401,6 @@ export class StudentController {
       }
     }
     return { success: true }
-  }
-
-  public static generatePaperDocuments = async (user: User, extraData: StudentExtraData, sessionSettings: SessionSettings, transaction?: Transaction) => {
-    const student = copyObject(user.student);
-    student.user = copyObject(user);
-    let paper = await StudentController.getPaper(user);
-    if (!paper) {
-      throw "BAD_REQUEST";
-    }
-
-    const ownTransaction = !transaction;
-
-    transaction = transaction || (await sequelize.transaction());
-    try {
-      // delete old generated and signed documents
-      await Document.destroy({
-        transaction,
-        where: {
-          paperId: paper.id,
-          name: {
-            [Op.in]: ['sign_up_form', 'statutory_declaration', 'liquidation_form']
-          }
-        }
-      });
-
-      let data = {
-        ...copyObject(student),
-        extra: extraData,
-        paper: copyObject(paper),
-        sessionSettings: copyObject(sessionSettings)
-      }
-
-      let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
-      let signUpFormDocument = await Document.create({
-        name: 'sign_up_form', category: "secretary_files", type: 'generated',
-        paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
-      }, { transaction });
-
-      fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
-
-      let statutoryDeclarationBuffer = await DocumentController.generateDocument('statutory_declaration', data);  // generate PDF
-      let statutoryDeclarationDocument = await Document.create({
-        name: 'statutory_declaration', category: "secretary_files", type: 'generated',
-        paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
-      }, { transaction });
-
-      fs.writeFileSync(getStoragePath(`${statutoryDeclarationDocument.id}.pdf`), statutoryDeclarationBuffer); // write to storage
-
-      let liquidationFormBuffer = await DocumentController.generateDocument('liquidation_form', data);  // generate PDF
-      let liquidationFormDocument = await Document.create({
-        name: 'liquidation_form', category: "secretary_files", type: 'generated',
-        paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
-      }, { transaction });
-
-      fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
-
-      if(ownTransaction) await transaction.commit();
-    } catch (err) {
-      if(ownTransaction) await transaction.rollback();
-      console.log(err);
-      throw err;
-    }
   }
 
   public static uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType) => {

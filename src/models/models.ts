@@ -447,6 +447,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public teacher?: Teacher;
   public topics?: Topic[];
 
+  public getStudent: HasOneGetAssociationMixin<Student>;
   public setTopics: HasManySetAssociationsMixin<Topic, number>;
   public getCommittee: HasOneGetAssociationMixin<Committee>;
   public getGrades: HasManyGetAssociationsMixin<PaperGrade>;

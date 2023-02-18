@@ -112,6 +112,13 @@ router.post('/papers/add', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.post('/papers/edit', function (req, res, next) {
+    const { paperId, title, description, topicIds } = req.body;
+    TeacherController.editPaper(req._user, +paperId, title, description, topicIds)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.post('/papers/grade', function (req, res, next) {
     const { paperId, forPaper, forPresentation } = req.body;
     TeacherController.gradePaper(req._user, +paperId, +forPaper, +forPresentation)

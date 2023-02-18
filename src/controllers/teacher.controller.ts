@@ -1,7 +1,7 @@
 "use strict"
 import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
-import * as UserController from './user.controller';
 import * as DocumentController from './/document.controller';
+import * as PaperController from "./paper.controller";
 import { Model, Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
@@ -298,6 +298,10 @@ export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name
         throw new ResponseErrorForbidden();
     }
     return DocumentController.uploadPaperDocument(user, documentFile, name, type, perspective, paperId);
+}
+
+export async function editPaper(user: User, paperId: number, title: string, description: string, topicIds: number[]) {
+    return PaperController.editPaper(user, paperId, title, description, topicIds);
 }
 
 /** Remove association with a student by deleting their paper and allowing them to look for other teacher. */
