@@ -13,6 +13,12 @@ export class ResponseError extends Error {
     }
 }
 
+export class ResponseErrorNotFound extends ResponseError {
+    constructor(message?: string, name?: string) {
+        super(message || 'Resursa nu există.', name || 'NOT_FOUND', 404);
+    }
+}
+
 export class ResponseErrorUnauthorized extends ResponseError {
     constructor(message?: string, name?: string) {
         super(message || 'Nu sunteți autorizat să faceți această acțiune.', name || 'UNAUTHORIZED', 401);

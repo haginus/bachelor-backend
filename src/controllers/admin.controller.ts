@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorInternal } from "../util/util";
+import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorInternal, ResponseErrorNotFound } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
@@ -843,6 +843,15 @@ export const editCommittee = async (id, name, domainsIds, members) => {
 
 export const deleteCommittee = (id) => {
     return Committee.destroy({ where: {id } });
+}
+
+export const markCommitteeFinalGrades =async (id: number, finalGrades: boolean) => {
+    const committee = await Committee.findOne({ where: { id } });
+    if(!committee) {
+        throw new ResponseErrorNotFound('Comisia nu există.');
+    }
+    committee.finalGrades = finalGrades;
+    return committee.save();
 }
 
 export const setCommitteePapers = async (id: number, paperIds: number[]) => {

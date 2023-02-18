@@ -297,6 +297,13 @@ router.post('/committees/delete', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/committees/finalGrades', (req, res, next) => {
+    const { id, finalGrades } = req.body;
+    AdminController.markCommitteeFinalGrades(id, finalGrades)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.post('/committees/assign-papers', (req, res, next) => {
     const { id, paperIds } = req.body;
     if(!id || !Array.isArray(paperIds)) {
