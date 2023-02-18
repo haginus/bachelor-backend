@@ -186,7 +186,11 @@ export const editStudent = async (id, firstName, lastName, CNP, group, specializ
     return UserController.getUserData(id);
 }
 
-export const deleteUser = async (id: number) => {
+export const deleteUser = async (requestUser: User, id: number) => {
+    const user = await User.findByPk(id);
+    if(requestUser.type == 'secretary' && !['student'].includes(user.type)) {
+        throw new ResponseError('Nu aveți permisiunea să ștergeți acest tip de utilizator.', 'PERMISSION_DENIED');
+    }
     let result = await User.destroy({ where: { id } });
     return result;
 }

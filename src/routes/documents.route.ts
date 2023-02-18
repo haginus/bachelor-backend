@@ -22,7 +22,7 @@ router.post('/delete', async (req, res, next) => {
     
 });
 
-router.get('/committee/:document', isType(['admin', 'teacher']), async (req, res, next) => {
+router.get('/committee/:document', isType(['admin', 'secretary', 'teacher']), async (req, res, next) => {
     try {
         const { document } = req.params;
         let { committeeId } = req.query;
@@ -46,7 +46,7 @@ router.get('/committee/:document', isType(['admin', 'teacher']), async (req, res
     }
 });
 
-router.get('/final_catalog', isType('admin'), (req, res, next) => {
+router.get('/final_catalog', isType(['admin']), (req, res, next) => {
     let { mode } = req.query;
     mode = mode || 'final';
     if(!['centralizing', 'final'].includes(mode as string)) {

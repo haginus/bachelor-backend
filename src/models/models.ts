@@ -94,7 +94,7 @@ export class ActivationToken extends Model<ActivationTokenAttributes, Activation
   public readonly updatedAt!: Date;
 }
 
-export type UserType = 'student' | 'teacher' | 'admin';
+export type UserType = 'student' | 'teacher' | 'admin' | 'secretary';
 
 interface UserAttributes {
   id: number;

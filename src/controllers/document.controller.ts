@@ -87,8 +87,9 @@ export const getDocument = async (user: User, documentId: number) => {
     }
 
     // Admin and student can view all documents, teacher can only view 'paper_files' category
-    const canViewAsOwner = user.type == 'admin' || (user.type == 'student' && document.paper.studentId == user.student.id)
-            || (user.type == 'teacher' && document.category == 'paper_files' && document.paper.teacherId == user.teacher.id)
+    const canViewAsOwner = ['admin', 'secretary'].includes(user.type) 
+        || (user.type == 'student' && document.paper.studentId == user.student.id)
+        || (user.type == 'teacher' && document.category == 'paper_files' && document.paper.teacherId == user.teacher.id)
     
     if(!canViewAsOwner) {
         // If user is not admin or owner of the paper, there is still a chance user's part of the committee reviewing the paper

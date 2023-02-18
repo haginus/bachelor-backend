@@ -18,8 +18,7 @@ router.get('/session/report/download', (req, res, next) => {
 });
 
 router.use(isLoggedIn());
-router.use(isType('admin'));
-
+router.use(isType(['admin', 'secretary']));
 
 router.get('/stats', function (req, res, next) {
     AdminController.getStats()
@@ -88,7 +87,7 @@ router.post('/users/delete', async function (req, res, next) {
         if(!id) {
             throw new ResponseError('Lipsește ID-ul utilizatorului.');
         }
-        const result = await AdminController.deleteUser(id);
+        const result = await AdminController.deleteUser(req._user, id);
         res.json({ result });
     } catch (err) {
         next(err);
@@ -97,28 +96,28 @@ router.post('/users/delete', async function (req, res, next) {
 
 // TEACHERS
 
-router.get('/teachers', function (req, res, next) {
+router.get('/teachers', isType('admin'), function (req, res, next) {
     let { sort, order, page, pageSize } = req.query;
     AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', null, +page, +pageSize)
         .then(teachers => res.json(teachers))
         .catch(err => next(err));
 });
 
-router.post('/teachers/add', function (req, res, next) {
+router.post('/teachers/add', isType('admin'), function (req, res, next) {
     let { title, firstName, lastName, CNP, email } = req.body;
     AdminController.addTeacher(title, firstName, lastName, CNP, email)
         .then(teacher => res.json(teacher))
         .catch(err => next(err));
 });
 
-router.post('/teachers/edit', function (req, res, next) {
+router.post('/teachers/edit', isType('admin'), function (req, res, next) {
     let { id, title, firstName, lastName, CNP } = req.body;
     AdminController.editTeacher(id, title, firstName, lastName, CNP)
         .then(teacher => res.json(teacher))
         .catch(err => next(err));
 });
 
-router.post('/teachers/add-bulk', fileUpload(), function(req, res, next) {
+router.post('/teachers/add-bulk', isType('admin'), fileUpload(), function(req, res, next) {
     AdminController.addTeacherBulk((req.files.file as UploadedFile).data)
         .then(result => res.json(result))
         .catch(err => next(err));
@@ -126,20 +125,20 @@ router.post('/teachers/add-bulk', fileUpload(), function(req, res, next) {
 
 // ADMINS
 
-router.get('/admins', function (req, res, next) {
+router.get('/admins', isType('admin'), function (req, res, next) {
     AdminController.getAdmins()
         .then(admins => res.json(admins))
         .catch(err => next(err));
 });
 
-// router.post('/admins/add', function (req, res, next) {
+// router.post('/admins/add', isType('admin'), function (req, res, next) {
 //     let { firstName, lastName, email } = req.body;
 //     AdminController.addAdmin(firstName, lastName, email)
 //         .then(admin => res.json(admin))
 //         .catch(err => next(err));
 // });
 
-// router.post('/admins/edit', function (req, res, next) {
+// router.post('/admins/edit', isType('admin'), function (req, res, next) {
 //     let { id, firstName, lastName } = req.body;
 //     AdminController.editAdmin(+id, firstName, lastName)
 //         .then(admin => res.json(admin))
@@ -194,21 +193,21 @@ router.get('/domains/extra', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/domains/add', (req, res, next) => {
+router.post('/domains/add', isType('admin'), (req, res, next) => {
     const { name, type, paperType, specializations } = req.body;
     AdminController.addDomain(name, type, paperType, specializations)
         .then(domain => res.json(domain))
         .catch(err => next(err));
 });
 
-router.post('/domains/edit', (req, res, next) => {
+router.post('/domains/edit', isType('admin'), (req, res, next) => {
     const { id, name, type, paperType, specializations } = req.body;
     AdminController.editDomain(id, name, type, paperType, specializations)
         .then(domain => res.json(domain))
         .catch(err => next(err));
 });
 
-router.post('/domains/delete', (req, res, next) => {
+router.post('/domains/delete', isType('admin'), (req, res, next) => {
     const { id } = req.body;
     if(!id || isNaN(id)) {
         return next(new ResponseError("Lipsește ID-ul domeniului."));
@@ -226,22 +225,21 @@ router.get('/topics', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/topics/add', (req, res, next) => {
+router.post('/topics/add', isType('admin'), (req, res, next) => {
     const { name } = req.body;
     AdminController.addTopic(name)
         .then(topic => res.json(topic))
         .catch(err => next(err));
 });
 
-
-router.post('/topics/edit', (req, res, next) => {
+router.post('/topics/edit', isType('admin'), (req, res, next) => {
     const { id, name } = req.body;
     AdminController.editTopic(id, name)
         .then(topic => res.json(topic))
         .catch(err => next(err));
 });
 
-router.post('/topics/delete', (req, res, next) => {
+router.post('/topics/delete', isType('admin'), (req, res, next) => {
     const { id, moveId } = req.body;
     if(!id || isNaN(id) || !moveId || isNaN(moveId)) {
         return next(new ResponseError("ID-uri greșite."));
@@ -251,7 +249,7 @@ router.post('/topics/delete', (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.post('/topics/bulk-delete', (req, res, next) => {
+router.post('/topics/bulk-delete', isType('admin'), (req, res, next) => {
     const { ids, moveId } = req.body;
     if(!ids || !Array.isArray(ids)) {
         return next(new ResponseError("ID-uri greșite."));
@@ -276,35 +274,35 @@ router.get('/committees/:id', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/committees/add', (req, res, next) => {
+router.post('/committees/add', isType('admin'), (req, res, next) => {
     const { name, domains, members } = req.body;
     AdminController.addCommittee(name, domains, members)
         .then(result => res.json({ success: true })) 
         .catch(err => next(err));
 });
 
-router.post('/committees/edit', (req, res, next) => {
+router.post('/committees/edit', isType('admin'), (req, res, next) => {
     const { id, name, domains, members } = req.body;
     AdminController.editCommittee(id, name, domains, members)
         .then(result => res.json({ success: true })) 
         .catch(err => next(err));
 });
 
-router.post('/committees/delete', (req, res, next) => {
+router.post('/committees/delete', isType('admin'), (req, res, next) => {
     const { id } = req.body;
     AdminController.deleteCommittee(id)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
 
-router.post('/committees/finalGrades', (req, res, next) => {
+router.post('/committees/finalGrades', isType('admin'), (req, res, next) => {
     const { id, finalGrades } = req.body;
     AdminController.markCommitteeFinalGrades(id, finalGrades)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
 
-router.post('/committees/assign-papers', (req, res, next) => {
+router.post('/committees/assign-papers', isType('admin'), (req, res, next) => {
     const { id, paperIds } = req.body;
     if(!id || !Array.isArray(paperIds)) {
         return next(new ResponseError("Parametri lipsă."));
@@ -314,7 +312,7 @@ router.post('/committees/assign-papers', (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.post('/committees/auto-assign-papers', (req, res, next) => {
+router.post('/committees/auto-assign-papers', isType('admin'), (req, res, next) => {
     AdminController.autoAssignCommitteePapers()
         .then(result => res.json(result))
         .catch(err => next(err));
@@ -393,18 +391,18 @@ router.post('/papers/documents/upload', fileUpload(), (req, res, next) => {
 
 // SESSION SETTINGS
 
-router.post('/session', (req, res, next) => {
+router.post('/session', isType('admin'), (req, res, next) => {
     const settings = req.body;
     AdminController.changeSessionSettings(settings)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
 
-router.get('/session/report', (req, res, next) => {
+router.get('/session/report', isType('admin'), (req, res, next) => {
     res.send(getGerationStatus());
 });
 
-router.post('/session/report', (req, res, next) => {
+router.post('/session/report', isType('admin'), (req, res, next) => {
     generateFinalReport()
         .then(_ => {
             res.send({ success: true });
@@ -412,19 +410,19 @@ router.post('/session/report', (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get('/session/report/token', (req, res, next) => {
+router.get('/session/report/token', isType('admin'), (req, res, next) => {
     const result = getLatestReportAccessToken();
     res.send(result);
 });
 
-router.post('/session/new', (req, res, next) => {
+router.post('/session/new', isType('admin'), (req, res, next) => {
     const { password } = req.body;
     AdminController.beginNewSession(req._user, password)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
 
-router.get('/reports/paper_list', (_, res, next) => {
+router.get('/reports/paper_list', isType('admin'), (_, res, next) => {
     DocumentController.generatePaperList()
         .then(result => res.send(result))
         .catch(err => next(err));
