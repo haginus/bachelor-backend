@@ -900,7 +900,7 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      isIn: [['student', 'teacher', 'admin']],
+      isIn: [['student', 'teacher', 'admin', 'secretary']],
     }
   }
 }, {
