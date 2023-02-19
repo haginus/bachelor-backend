@@ -333,6 +333,22 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
     return true;
 }
 
+export const unsubmitPaper = async (user: User, paperId: number): Promise<boolean> => {
+    const paper = await Paper.findOne({ where: { id: paperId } });
+    if(!paper) {
+        throw new ResponseErrorForbidden();
+    }
+    if(paper.teacherId != user.teacher.id) {
+        throw new ResponseErrorForbidden();
+    }
+    if(!paper.submitted) {
+        throw new ResponseErrorForbidden();
+    }
+    paper.submitted = false;
+    await paper.save();
+    return true;
+}
+
 export const getCommittees = async (user: User) => {
     const committees = await user.teacher.getCommittees();
     return JSON.parse(JSON.stringify(committees)).map(committee => {

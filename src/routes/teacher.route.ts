@@ -101,7 +101,14 @@ router.post('/papers/documents/upload', fileUpload(), function (req, res, next) 
 router.post('/papers/remove', function (req, res, next) {
     const { paperId } = req.body;
     TeacherController.removePaper(req._user, +paperId)
-        .then(result => res.json(result))
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
+router.post('/papers/unsubmit', function (req, res, next) {
+    const { paperId } = req.body;
+    TeacherController.unsubmitPaper(req._user, +paperId)
+        .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
 
