@@ -1084,6 +1084,19 @@ const checkRequiredDocuments = (requiredDocs: PaperRequiredDocument[], documents
     }
 }
 
+export const submitPaper = async (paperId: number, submit = true) => {
+    const paper = await Paper.findOne({ where: { id: paperId } });
+    if(!paper) {
+        throw new ResponseErrorNotFound("Lucrarea nu a fost găsită.");
+    }
+    if(paper.isValid != null) {
+        throw new ResponseError("Lucrarea a fost deja validată.", "ALREADY_VALIDATED");
+    }
+    paper.submitted = submit;
+    await paper.save();
+    return true;
+}
+
 /** Validate/Invalidate a paper by its ID. */
 export const validatePaper = async (paperId: number, validate: boolean, generalAverage?: number, ignoreRequiredDocs: boolean = false) => {
     const paper = await Paper.scope(['documents', 'student', 'teacher']).findOne({

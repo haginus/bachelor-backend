@@ -368,6 +368,13 @@ router.get('/papers', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.post('/papers/submit', (req, res, next) => {
+    const { paperId, submit } = req.body;
+    AdminController.submitPaper(paperId, submit)
+        .then(result => res.json({ success: true }))
+        .catch(err => next(err));
+});
+
 router.post('/papers/validate', (req, res, next) => {
     const { paperId, validate, generalAverage, ignoreRequiredDocs } = req.body;
     AdminController.validatePaper(paperId, validate, parseFloat(generalAverage), ignoreRequiredDocs)
