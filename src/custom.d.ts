@@ -5,6 +5,7 @@ declare global {
       interface Request {
          _user: User;
          _impersonatedBy?: number;
+         _sudo?: boolean;
       }
    }
 }

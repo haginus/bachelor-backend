@@ -7,11 +7,12 @@ import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorInternal, ResponseErrorNotFound } from "../util/util";
+import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorNotFound } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
 import { redisDel, redisSet } from "../util/redis";
+import { Request } from "express";
 var stream = require('stream');
 
 interface Statistic {
@@ -186,10 +187,17 @@ export const editStudent = async (id, firstName, lastName, CNP, group, specializ
     return UserController.getUserData(id);
 }
 
-export const deleteUser = async (requestUser: User, id: number) => {
+export const deleteUser = async (request: Request, id: number) => {
+    const requestUser = request._user;
     const user = await User.findByPk(id);
+    if(requestUser.id == id) {
+        throw new ResponseErrorForbidden('Nu puteți șterge contul propriu.');
+    }
     if(requestUser.type == 'secretary' && !['student'].includes(user.type)) {
-        throw new ResponseError('Nu aveți permisiunea să ștergeți acest tip de utilizator.', 'PERMISSION_DENIED');
+        throw new ResponseErrorForbidden('Nu aveți permisiunea să ștergeți acest tip de utilizator.');
+    }
+    if(['admin', 'secretary'].includes(user.type) && !request._sudo) {
+        throw new ResponseErrorForbidden('Trebuie să vă autentificați cu parola pentru a putea șterge acest tip de utilizator.');
     }
     let result = await User.destroy({ where: { id } });
     return result;
@@ -454,13 +462,22 @@ export const resendUserActivationCode = async (userId: number) => {
 // Admins
 
 export const getAdmins = async () => {
-    return User.findAll({ where: { type: 'admin' } });
+    return User.findAll({ 
+        where: { 
+            type: {
+                [Op.or]: ['admin', 'secretary']
+            }
+        },
+    });
 }
 
-export const addAdmin = async (firstName: string, lastName: string, email: string) => {
+export const addAdmin = async (firstName: string, lastName: string, email: string, type: 'admin' | 'secretary') => {
+    if(['admin', 'secretary'].indexOf(type) == -1) {
+        throw new ResponseError('Tipul de utilizator nu este valid.', 'VALIDATION_ERROR');
+    }
     const transaction = await sequelize.transaction();
     try {
-        let user = await User.create({ firstName, lastName, email, type: 'admin' }, { transaction });
+        let user = await User.create({ firstName, lastName, email, type, }, { transaction });
         await Profile.create({ userId: user.id }, { transaction });
         let token = crypto.randomBytes(64).toString('hex');
         let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
@@ -486,8 +503,11 @@ export const addAdmin = async (firstName: string, lastName: string, email: strin
     }
 }
 
-export const editAdmin = async (id: number, firstName: string, lastName: string) => {
-    let userUpdate = await User.update({ firstName, lastName }, {
+export const editAdmin = async (id: number, firstName: string, lastName: string, type: 'admin' | 'secretary') => {
+    if(['admin', 'secretary'].indexOf(type) == -1) {
+        throw new ResponseError('Tipul de utilizator nu este valid.', 'VALIDATION_ERROR');
+    }
+    let userUpdate = await User.update({ firstName, lastName, type }, {
         where: { id }
     });
     return UserController.getUserData(id);
@@ -1157,11 +1177,7 @@ export const changeSessionSettings = async (settings: SessionSettings) => {
     }
 }
 
-export const beginNewSession = async (user: User, password: string) => {
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-        throw new ResponseError("Parolă incorectă.", "WRONG_PASSWORD", 403);
-    }
+export const beginNewSession = async (user: User) => {
     const transaction = await sequelize.transaction();
     try {
         const studentUsers = await User.findAll({

@@ -7,6 +7,7 @@ import { SessionSettingsDto } from '../dto/SessionSettingsDto';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import reCaptcha from './middlewares/reCaptcha';
+import sudo from './middlewares/sudo';
 
 router.post('/login', reCaptcha(), (req, res, next) => {
     const { email, password } = req.body;
@@ -29,7 +30,7 @@ router.post('/change-password-token', (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.post('/impersonate', isLoggedIn(), isType('admin'), (req, res, next) => {
+router.post('/impersonate', isLoggedIn(), isType('admin'), sudo(), (req, res, next) => {
     const { userId } = req.body;
     AuthController.impersonateUser(req._user, +userId)
         .then(result => res.json(result))
@@ -67,6 +68,10 @@ router.get('/user', isLoggedIn(), async (req, res, next) => {
     AuthController.getCurrentUser(req._user, !!req._impersonatedBy)
         .then(result => res.json(result))
         .catch(err => next(err));
+});
+
+router.post('/sudo', isLoggedIn(), isType('admin'), sudo(), async function (req, res, next) {
+    res.json({ success: true });
 });
 
 router.post('/sign-up', reCaptcha(), async (req, res, next) => {

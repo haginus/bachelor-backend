@@ -9,6 +9,7 @@ import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import { PaperType, StudyForm } from '../models/models';
 import fs from "fs";
+import sudo from './middlewares/sudo';
 
 router.get('/session/report/download', (req, res, next) => {
     const reportPath = getReport(req.query.token as string);
@@ -81,13 +82,13 @@ router.post('/students/add-bulk', fileUpload(), async function(req, res, next) {
     }
 });
 
-router.post('/users/delete', async function (req, res, next) {
+router.post('/users/delete', sudo({ soft: true }), async function (req, res, next) {
     try {
         let { id } = req.body;
         if(!id) {
             throw new ResponseError('Lipsește ID-ul utilizatorului.');
         }
-        const result = await AdminController.deleteUser(req._user, id);
+        const result = await AdminController.deleteUser(req, id);
         res.json({ result });
     } catch (err) {
         next(err);
@@ -125,25 +126,25 @@ router.post('/teachers/add-bulk', isType('admin'), fileUpload(), function(req, r
 
 // ADMINS
 
-router.get('/admins', isType('admin'), function (req, res, next) {
+router.get('/admins', isType('admin'), sudo(), function (req, res, next) {
     AdminController.getAdmins()
         .then(admins => res.json(admins))
         .catch(err => next(err));
 });
 
-// router.post('/admins/add', isType('admin'), function (req, res, next) {
-//     let { firstName, lastName, email } = req.body;
-//     AdminController.addAdmin(firstName, lastName, email)
-//         .then(admin => res.json(admin))
-//         .catch(err => next(err));
-// });
+router.post('/admins/add', isType('admin'), sudo(), function (req, res, next) {
+    let { firstName, lastName, email, type } = req.body;
+    AdminController.addAdmin(firstName, lastName, email, type)
+        .then(admin => res.json(admin))
+        .catch(err => next(err));
+});
 
-// router.post('/admins/edit', isType('admin'), function (req, res, next) {
-//     let { id, firstName, lastName } = req.body;
-//     AdminController.editAdmin(+id, firstName, lastName)
-//         .then(admin => res.json(admin))
-//         .catch(err => next(err));
-// });
+router.post('/admins/edit', isType('admin'), sudo(), function (req, res, next) {
+    let { id, firstName, lastName, type } = req.body;
+    AdminController.editAdmin(+id, firstName, lastName, type)
+        .then(admin => res.json(admin))
+        .catch(err => next(err));
+});
 
 // REQUESTS
 
@@ -415,9 +416,8 @@ router.get('/session/report/token', isType('admin'), (req, res, next) => {
     res.send(result);
 });
 
-router.post('/session/new', isType('admin'), (req, res, next) => {
-    const { password } = req.body;
-    AdminController.beginNewSession(req._user, password)
+router.post('/session/new', isType('admin'), sudo(), (req, res, next) => {
+    AdminController.beginNewSession(req._user)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
