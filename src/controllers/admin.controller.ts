@@ -148,7 +148,7 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
             );
         }
         if(!t) await transaction.commit(); // commit changes
-        return UserController.getUserData(user.id); // return user data
+        return UserController.getUserData(user.id, transaction); // return user data
     } catch (err) {
         console.log(err)
         if(!t) await transaction.rollback(); // if anything goes wrong, rollback
@@ -518,7 +518,7 @@ export const getSignUpRequests = async () => {
     return SignUpRequest.findAll();
 }
 
-export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpRequest) => {
+export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpRequest & { generalAverage?: number }) => {
     let request = await SignUpRequest.findByPk(id);
     if(!request) {
         throw new ResponseError('Cererea nu există.');
@@ -526,9 +526,12 @@ export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpR
     const transaction = await sequelize.transaction();
     try {
         await request.update({ ...additionalChanges }, { transaction });
-        await addStudent(request.firstName, request.lastName, request.CNP, request.email, request.group, request.specializationId,
+        const student = await addStudent(request.firstName, request.lastName, request.CNP, request.email, request.group, request.specializationId,
             request.identificationCode, request.promotion, request.studyForm, request.fundingForm, request.matriculationYear,
             transaction);
+        if(additionalChanges.generalAverage) {
+            await Student.update({ generalAverage: additionalChanges.generalAverage }, { where: { id: student.id }, transaction });
+        }
         await SignUpRequest.destroy({ where: { id }, transaction });
         await transaction.commit();
     } catch(err) {

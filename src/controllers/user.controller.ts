@@ -6,9 +6,11 @@ import fs from "fs";
 import crypto from 'crypto';
 import { config } from "../config/config";
 import * as Mailer from '../alerts/mailer';
+import { Transaction } from "sequelize/types";
 
-const getUser = async (where) => {
+const getUser = async (where, transaction?: Transaction) => {
   return User.findOne({
+    transaction,
     where,
     attributes: { exclude: ['password'] },
     include: [
@@ -43,8 +45,8 @@ export async function validateUser(uid) {
   return user.save({ fields: ['validated'] });
 }
 
-export async function getUserData(uid) {
-  return getUser(uid);
+export async function getUserData(uid: number, transaction?: Transaction) {
+  return getUser(uid, transaction);
 }
 
 export async function patchProfile(user: User, picture: Buffer, bio: string, website: string) {
