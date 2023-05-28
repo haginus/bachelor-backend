@@ -429,8 +429,12 @@ router.post('/session/new', isType('admin'), sudo(), (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get('/reports/paper_list', isType('admin'), (_, res, next) => {
-    DocumentController.generatePaperList()
+router.get('/reports/paper_list', isType('admin'), (req, res, next) => {
+    let where: Parameters<typeof DocumentController.generatePaperList>[0] = {};
+    if(req.query.submitted !== undefined) {
+        where.submitted = req.query.submitted == 'true';
+    }
+    DocumentController.generatePaperList(where)
         .then(result => res.send(result))
         .catch(err => next(err));
 });

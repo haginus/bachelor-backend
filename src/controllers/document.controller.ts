@@ -631,7 +631,10 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
         const domain = paper.student.domain.name + ', ' + DOMAIN_TYPES[paper.student.domain.type];
         const committee = paper.committee?.name || '';
         const email = paper.student.user.email;
-        return [id, studentName, teacherName, title, paperType, specialization, domain, committee, email];
+        const promotion = paper.student.promotion;
+        const paperValid = paper.isValid != null ? (paper.isValid ? 'Validată' : 'Invalidată') : 'N/A';
+        const isSubmitted = paper.submitted ? 'Da' : 'Nu';
+        return [id, studentName, teacherName, title, paperType, specialization, domain, committee, email, promotion, paperValid, isSubmitted];
     });
     rows.sort((r1, r2) => compare(r1[6], r2[6], compare(r1[5], r2[5], compare(r1[1], r2[1]))));
     const groupedRows = [
@@ -653,7 +656,10 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
                 { name: 'Specializarea' },
                 { name: 'Domeniul' },
                 { name: 'Comisia' },
-                { name: 'Email' },
+                { name: 'E-mail' },
+                { name: 'Promoție' },
+                { name: 'Lucrare validată' },
+                { name: 'Lucrare înscrisă' }
             ],
             rows
         });
