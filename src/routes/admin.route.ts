@@ -54,9 +54,9 @@ router.post('/students/add', function (req, res, next) {
 });
 
 router.post('/students/edit', function (req, res, next) {
-    let { id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
+    let { id, firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
         studyForm, fundingForm, matriculationYear } = req.body;
-    AdminController.editStudent(id, firstName, lastName, CNP, group, specializationId,
+    AdminController.editStudent(id, firstName, lastName, CNP, email, group, specializationId,
         identificationCode, promotion, studyForm, fundingForm, matriculationYear)
         .then(student => res.json(student))
         .catch(err => next(err));
@@ -112,8 +112,8 @@ router.post('/teachers/add', isType('admin'), function (req, res, next) {
 });
 
 router.post('/teachers/edit', isType('admin'), function (req, res, next) {
-    let { id, title, firstName, lastName, CNP } = req.body;
-    AdminController.editTeacher(id, title, firstName, lastName, CNP)
+    let { id, title, firstName, lastName, CNP, email } = req.body;
+    AdminController.editTeacher(id, title, firstName, lastName, CNP, email)
         .then(teacher => res.json(teacher))
         .catch(err => next(err));
 });

@@ -5,7 +5,7 @@ import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher
 import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../alerts/mailer';
-import { WhereOptions } from "sequelize/types";
+import { Transaction, WhereOptions } from "sequelize/types";
 
 export const getUser = async (where: WhereOptions<User>) => {
     return User.findOne({ 
@@ -105,8 +105,8 @@ export async function releaseImpersonation(impersonatedBy: number) {
     return createLoginResponse(user);
 }
 
-export const resetPassword = async (email: string) => {
-    const user = await User.findOne({ where: { email } });
+export const resetPassword = async (email: string, t?: Transaction) => {
+    const user = await User.findOne({ where: { email }, transaction: t });
     if(user) {
         const prevSent = await ActivationToken.findAll({ where: { userId: user.id }, limit: 3, order: [['id', 'DESC'] ]});
         // If user has sent too many password reset requests
@@ -119,14 +119,14 @@ export const resetPassword = async (email: string) => {
                     "TOO_MANY_REQUESTS");
             }
         }
-        const transaction = await sequelize.transaction();
+        const transaction = t || await sequelize.transaction();
         try {
             let token = crypto.randomBytes(64).toString('hex');
             await ActivationToken.create({ token, userId: user.id }, { transaction });
             await Mailer.sendResetPasswordEmail(user, token);
-            await transaction.commit();
+            if(!t) await transaction.commit();
         } catch(err) {
-            await transaction.rollback();
+            if(!t) await transaction.rollback();
             throw new ResponseErrorInternal("A apărut o eroare la trimiterea e-mailului. Contactați administratorul.");
         }
     } else {

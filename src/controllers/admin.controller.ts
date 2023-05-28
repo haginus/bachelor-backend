@@ -13,6 +13,7 @@ import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
 import { redisDel, redisSet } from "../util/redis";
 import { Request } from "express";
+import { resetPassword } from "./auth.controller";
 var stream = require('stream');
 
 interface Statistic {
@@ -152,18 +153,16 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
     } catch (err) {
         console.log(err)
         if(!t) await transaction.rollback(); // if anything goes wrong, rollback
-        if(err instanceof ValidationError) {
-            if(err.errors[0].validatorKey == 'not_unique') {
-                throw new ResponseError('E-mailul introdus este deja luat: ' + email, 'VALIDATION_ERROR');
-            }
-            throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
-        }
-        throw err;
+        handleUserUpdateError(err);
     }
 }
 
-export const editStudent = async (id, firstName, lastName, CNP, group, specializationId, identificationCode, promotion,
-    studyForm, fundingForm, matriculationYear) => {
+export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number, 
+    identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
+    let previousStudent = await Student.findOne({ where: { userId: id }, include: [User] });
+    if(!previousStudent) {
+        throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+    }
     let specialization = await Specialization.findOne({ where: { id: specializationId } });
     if (!specialization) {
         throw "SPECIALIZATION_NOT_FOUND";
@@ -171,18 +170,21 @@ export const editStudent = async (id, firstName, lastName, CNP, group, specializ
     let domainId = specialization.domainId;
     const transaction = await sequelize.transaction();
     try {
-        let userUpdate = await User.update({ firstName, lastName, CNP }, { // update user data
+        let userUpdate = await User.update({ firstName, lastName, CNP, email }, { // update user data
             where: { id }, transaction
         });
         let studentUpdate = await Student.update({ group, domainId, identificationCode, promotion, specializationId,
             studyForm, fundingForm, matriculationYear }, { // update student data
             where: { userId: id }, transaction
         });
+        if(previousStudent.user.email != email) {
+            await resetPassword(email, transaction);
+        }
         await transaction.commit();
     } catch(err) {
         console.log(err);
         await transaction.rollback(); // if anything goes wrong, rollback
-        throw "VALIDATION_ERROR";
+        handleUserUpdateError(err);
     }
     return UserController.getUserData(id);
 }
@@ -257,7 +259,7 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
         const existing = await User.findOne({ where: { email }, include: [Student] });
         if(existing && existing.student.specializationId == specializationId) return { 
             isNew: false, 
-            student: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+            student: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm as any, user.matriculationYear)
         }
         return {
             isNew: true,
@@ -379,21 +381,30 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
         return UserController.getUserData(user.id);
     } catch (err) {
         await transaction.rollback();
-        if(err instanceof ValidationError) {
-            if(err.errors[0].validatorKey == 'not_unique') {
-                throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
-            }
-            throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
-        }
-        throw err;
+        handleUserUpdateError(err);
     }
 }
 
-export const editTeacher = async (id: number, title: string, firstName: string, lastName: string, CNP: string) => {
-    let userUpdate = await User.update({ title, firstName, lastName, CNP }, {
-        where: { id }
-    });
-    return UserController.getUserData(id);
+export const editTeacher = async (id: number, title: string, firstName: string, lastName: string, CNP: string, email: string) => {
+    const transaction = await sequelize.transaction();
+    let previousTeacher = await Teacher.findOne({ where: { userId: id }, include: [User] });
+    if(!previousTeacher) {
+        throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+    }
+    try {
+        let userUpdate = await User.update({ title, firstName, lastName, CNP, email }, {
+            where: { id },
+            transaction,
+        });
+        if(previousTeacher.user.email != email) {
+            await resetPassword(email, transaction);
+        }
+        await transaction.commit();
+        return UserController.getUserData(id);
+    } catch (err) {
+        await transaction.rollback();
+        handleUserUpdateError(err);
+    }
 }
 
 export const addTeacherBulk = async (file: Buffer) => {
@@ -447,6 +458,16 @@ export const addTeacherBulk = async (file: Buffer) => {
     });
 
     return response;
+}
+
+function handleUserUpdateError(err: unknown) {
+    if(err instanceof ValidationError) {
+        if(err.errors[0].validatorKey == 'not_unique') {
+            throw new ResponseError('E-mailul introdus este deja luat.', 'VALIDATION_ERROR');
+        }
+        throw new ResponseError('Datele introduse sunt incorecte.', 'VALIDATION_ERROR');
+    }
+    throw err;
 }
 
 export const resendUserActivationCode = async (userId: number) => {
