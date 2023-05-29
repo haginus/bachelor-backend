@@ -16,20 +16,21 @@ export function mapPaper(paper: Paper) {
 
 export type MappedPaper = ReturnType<typeof mapPaper>;
 
-/** Check if student can edit paper. */
+/** Check if student or teacher can edit paper. */
 export function editPaperGuard(paper: Paper, user: User, sessionSettings: SessionSettings) {
+  if(user.type == 'admin') return;
   if(![paper.teacherId, paper.studentId].includes(user.id)) {
     throw new ResponseErrorForbidden("Nu puteți edita această lucrare.");
   }
   if(paper.isValid != null) {
     throw new ResponseErrorForbidden("Lucrarea a fost deja validată și nu mai poate fi editată.");
   }
-  if(user.type == 'admin') return;
   const today = Date.now();
   const endDateSecretary = inclusiveDate(sessionSettings.fileSubmissionEndDate).getTime();
   const paperCreatedAt = new Date(paper.createdAt);
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-  const timeConstraint = (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary) && today <= endDateSecretary;
+  const timeConstraint = (user.type != 'student' || (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary)) && 
+    today <= endDateSecretary;
   if(!timeConstraint) {
     throw new ResponseErrorForbidden("Nu puteți edita lucrarea acum.");
   }
