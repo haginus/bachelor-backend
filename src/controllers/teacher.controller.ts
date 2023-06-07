@@ -435,25 +435,22 @@ export const markGradesAsFinal = async (user: User, committeeId: number) => {
     return { success: true };
 }
 
-export async function getStudents(names?: string, domainId?: number): Promise<User[]> {
+export async function getStudents(firstName?: string, lastName?: string, email?: string, domainId?: number): Promise<User[]> {
     const sessionSettings = await SessionSettings.findOne();
     if(!canApply(sessionSettings)) {
         throw new ResponseErrorForbidden();
     }
-    const orClauses = (names?.split(' ') || [])
-        .map(name => ({
-            [Op.or]: [
-                { firstName: { [Op.substring]: name } },
-                { lastName: { [Op.substring]: name } },
-            ]
-        })
-        ).splice(0, 3);
+    
+    const firstNameWhere = firstName ? { firstName: { [Op.substring]: firstName } } : { };
+    const lastNameWhere = lastName ? { lastName: { [Op.substring]: lastName } } : { };
+    const emailWhere = email ? { email: { [Op.substring]: email } } : { };
     const domainIdWhere = domainId ? { domainId } : { };
-    const orClausesWhere = orClauses.length > 0 ? { [Op.or]: orClauses } : { };
     return User.scope("min").findAll({
         where: { 
             type: "student",
-            ...orClausesWhere,
+            ...firstNameWhere,
+            ...lastNameWhere,
+            ...emailWhere,
         },
         include: [
             {

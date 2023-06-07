@@ -155,8 +155,8 @@ router.post('/committees/:id/mark-grades-final', function (req, res, next) {
 });
 
 router.get('/students/', function (req, res, next) {
-    const { name, domainId } = req.query;
-    TeacherController.getStudents(name as string, +domainId)
+    const { firstName, lastName, email, domainId } = req.query;
+    TeacherController.getStudents(firstName as string, lastName as string, email as string, +domainId)
         .then(students => res.json(students))
         .catch(err => next(err));
 });
