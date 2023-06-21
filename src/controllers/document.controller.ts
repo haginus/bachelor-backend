@@ -178,9 +178,17 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     }
     // Find the paper and check if it is valid
     const paper = await Paper.findOne({ where: { id: paperId } });
-    if(paper.isValid != null && perspective != 'committee') {
-        throw new ResponseErrorForbidden();
+    if(paper.isValid != null) {
+        // allow teachers to upload documents even if the paper is validated
+        if(perspective == 'teacher') {
+            if(sessionSettings.allowGrading) {
+                throw new ResponseErrorForbidden();
+            }
+        } else if(perspective != 'committee') {
+            throw new ResponseErrorForbidden();
+        }
     }
+    
     const requiredDocuments = await getPaperRequiredDocuments(paperId, sessionSettings);
     const mimeType = documentFile.mimetype; // get uploaded file mimeType
     const uploadedBy = user.id;
