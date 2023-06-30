@@ -34,6 +34,9 @@ router.get('/committee/:document', isType(['admin', 'secretary', 'teacher']), as
             case 'catalog':
                 buffer = await DocumentController.generateCommitteeCatalog(req._user, +committeeId);
                 break;
+            case 'catalog_docx':
+                buffer = await DocumentController.generateCommitteeCatalogWord(req._user, +committeeId);
+                break;
             case 'final_catalog':
                 buffer = await DocumentController.generateCommitteeFinalCatalog(req._user, +committeeId);
                 break;
