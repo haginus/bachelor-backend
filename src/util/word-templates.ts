@@ -202,7 +202,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
                 children: [
                   TableCell({ text: `${i + 1}.` }),
                   TableCell({ text: `${paper.student.user.lastName} ${paper.student.studentExtraDatum?.parentInitial} ${paper.student.user.firstName}`.toLocaleUpperCase() }),
-                  TableCell({ text: `${paper.title} ${paper.teacher.user.lastName} ${paper.teacher.user.lastName}`.toLocaleUpperCase() }),
+                  TableCell({ text: `${paper.title} – ${paper.teacher.user.lastName} ${paper.teacher.user.firstName}`.toLocaleUpperCase() }),
                   ...gradingMembers.flatMap(member => {
                     const grade = paper.grades.find(grade => grade.teacherId == member.id);
                     return [
