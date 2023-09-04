@@ -903,21 +903,18 @@ export const markCommitteeFinalGrades =async (id: number, finalGrades: boolean) 
 }
 
 export const setCommitteePapers = async (id: number, paperIds: number[]) => {
-    const committee = await Committee.findOne({ where: { id } }); // get committee
+    const committee = await Committee.findByPk(id);
     if(!committee) {
-        throw "BAD_REQUEST";
+        throw new ResponseErrorNotFound('Comisia nu există.');
     }
-    const memberIds = committee.members.map(m => m.id); // get member IDs
-    const isMasterCommittee = committee.domains.some(domain => domain.type == 'master');
-    const papers = await Paper.findAll({ where: {
-        id: {
-            [Op.in]: paperIds
-        }
-    }}); // find all papers and check if the coordinating teacher is in committee
+    const papers = await Paper.findAll({
+        where: {
+            id: {
+                [Op.in]: paperIds
+            }
+        },
+    });
     papers.forEach(paper => {
-        if(!isMasterCommittee && memberIds.includes(paper.teacherId)) {
-            throw new ResponseError(`Lucrarea "${paper.title}" nu poate fi atribuită, deoarece profesorul coordonator face parte din comisie.`);
-        }
         if(!paper.submitted || (paper.isValid != null && !paper.isValid)) {
             throw new ResponseError(`Lucrarea "${paper.title}" nu poate fi atribuită, deoarece este invalidă.`);
         }
