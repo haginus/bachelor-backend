@@ -89,8 +89,10 @@ export const generateFinalReport = (): Promise<string> => {
         archive.append(committeeDocs.committeeStudents, { name: `Comisii/Repartizarea studenților pe comisii.pdf` });
         committeeDocs.list.forEach(committee => {
             archive.append(committee.catalog, { name: `Comisii/${committee.name}/Catalog.pdf` });
+            archive.append(committee.catalog_docx, { name: `Comisii/${committee.name}/Catalog.docx` });
             archive.append(committee.finalCatalog, { name: `Comisii/${committee.name}/Catalog final.pdf` });
             totalSize += committee.catalog.length;
+            totalSize += committee.catalog_docx.length;
             totalSize += committee.finalCatalog.length;
         });
         const studentLists = await generateStudentList();
@@ -135,11 +137,14 @@ const getCommitteeDocuments = async () => {
     let mockUser = { type: 'admin' } as User;
     let committeeStudents = await DocumentController.generateCommitteeStudents();
     let committeeCompositions = await DocumentController.generateCommitteeCompositions();
-    let list = await Promise.all(committees.map(async (committee) => {
-        let catalog = await DocumentController.generateCommitteeCatalog(mockUser, committee.id);
-        let finalCatalog = await DocumentController.generateCommitteeFinalCatalog(mockUser, committee.id);
-        return { name: committee.name, catalog, finalCatalog };
-    }));
+    let list = await Promise.all(
+        committees.map(async (committee) => ({
+            name: committee.name, 
+            catalog: await DocumentController.generateCommitteeCatalog(mockUser, committee.id),
+            catalog_docx: await DocumentController.generateCommitteeCatalogWord(mockUser, committee.id),
+            finalCatalog: await DocumentController.generateCommitteeFinalCatalog(mockUser, committee.id),
+        }))
+    );
     return { committeeStudents, committeeCompositions, list }
 }
 

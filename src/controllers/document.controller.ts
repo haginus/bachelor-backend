@@ -420,7 +420,7 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
       let paperGroup: Group = [null, paper.student.studyForm, paper.student.specialization.name];
       return paper.gradeAverage != null && equalGroups(group, paperGroup);
     });
-  });
+  }).filter(group => group.length > 0);
 
   // Group the previous results by promotion
   let paperPromotionGroups = paperGroups.map(paperGroup => {
@@ -437,6 +437,8 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     });
     return promotionItems;
   });
+
+  console.log(paperPromotionGroups)
 
   // Get session settings
   const sessionSettings = await SessionSettings.findOne();
@@ -596,7 +598,7 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
       let paperGroup: Group = [null, paper.student.studyForm, paper.student.specialization.name];
       return paper.gradeAverage != null && equalGroups(group, paperGroup);
     });
-  });
+  }).filter(group => group.length > 0);
 
   // Group the previous results by promotion
   let paperPromotionGroups = paperGroups.map(paperGroup => {
