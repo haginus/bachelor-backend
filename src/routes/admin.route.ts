@@ -5,11 +5,12 @@ import * as AdminController from '../controllers/admin.controller';
 import * as DocumentController from '../controllers/document.controller';
 import { ResponseError } from '../util/util';
 import { generateFinalReport, getGerationStatus, getLatestReportAccessToken, getReport } from '../util/final-report';
-import isLoggedIn from './middlewares/isLoggedIn';
+import isLoggedIn, { defaultGetToken } from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import { PaperType, StudyForm } from '../models/models';
 import fs from "fs";
 import sudo from './middlewares/sudo';
+import { ServerSentEventsHandler } from '../util/sse';
 
 router.get('/session/report/download', (req, res, next) => {
     const reportPath = getReport(req.query.token as string);
@@ -18,7 +19,11 @@ router.get('/session/report/download', (req, res, next) => {
     fs.createReadStream(reportPath).pipe(res);
 });
 
-router.use(isLoggedIn());
+router.use(isLoggedIn({ 
+    getToken: (req) => {
+        return defaultGetToken(req) || req.query.token as string;
+    }
+}));
 router.use(isType(['admin', 'secretary']));
 
 router.get('/stats', function (req, res, next) {
@@ -410,12 +415,11 @@ router.get('/session/report', isType('admin'), (req, res, next) => {
     res.send(getGerationStatus());
 });
 
-router.post('/session/report', isType('admin'), (req, res, next) => {
-    generateFinalReport()
-        .then(_ => {
-            res.send({ success: true });
-        })
-        .catch(err => next(err));
+router.get('/session/report/generate', isType('admin'), (req, res, next) => {
+    const handler = new ServerSentEventsHandler(res);
+    generateFinalReport(handler)
+        .catch(err => next(err))
+        .finally(() => handler.close());
 });
 
 router.get('/session/report/token', isType('admin'), (req, res, next) => {

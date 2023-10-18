@@ -11,6 +11,7 @@ import { copyObject, ResponseError, ResponseErrorUnauthorized, safePath, sortArr
 import { config } from '../config/config';
 import jwt from "jsonwebtoken";
 import { Op } from 'sequelize';
+import { ServerSentEventsHandler } from './sse';
 
 export let finalReportGenerationStatus = {
     isGenerating: false,
@@ -47,7 +48,7 @@ export function getReport(token: string): string {
  * 
  * @returns path to the report
  */
-export const generateFinalReport = (): Promise<string> => {
+export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         console.log('Report generation started...');
         finalReportGenerationStatus = {
@@ -56,6 +57,7 @@ export const generateFinalReport = (): Promise<string> => {
             lastGeneratedOn: Date.now(),
             lastReportPath: null
         }
+        sseHandler?.emitMessage(finalReportGenerationStatus);
         const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
         console.log("Temporary report location: ", destination);
         let bufferStream = fs.createWriteStream(destination);
@@ -68,6 +70,7 @@ export const generateFinalReport = (): Promise<string> => {
                 lastGeneratedOn: Date.now(),
                 lastReportPath: destination
             }
+            sseHandler?.emitMessage(finalReportGenerationStatus);
             resolve(destination);
         });
 
@@ -123,6 +126,7 @@ export const generateFinalReport = (): Promise<string> => {
             let pseudoSize = totalSize * percent;
             let percentStr = (percent * 100).toFixed(2);
             finalReportGenerationStatus.progress = percent;
+            sseHandler?.emitMessage(finalReportGenerationStatus);
             console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(pseudoSize), bytesToSize(totalSize), percentStr, progress.entries.processed, progress.entries.total);
         });
 
