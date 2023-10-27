@@ -131,7 +131,7 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
         throw "SPECIALIZATION_NOT_FOUND";
     }
     let domainId = specialization.domainId;
-    const transaction = t || await sequelize.transaction();
+    let transaction = t || await sequelize.transaction();
     try {
         let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
         // create student entity
@@ -148,7 +148,10 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
                 'EMAIL_NOT_SENT'
             );
         }
-        if(!t) await transaction.commit(); // commit changes
+        if(!t) {
+            await transaction.commit();
+            transaction = undefined;
+         }
         return UserController.getUserData(user.id, transaction); // return user data
     } catch (err) {
         console.log(err)
@@ -258,33 +261,43 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
         const email = user.email.trim();
         const existing = await User.findOne({ where: { email }, include: [Student] });
         if(existing && existing.student.specializationId == specializationId) return { 
-            isNew: false, 
-            student: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm as any, user.matriculationYear)
+            status: 'edited' as const,
+            row: user,
+            result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm as any, user.matriculationYear)
         }
         return {
-            isNew: true,
-            student: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+            status: 'added' as const,
+            row: user,
+            result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
         }
     });
 
 
     let results = await Promise.allSettled(promises);
-    let totalStudents = users.length;
 
-    let response = { students: [], totalStudents, addedStudents: 0, editedStudents: 0 };
-
-    results.forEach(result => {
-        if (result.status == 'fulfilled') {
-            if(result.value.isNew) {
-                response.addedStudents++;
+    return {
+        stats: {
+            totalRows: users.length,
+            addedRows: results.filter(result => result.status == 'fulfilled' && result.value.status == 'added').length,
+            editedRows: results.filter(result => result.status == 'fulfilled' && result.value.status == 'edited').length,
+            invalidRows: results.filter(result => result.status == 'rejected').length
+        },
+        rows: results.map((result, index) => {
+            if (result.status == 'fulfilled') {
+                return {
+                    rowIndex: index + 1,
+                    ...result.value,
+                }
             } else {
-                response.editedStudents++;
+                return {
+                    rowIndex: index + 1,
+                    status: 'error',
+                    row: users[index],
+                    error: result.reason.message || result.reason,
+                }
             }
-            response.students.push(result.value);
-        }
-    });
-
-    return response;
+        })
+    }
 }
 
 // Teachers
