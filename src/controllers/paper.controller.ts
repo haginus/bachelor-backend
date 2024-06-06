@@ -4,6 +4,7 @@ import { changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseError
 import { getStoragePath } from "./document.controller";
 import * as DocumentController from './document.controller';
 import * as fs from 'fs';
+import { StudentDocumentGenerationProps } from "../documents/types";
 
 export function mapPaper(paper: Paper) {
   const plainPaper = copyObject(paper);
@@ -74,7 +75,6 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
     where: { id: paper.studentId }, 
     include: [User, Domain, Specialization] 
   });
-  console.log(paper);
   const ownTransaction = !transaction;
 
   transaction = transaction || (await sequelize.transaction());
@@ -90,30 +90,36 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
       }
     });
 
-    let data = {
-      ...copyObject(student),
-      extra: extraData,
-      paper: copyObject(paper),
-      sessionSettings: copyObject(sessionSettings)
+    const generationProps: StudentDocumentGenerationProps = {
+      student,
+      extraData,
+      paper,
+      sessionSettings,
     }
 
-    let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
+    let signUpFormBuffer = await DocumentController.generateSignUpForm(generationProps);
     let signUpFormDocument = await Document.create({
-      name: 'sign_up_form', category: "secretary_files", type: 'generated',
-      paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
+      name: 'sign_up_form',
+      category: "secretary_files",
+      type: 'generated',
+      paperId: paper.id,
+      mimeType: 'application/pdf',
+      uploadedBy: null
     }, { transaction });
-
     fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
 
-    let statutoryDeclarationBuffer = await DocumentController.generateDocument('statutory_declaration', data);  // generate PDF
+    let statutoryDeclarationBuffer = await DocumentController.generateStatutoryDeclaration(generationProps);
     let statutoryDeclarationDocument = await Document.create({
-      name: 'statutory_declaration', category: "secretary_files", type: 'generated',
-      paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
+      name: 'statutory_declaration',
+      category: "secretary_files",
+      type: 'generated',
+      paperId: paper.id,
+      mimeType: 'application/pdf',
+      uploadedBy: null
     }, { transaction });
-
     fs.writeFileSync(getStoragePath(`${statutoryDeclarationDocument.id}.pdf`), statutoryDeclarationBuffer); // write to storage
 
-    let liquidationFormBuffer = await DocumentController.generateDocument('liquidation_form', data);  // generate PDF
+    let liquidationFormBuffer = await DocumentController.generateLiquidationForm(generationProps);  // generate PDF
     let liquidationFormDocument = await Document.create({
       name: 'liquidation_form', category: "secretary_files", type: 'generated',
       paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null

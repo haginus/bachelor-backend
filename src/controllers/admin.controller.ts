@@ -14,6 +14,8 @@ import { UploadedFile } from "express-fileupload";
 import { redisDel, redisSet } from "../util/redis";
 import { Request } from "express";
 import { resetPassword } from "./auth.controller";
+import { StudentDocumentGenerationProps } from "../documents/types";
+import { mapPaper } from "./paper.controller";
 var stream = require('stream');
 
 interface Statistic {
@@ -1167,18 +1169,20 @@ export const validatePaper = async (paperId: number, validate: boolean, generalA
         paper.student.generalAverage = generalAverage;
         const transaction = await sequelize.transaction();
         try {
-            await paper.save({ transaction} );
+            await paper.save({ transaction });
             await paper.student.save({ transaction });
             const sessionSettings = await SessionSettings.findOne();
-            let data = {
-                ...copyObject(paper.student),
-                extra: await StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
-                paper: copyObject(paper),
-                sessionSettings: copyObject(sessionSettings)
+            const generationProps: StudentDocumentGenerationProps = {
+                student: paper.student,
+                extraData: await StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
+                paper: mapPaper(paper),
+                sessionSettings,
             }
             const doc = await Document.findOne({ where: { paperId: paper.id, name: 'sign_up_form', type: 'signed' }, transaction });
-            let signUpFormBuffer = await DocumentController.generateDocument('sign_up_form', data);  // generate PDF
-            fs.writeFileSync(DocumentController.getStoragePath(`${doc.id}.pdf`), signUpFormBuffer);
+            if(doc) {
+                let signUpFormBuffer = await DocumentController.generateSignUpForm(generationProps);
+                fs.writeFileSync(DocumentController.getStoragePath(`${doc.id}.pdf`), signUpFormBuffer);
+            }
             await transaction.commit();
         } catch(err) {
             await transaction.rollback();

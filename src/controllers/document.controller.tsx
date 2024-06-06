@@ -1,9 +1,10 @@
+import React from "react";
 import {
   Document, DocumentCategory, DocumentType, Paper, sequelize, SessionSettings,
   StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes
 } from "../models/models";
 import ejs from 'ejs';
-import { generatePdf } from './../util/generate-pdf'
+import { generatePdf } from '../util/generate-pdf'
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
@@ -11,13 +12,27 @@ import { Op, WhereOptions } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, truncateInMiddle } from "../util/util";
+import { compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, streamToBuffer, truncateInMiddle } from "../util/util";
 import { config } from "../config/config";
 import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
 import { redisHGet, redisHSet } from "../util/redis";
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../util/constants";
 import { CommitteeCatalog } from "../util/word-templates";
+import ReactPDF, { Font } from "@react-pdf/renderer";
+import { SignUpForm } from "../documents/templates/sign-up-form";
+import { StatutoryDeclaration } from "../documents/templates/statutory_declaration";
+import { LiquidationForm } from "../documents/templates/liquidation-form";
+import { StudentDocumentGenerationProps } from "../documents/types";
+
+Font.register({
+  family: 'Liberation Serif',
+  fonts: [
+    { src: path.join(config.PROJECT_ROOT, 'src/documents/fonts/LiberationSerif-Regular.ttf') },
+    { src: path.join(config.PROJECT_ROOT, 'src/documents/fonts/LiberationSerif-Bold.ttf'), fontWeight: 'bold' },
+    { src: path.join(config.PROJECT_ROOT, 'src/documents/fonts/LiberationSerif-Italic.ttf'), fontStyle: 'italic' },
+  ],
+});
 
 const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
 
@@ -125,50 +140,19 @@ export const getDocument = async (user: User, documentId: number) => {
   }
 }
 
-export const generateDocument = (name, data) => {
-  if (name == 'sign_up_form') {
-    return generateSignUpForm(data);
-  }
-  if (name == 'statutory_declaration') {
-    return generateStatutoryDeclaration(data);
-  }
-  if (name == 'liquidation_form') {
-    return generateLiquidationForm(data);
-  }
-
-  throw new ResponseErrorInternal('Nume de document invalid');
+export async function generateSignUpForm(props: StudentDocumentGenerationProps) {
+  const result = await ReactPDF.renderToStream(<SignUpForm {...props} />);
+  return streamToBuffer(result);
 }
 
-const generateSignUpForm = async (student) => {
-  const today = new Date();
-  const birth = new Date(student.extra.dateOfBirth);
-
-  const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-  const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-
-  const content = await ejs.renderFile(getDocumentTemplatePath("sign_up_form"), { student, date, birthDate });
-  let fileBuffer = generatePdf(content, HtmlToPdfOptions);
-  return fileBuffer;
+export async function generateStatutoryDeclaration(props: StudentDocumentGenerationProps) {
+  const result = await ReactPDF.renderToStream(<StatutoryDeclaration {...props} />);
+  return streamToBuffer(result);
 }
 
-const generateStatutoryDeclaration = async (student) => {
-  const today = new Date();
-
-  const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-  const content = await ejs.renderFile(getDocumentTemplatePath("statutory_declaration"), { student, date });
-  let fileBuffer = generatePdf(content, HtmlToPdfOptions);
-  return fileBuffer;
-}
-
-const generateLiquidationForm = async (student) => {
-  const today = new Date();
-  const birth = new Date(student.extra.dateOfBirth);
-
-  const date = today.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-  const birthDate = birth.toLocaleDateString('ro-RO', { year: 'numeric', month: 'numeric', day: 'numeric' });
-  const content = await ejs.renderFile(getDocumentTemplatePath("liquidation_form"), { student, date, birthDate });
-  let fileBuffer = generatePdf(content, HtmlToPdfOptions);
-  return fileBuffer;
+export async function generateLiquidationForm(props: StudentDocumentGenerationProps) {
+  const result = await ReactPDF.renderToStream(<LiquidationForm {...props} />);
+  return streamToBuffer(result);
 }
 
 export const uploadPaperDocument = async (user: User, documentFile: UploadedFile,

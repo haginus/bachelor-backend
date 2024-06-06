@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { sequelize, SessionSettings, Student, Teacher } from "../models/models";
 import { Op, Sequelize } from "sequelize";
+import { Stream } from "stream";
 
 export class ResponseError extends Error {
     httpStatusCode: number;
@@ -211,4 +212,13 @@ export function truncateInMiddle(str: string, maxLength: number) {
 
 export function removeCharacters(str: string, characters: string[]) {
     return str.split('').filter(c => !characters.includes(c)).join('');
+}
+
+export function streamToBuffer(stream: Stream) {
+    return new Promise<Buffer>((resolve, reject) => {
+        const buffers: Buffer[] = [];
+        stream.on('data', (data: Buffer) => buffers.push(data));
+        stream.on('end', () => resolve(Buffer.concat(buffers)));
+        stream.on('error', reject);
+    });
 }
