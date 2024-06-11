@@ -42,9 +42,9 @@ export const getStoragePath = (fileName: string) => {
   return safePath(config.PROJECT_ROOT, 'storage', 'documents', fileName);
 }
 
-export const getDocumentTemplatePath = (docName: string) => {
+export const getTemplatePath = (docName: string) => {
   let fileName: string = docName + '.ejs';
-  return path.resolve(process.env.PWD, 'src', 'document-templates', fileName);
+  return path.resolve(process.env.PWD, 'src', 'templates', fileName);
 }
 
 /** Delete a document by ID. */

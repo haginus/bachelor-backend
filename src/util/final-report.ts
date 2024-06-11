@@ -176,7 +176,7 @@ const generateStudentList = async () => {
     })
     return Promise.all(domains.map(async domain => {
         const list = await ejs
-            .renderFile(DocumentController.getDocumentTemplatePath("final-report/student_list"), { domain } );
+            .renderFile(DocumentController.getTemplatePath("final-report/student_list"), { domain } );
         return { name: domain.name, type: DOMAIN_TYPES[domain.type], list };
     }));
 }
