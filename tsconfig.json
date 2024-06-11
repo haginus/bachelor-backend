@@ -1,12 +1,21 @@
 {
     "compilerOptions": {
-      "jsx": "react",
-      "target": "es2020",
       "resolveJsonModule": true,
-      "module": "commonjs",
       "rootDir": "./src",
       "outDir": "./build",
       "esModuleInterop": true,
-      "strict": false
+      "strict": false,
+      "jsx": "react",
+      "types": ["node"],
+      "declaration": false,
+      "moduleResolution": "node",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "importHelpers": true,
+      "target": "es2015",
+      "module": "commonjs",
+      "lib": ["es2020", "dom"],
+      "skipLibCheck": true,
+      "skipDefaultLibCheck": true,
     }
 }
