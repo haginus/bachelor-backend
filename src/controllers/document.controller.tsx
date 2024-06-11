@@ -3,8 +3,6 @@ import {
   Document, DocumentCategory, DocumentType, Paper, sequelize, SessionSettings,
   StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes
 } from "../models/models";
-import ejs from 'ejs';
-import { generatePdf } from '../util/generate-pdf'
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
@@ -14,16 +12,20 @@ import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required
 import { UploadedFile } from "express-fileupload";
 import { compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, streamToBuffer, truncateInMiddle } from "../util/util";
 import { config } from "../config/config";
-import { PDFOptions } from "puppeteer";
 import ExcelJS from 'exceljs';
 import { redisHGet, redisHSet } from "../util/redis";
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../util/constants";
-import { CommitteeCatalog } from "../util/word-templates";
-import ReactPDF, { Font } from "@react-pdf/renderer";
+import { CommitteeCatalog as CommitteeCatalogWord } from "../util/word-templates";
+import { Font, renderToBuffer } from "@react-pdf/renderer";
 import { SignUpForm } from "../documents/templates/sign-up-form";
 import { StatutoryDeclaration } from "../documents/templates/statutory_declaration";
 import { LiquidationForm } from "../documents/templates/liquidation-form";
 import { StudentDocumentGenerationProps } from "../documents/types";
+import { CommitteeCompositions } from "../documents/templates/committee-compositions";
+import { CommitteeStudents } from "../documents/templates/committee-students";
+import { CommitteeCatalog } from "../documents/templates/committee-catalog";
+import { CommitteeFinalCatalog } from "../documents/templates/committee-final-catalog";
+import { FinalCatalog } from "../documents/templates/final-catalog";
 
 Font.register({
   family: 'Liberation Serif',
@@ -34,7 +36,7 @@ Font.register({
   ],
 });
 
-const HtmlToPdfOptions: PDFOptions = { format: 'a4', printBackground: true };
+Font.registerHyphenationCallback(word => [word]);
 
 export const getStoragePath = (fileName: string) => {
   return safePath(config.PROJECT_ROOT, 'storage', 'documents', fileName);
@@ -141,18 +143,15 @@ export const getDocument = async (user: User, documentId: number) => {
 }
 
 export async function generateSignUpForm(props: StudentDocumentGenerationProps) {
-  const result = await ReactPDF.renderToStream(<SignUpForm {...props} />);
-  return streamToBuffer(result);
+  return renderToBuffer(<SignUpForm {...props} />);
 }
 
 export async function generateStatutoryDeclaration(props: StudentDocumentGenerationProps) {
-  const result = await ReactPDF.renderToStream(<StatutoryDeclaration {...props} />);
-  return streamToBuffer(result);
+  return renderToBuffer(<StatutoryDeclaration {...props} />);
 }
 
 export async function generateLiquidationForm(props: StudentDocumentGenerationProps) {
-  const result = await ReactPDF.renderToStream(<LiquidationForm {...props} />);
-  return streamToBuffer(result);
+  return renderToBuffer(<LiquidationForm {...props} />);
 }
 
 export const uploadPaperDocument = async (user: User, documentFile: UploadedFile,
@@ -264,12 +263,7 @@ export const getPaperRequiredDocuments = async (paperId: number, sessionSettings
     sessionSettings = await AuthController.getSessionSettings();
   }
 
-  const result = paperRequiredDocuments.filter(doc => {
-    if (!doc.onlyFor) { // if document is required for everyone
-      return true;
-    }
-    return doc.onlyFor(paper, sessionSettings);
-  }).map(doc => {
+  const result = paperRequiredDocuments.filter(doc => !doc.onlyFor || doc.onlyFor(paper, sessionSettings)).map(doc => {
     let sentDoc = { ...doc }
     delete sentDoc['onlyFor']; // remove the onlyFor attribute
     sentDoc.acceptedExtensions = doc.acceptedMimeTypes.split(',') // get accepted extensions from mimeType
@@ -367,23 +361,13 @@ const getCommitteeCatalogData = async (user: User, committeId: number) => {
 
 export const generateCommitteeCatalog = async (user: User, committeId: number): Promise<Buffer> => {
   const { committee, paperGroups, sessionSettings } = await getCommitteeCatalogData(user, committeId);
-  const content = await ejs.renderFile(getDocumentTemplatePath("committee_catalog"), { committee, paperGroups, sessionSettings });
-  const footer = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee });
-  // Set orientation, margins and footer
-  let renderSettings = {
-    ...HtmlToPdfOptions,
-    landscape: true,
-    margin: { bottom: '5cm', top: '2cm' },
-    displayHeaderFooter: true,
-    headerTemplate: '<div></div>',
-    footerTemplate: footer
-  }
-  let fileBuffer = await generatePdf(content, renderSettings);
-  return fileBuffer;
+  return renderToBuffer(
+    <CommitteeCatalog committee={committee} paperGroups={paperGroups} sessionSettings={sessionSettings} />
+  );
 }
 
 export const generateCommitteeCatalogWord = async (user: User, committeId: number) => {
-  return CommitteeCatalog(await getCommitteeCatalogData(user, committeId));
+  return CommitteeCatalogWord(await getCommitteeCatalogData(user, committeId));
 };
 
 export const generateCommitteeFinalCatalog = async (user: User, committeId: number): Promise<Buffer> => {
@@ -410,7 +394,7 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
   let paperPromotionGroups = paperGroups.map(paperGroup => {
     // Get unique promotions in group
     let promotions = new Set(paperGroup.map(paper => paper.student.promotion));
-    let promotionItems = [];
+    let promotionItems: { promotion: string, items: Paper[] }[] = [];
     // For every promotion, get the papers
     promotions.forEach(promotion => {
       let result = {
@@ -422,20 +406,11 @@ export const generateCommitteeFinalCatalog = async (user: User, committeId: numb
     return promotionItems;
   });
 
-  console.log(paperPromotionGroups)
-
   // Get session settings
   const sessionSettings = await SessionSettings.findOne();
-
-  const content = await ejs.renderFile(getDocumentTemplatePath("committee_final_catalog"), { committee, paperPromotionGroups, sessionSettings });
-  const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("committee_catalog_footer"), { committee, minified: true });
-  // Set margins and footer
-  let renderSettings = {
-    ...HtmlToPdfOptions, margin: { bottom: '2cm', top: '1cm' },
-    displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate
-  }
-  let fileBuffer = generatePdf(content, renderSettings);
-  return fileBuffer;
+  return renderToBuffer(
+    <CommitteeFinalCatalog committee={committee} paperPromotionGroups={paperPromotionGroups} sessionSettings={sessionSettings} />
+  );
 }
 
 const getPaperFullName = (paper: Paper) => {
@@ -447,7 +422,7 @@ const paperComparator = (a: Paper, b: Paper) => {
   return getPaperFullName(a) < getPaperFullName(b) ? -1 : 1;
 }
 
-export const generateCommitteeCompositions = async () => {
+export async function generateCommitteeCompositions() {
   const committees = await Committee.findAll();
   let uniqueDomains = new Set();
   // Sort committes by domain type and name
@@ -460,15 +435,13 @@ export const generateCommitteeCompositions = async () => {
     let domainIds = committee.domains.map(domain => domain.id).join('.');
     uniqueDomains.add(domainIds);
   });
-  let groups = [];
+  let groups: Committee[][] = [];
   uniqueDomains.forEach(domain => {
     let group = committees.filter(committee => committee.domains.map(domain => domain.id).join('.') == domain);
     groups.push(group);
   });
   const sessionSettings = await SessionSettings.findOne();
-  const content = await ejs.renderFile(getDocumentTemplatePath("committee_compositions"), { groups, sessionSettings });
-  let fileBuffer = generatePdf(content, HtmlToPdfOptions);
-  return fileBuffer;
+  return renderToBuffer(<CommitteeCompositions groups={groups} sessionSettings={sessionSettings} />);
 }
 
 export const generateCommitteeStudentsExcel = async () => {
@@ -516,7 +489,7 @@ export const generateCommitteeStudentsExcel = async () => {
 }
 
 
-export const generateCommitteeStudents = async () => {
+export async function generateCommitteeStudents() {
   const committees = await Committee.findAll({
     include: [{
       model: Paper.scope(['teacher', 'student']),
@@ -528,9 +501,7 @@ export const generateCommitteeStudents = async () => {
   });
   sortCommittees(committees);
   const sessionSettings = await SessionSettings.findOne();
-  const content = await ejs.renderFile(getDocumentTemplatePath("committee_students"), { committees, sessionSettings });
-  let fileBuffer: Buffer = await generatePdf(content, HtmlToPdfOptions);
-  return fileBuffer;
+  return renderToBuffer(<CommitteeStudents committees={committees} sessionSettings={sessionSettings} />);
 }
 
 const sortCommittees = (committees: Committee[]) => {
@@ -603,24 +574,9 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
   // Get session settings
   const sessionSettings = await SessionSettings.findOne();
 
-  const content = await ejs.renderFile(getDocumentTemplatePath("final_catalog"), { paperPromotionGroups, sessionSettings, mode });
-  const footerTemplate = await ejs.renderFile(getDocumentTemplatePath("signature_footer"), {
-    people: [
-      { position: 'DECAN', name: 'Prof. Dr. Ioana Leuștean', stamp: true },
-      { position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
-      { position: 'Întocmit', name: '' },
-    ]
-  });
-  // Set margins and footer
-  let renderSettings = {
-    ...HtmlToPdfOptions,
-    margin: { bottom: '6cm', top: '1cm' },
-    displayHeaderFooter: true,
-    headerTemplate: '<div></div>',
-    footerTemplate
-  }
-  let fileBuffer = generatePdf(content, renderSettings);
-  return fileBuffer;
+  return renderToBuffer(
+    <FinalCatalog paperPromotionGroups={paperPromotionGroups} sessionSettings={sessionSettings} mode={mode} />
+  );
 }
 
 export async function generatePaperList(where: WhereOptions<PaperAttributes> = { submitted: true }) {
