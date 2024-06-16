@@ -2,10 +2,10 @@
 import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
 import * as DocumentController from './/document.controller';
 import * as PaperController from "./paper.controller";
-import { Model, Op, Sequelize, ValidationError } from "sequelize";
+import { Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../alerts/mailer";
 import { UploadedFile } from "express-fileupload";
-import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorNotFound } from "../util/util";
 
 
 export const validateTeacher = async (user: User) => {
@@ -367,10 +367,10 @@ export const getCommittee = async (user: User, committeeId: number) => {
         include: [Paper.scope(['student', 'teacher', 'documentsPaperFiles', 'gradesMin', 'topics'])]
     });
     if(!committee) {
-        throw "NOT_FOUND";
+        throw new ResponseErrorNotFound();
     }
     if(committee.members.findIndex(member => member.id == user.teacher?.id) < 0) {
-        throw "TEACHER_NOT_IN_COMMITTEE";
+        throw new ResponseErrorForbidden();
     }
     let resp: any = copyObject(committee);
     
