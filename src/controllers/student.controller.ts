@@ -6,7 +6,7 @@ import { Model, Op, Sequelize, Transaction, ValidationError } from "sequelize";
 import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
-import * as Mailer from "../alerts/mailer";
+import * as Mailer from "../mail/mailer";
 import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
 import { redisHSet } from "../util/redis";
 import * as PaperController from "./paper.controller";

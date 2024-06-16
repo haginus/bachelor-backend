@@ -3,7 +3,7 @@ import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Appli
 import * as DocumentController from './/document.controller';
 import * as PaperController from "./paper.controller";
 import { Op, Sequelize, ValidationError } from "sequelize";
-import * as Mailer from "../alerts/mailer";
+import * as Mailer from "../mail/mailer";
 import { UploadedFile } from "express-fileupload";
 import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorNotFound } from "../util/util";
 

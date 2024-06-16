@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize, SignUpRequestCreationAttributes, Profile, SignUpRequest } from "../models/models";
 import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
-import * as Mailer from '../alerts/mailer';
+import * as Mailer from '../mail/mailer';
 import { Transaction, WhereOptions } from "sequelize/types";
 
 export const getUser = async (where: WhereOptions<User>) => {

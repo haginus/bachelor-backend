@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.ts",
   "dependencies": {
+    "@react-email/components": "0.0.19",
+    "@react-email/render": "0.0.15",
     "@react-pdf/renderer": "^3.4.4",
     "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.16.1",
@@ -26,6 +28,7 @@
     "mysql2": "^2.2.5",
     "nodemailer": "^6.7.5",
     "prompt": "^1.1.0",
+    "react-email": "2.1.4",
     "redis": "^4.1.0",
     "sequelize": "^6.21.0"
   },
@@ -36,7 +39,7 @@
     "start:dev": "nodemon src/index.ts -e ts,tsx,json",
     "serve": "nodemon src/index.ts",
     "build": "tsc",
-    "postbuild": "cp -R src/templates build/templates && cp -R src/alerts/mail-templates build/alerts/mail-templates",
+    "postbuild": "cp -R src/templates build/templates",
     "start": "node build/index.js",
     "addAdmin": "node cli/add-admin.js"
   },

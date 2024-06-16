@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs";
 import crypto from 'crypto';
 import { config } from "../config/config";
-import * as Mailer from '../alerts/mailer';
+import * as Mailer from '../mail/mailer';
 import { Transaction } from "sequelize/types";
 
 const getUser = async (where, transaction?: Transaction) => {

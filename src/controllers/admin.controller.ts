@@ -1,7 +1,7 @@
 import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
-import * as Mailer from '../alerts/mailer';
+import * as Mailer from '../mail/mailer';
 import crypto from 'crypto';
 import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
