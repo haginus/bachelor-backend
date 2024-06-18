@@ -1,5 +1,5 @@
 import express from 'express';
-import { testEmail } from '../alerts/mailer';
+import { testEmail } from '../mail/mailer';
 const router = express.Router();
 
 router.get('/email', async (req, res) => {
