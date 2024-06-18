@@ -584,13 +584,18 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
     where,
     include: [{
       association: Paper.associations.student,
-      include: [Student.associations.domain, Student.associations.specialization]
+      include: [
+        Student.associations.domain,
+        Student.associations.specialization,
+        StudentExtraData
+      ]
     }]
   });
   const wb = new ExcelJS.Workbook();
   let rows = papers.map(paper => {
     const id = paper.id;
     const studentName = paper.student.user.fullName;
+    const parentInitial = paper.student.studentExtraDatum?.parentInitial || '';
     const teacherName = paper.teacher.user.fullName;
     const title = paper.title;
     const paperType = PAPER_TYPES[paper.type];
@@ -598,10 +603,25 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
     const domain = paper.student.domain.name + ', ' + DOMAIN_TYPES[paper.student.domain.type];
     const committee = paper.committee?.name || '';
     const email = paper.student.user.email;
-    const promotion = paper.student.promotion;
+    const { matriculationYear, promotion } = paper.student;
     const paperValid = paper.isValid != null ? (paper.isValid ? 'Validată' : 'Invalidată') : 'N/A';
     const isSubmitted = paper.submitted ? 'Da' : 'Nu';
-    return [id, studentName, teacherName, title, paperType, specialization, domain, committee, email, promotion, paperValid, isSubmitted];
+    return [
+      id,
+      studentName,
+      parentInitial,
+      teacherName,
+      title,
+      paperType,
+      specialization,
+      domain,
+      committee,
+      email,
+      matriculationYear,
+      promotion,
+      paperValid,
+      isSubmitted
+    ];
   });
   rows.sort((r1, r2) => compare(r1[6], r2[6], compare(r1[5], r2[5], compare(r1[1], r2[1]))));
   const groupedRows = [
@@ -616,7 +636,8 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
       headerRow: true,
       columns: [
         { name: 'ID lucrare' },
-        { name: 'Nume și prenume' },
+        { name: 'Nume și prenume student' },
+        { name: 'Inițiala părintelui' },
         { name: 'Profesor coordonator' },
         { name: 'Titlul lucrării' },
         { name: 'Tipul lucrării' },
@@ -624,6 +645,7 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
         { name: 'Domeniul' },
         { name: 'Comisia' },
         { name: 'E-mail' },
+        { name: 'Anul înmatriculării' },
         { name: 'Promoție' },
         { name: 'Lucrare validată' },
         { name: 'Lucrare înscrisă' }
