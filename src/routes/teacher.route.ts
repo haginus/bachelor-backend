@@ -105,24 +105,10 @@ router.post('/papers/remove', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/papers/unsubmit', function (req, res, next) {
-    const { paperId } = req.body;
-    TeacherController.unsubmitPaper(req._user, +paperId)
-        .then(result => res.json({ success: true }))
-        .catch(err => next(err));
-});
-
 router.post('/papers/add', function (req, res, next) {
     const { studentId, title, description, topicIds } = req.body;
     TeacherController.addPaper(req._user, +studentId, title, description, topicIds)
         .then(paper => res.json(paper))
-        .catch(err => next(err));
-});
-
-router.post('/papers/edit', function (req, res, next) {
-    const { paperId, title, description, topicIds } = req.body;
-    TeacherController.editPaper(req._user, +paperId, title, description, topicIds)
-        .then(result => res.json(result))
         .catch(err => next(err));
 });
 

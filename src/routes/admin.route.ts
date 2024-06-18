@@ -67,6 +67,13 @@ router.post('/students/edit', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.post('/students/:id/extra-data', function (req, res, next) {
+    let { id } = req.params;
+    AdminController.editStudentExtraData(+id, req.body)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.post('/students/add-bulk', fileUpload(), async function(req, res, next) {
     try {
         let { specializationId, studyForm } = req.body;

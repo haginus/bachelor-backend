@@ -300,10 +300,6 @@ export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name
     return DocumentController.uploadPaperDocument(user, documentFile, name, type, perspective, paperId);
 }
 
-export async function editPaper(user: User, paperId: number, title: string, description: string, topicIds: number[]) {
-    return PaperController.editPaper(user, paperId, title, description, topicIds);
-}
-
 /** Remove association with a student by deleting their paper and allowing them to look for other teacher. */
 export const removePaper = async (user: User, paperId: number): Promise<boolean> => {
     const paper = await Paper.findOne({ where: { id: paperId } });
@@ -330,22 +326,6 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
         await transaction.rollback();
         throw err;
     }
-    return true;
-}
-
-export const unsubmitPaper = async (user: User, paperId: number): Promise<boolean> => {
-    const paper = await Paper.findOne({ where: { id: paperId } });
-    if(!paper) {
-        throw new ResponseErrorForbidden();
-    }
-    if(paper.teacherId != user.teacher.id) {
-        throw new ResponseErrorForbidden();
-    }
-    if(!paper.submitted) {
-        throw new ResponseErrorForbidden();
-    }
-    paper.submitted = false;
-    await paper.save();
     return true;
 }
 

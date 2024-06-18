@@ -289,52 +289,13 @@ export class StudentController {
     return paperRes;
   }
 
-  /** Check if student can edit paper. */
-  private static checkEditPaper = (paper: Paper, sessionSettings: SessionSettings) => {
-    const today = Date.now();
-    const endDateSecretary = inclusiveDate(sessionSettings.fileSubmissionEndDate).getTime();
-    const paperCreatedAt = new Date(paper.createdAt);
-    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-    return (paperCreatedAt.getTime() + SEVEN_DAYS <= today || today + SEVEN_DAYS >= endDateSecretary) &&
-      today <= endDateSecretary && paper.isValid == null;
-  }
-
-  public static editPaper = async (user: User, title: string, description: string, topicIds: number[]) => {
-    const paperId = user.student.paper?.id;
-    if(!paperId) {
-      throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
-    }
-    return PaperController.editPaper(user, paperId, title, description, topicIds);
-  }
-
-  public static submitPaper = async (user: User, submit: boolean) => {
-    const paper = user.student.paper;
-    if (!paper) {
-      throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
-    }
-    const sessionSettings = await SessionSettings.findOne();
-    if (Date.now() > inclusiveDate(sessionSettings.paperSubmissionEndDate).getTime() || paper.isValid) {
-      throw new ResponseErrorForbidden("Nu vă mai puteți înscrie/retrage din această sesiune.");
-    }
-    try {
-      paper.submitted = submit;
-      if(!submit) {
-        paper.committeeId = null;
-      }
-      await paper.save();
-      return { success: true };
-    } catch (err) {
-      throw err;
-    }
-  }
-
   public static getExtraData = async (user: User) => {
     return user.student.getStudentExtraDatum({ scope: 'noKeys' });
   }
 
-  public static setExtraData = async (user: User, data: StudentExtraData) => {  // sets the new extra data and triggers document generation
+  public static setExtraData = async (user: User, data: StudentExtraData, skipChecks = false) => {
     const sessionSettings = await SessionSettings.findOne();
-    if (!(await DocumentController.checkFileSubmissionPeriod('secretary_files', sessionSettings))) {
+    if (!skipChecks && !(await DocumentController.checkFileSubmissionPeriod('secretary_files', sessionSettings))) {
       throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
     }
     const student = user.student;
@@ -356,6 +317,9 @@ export class StudentController {
       where: { studentId: student.id }, 
       include: [{ model: Teacher, include: [User] }] 
     });
+    if(!studentPaper) {
+      throw new ResponseErrorInternal('Datele suplimentare nu pot fi modificate fără o lucrare asociată.');
+    }
     if (oldData) { // if data exists
       try {
         let [dataUpdated] = await StudentExtraData.update(newMainData, {

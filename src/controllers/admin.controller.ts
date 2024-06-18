@@ -16,6 +16,7 @@ import { Request } from "express";
 import { resetPassword } from "./auth.controller";
 import { StudentDocumentGenerationProps } from "../documents/types";
 import { mapPaper } from "./paper.controller";
+import { StudentController } from "./student.controller";
 var stream = require('stream');
 
 interface Statistic {
@@ -119,7 +120,8 @@ export const getStudent = (id: number) => {
             required: true,
             include: [
                 sequelize.model('domain'),
-                sequelize.model('specialization')
+                sequelize.model('specialization'),
+                StudentExtraData,
             ]
         }]
     });
@@ -192,6 +194,14 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
         handleUserUpdateError(err);
     }
     return UserController.getUserData(id);
+}
+
+export async function editStudentExtraData(studentId: number, data: StudentExtraData) {
+    const studentUser = await getStudent(studentId);
+    if(!studentUser) {
+        throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+    }
+    return StudentController.setExtraData(studentUser, data, true);
 }
 
 export const deleteUser = async (request: Request, id: number) => {

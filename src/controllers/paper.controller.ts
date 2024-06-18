@@ -18,7 +18,7 @@ export function mapPaper(paper: Paper) {
 export type MappedPaper = ReturnType<typeof mapPaper>;
 
 /** Check if student or teacher can edit paper. */
-export function editPaperGuard(paper: Paper, user: User, sessionSettings: SessionSettings) {
+function editPaperGuard(paper: Paper, user: User, sessionSettings: SessionSettings) {
   if(user.type == 'admin') return;
   if(![paper.teacherId, paper.studentId].includes(user.id)) {
     throw new ResponseErrorForbidden("Nu puteți edita această lucrare.");
@@ -55,7 +55,7 @@ export async function editPaper(user: User, paperId: number, title: string, desc
     if (titleUpdated) {
       const extraData = await paper.student.getStudentExtraDatum();
       if (extraData != null) {
-        await generatePaperDocuments(mapPaper(paper) as any, extraData, sessionSettings, transaction);
+        await generatePaperDocuments(mapPaper(paper), extraData, sessionSettings, transaction);
       }
     }
     await transaction.commit();
@@ -70,7 +70,6 @@ export async function editPaper(user: User, paperId: number, title: string, desc
 }
 
 export async function generatePaperDocuments(paper: MappedPaper, extraData: StudentExtraData, sessionSettings: SessionSettings, transaction?: Transaction) {
-
   const student = await Student.findOne({
     where: { id: paper.studentId }, 
     include: [User, Domain, Specialization] 
@@ -131,6 +130,32 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
   } catch (err) {
     if(ownTransaction) await transaction.rollback();
     console.log(err);
+    throw err;
+  }
+}
+
+export async function submitPaper(user: User, paperId: number, submit: boolean) {
+  const paper = await Paper.scope(['student', 'teacher']).findOne({ where: { id: paperId }});
+  if (!paper) {
+    throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
+  }
+  if(!['admin', 'secretary'].includes(user.type)) {
+    const sessionSettings = await SessionSettings.findOne();
+    if (Date.now() > inclusiveDate(sessionSettings.paperSubmissionEndDate).getTime() || paper.isValid) {
+      throw new ResponseErrorForbidden("Nu vă mai puteți înscrie/retrage din această sesiune.");
+    }
+    if(![paper.studentId, paper.teacherId].includes(user.id)) {
+      throw new ResponseErrorForbidden();
+    }
+  }
+  try {
+    paper.submitted = submit;
+    if(!submit) {
+      paper.committeeId = null;
+    }
+    await paper.save();
+    return { success: true };
+  } catch (err) {
     throw err;
   }
 }
