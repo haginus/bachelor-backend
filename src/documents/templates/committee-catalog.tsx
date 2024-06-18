@@ -6,6 +6,7 @@ import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/tab
 import { DOMAIN_TYPES, NUMBERS, PAPER_TYPES } from "../constants";
 import { arrayMap } from "../../util/util";
 import { CommitteeCatalogFooter } from "../components/committee-catalog-footer";
+import { flattenStyles } from "../utils";
 
 const styles = StyleSheet.create({
   footer: {
@@ -20,8 +21,8 @@ function HeaderCell({ ...props }: React.ComponentProps<typeof _Cell>) {
   return <_HeaderCell {...props} style={{ paddingHorizontal: 0 }} />
 }
 
-function Cell({ ...props }: React.ComponentProps<typeof _Cell>) {
-  return <_Cell {...props} style={{ paddingHorizontal: 4, justifyContent: 'center', minHeight: 40 }} />
+function Cell({ style, ...props }: React.ComponentProps<typeof _Cell>) {
+  return <_Cell {...props} style={[{ paddingHorizontal: 4, justifyContent: 'center', minHeight: 40 }, flattenStyles(style)]} />
 }
 
 interface CommitteeCatalogProps {
@@ -149,6 +150,8 @@ export function CommitteeCatalog({ committee, paperGroups, sessionSettings }: Co
                           ].filter(Boolean).join(' ')
                         }
                         width={leftSpace / 2}
+                        style={{ justifyContent: 'flex-start' }}
+                        textStyle={{ textAlign: 'left' }}
                       />
                       <Cell 
                         value={`${paper.title} – ${paper.teacher.user.lastName} ${paper.teacher.user.firstName}`.toLocaleUpperCase()}

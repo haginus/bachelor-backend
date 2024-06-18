@@ -5,6 +5,7 @@ import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/tab
 import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
 import { PeopleSignatureFooter } from "../components/people-signature-footer";
+import { flattenStyles } from "../utils";
 
 const styles = StyleSheet.create({
   footer: {
@@ -18,8 +19,8 @@ function HeaderCell({ ...props }: React.ComponentProps<typeof _Cell>) {
   return <_HeaderCell {...props} style={{ paddingHorizontal: 6 }} />
 }
 
-function Cell({ ...props }: React.ComponentProps<typeof _Cell>) {
-  return <_Cell {...props} style={{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center', }} />
+function Cell({ style, ...props }: React.ComponentProps<typeof _Cell>) {
+  return <_Cell {...props} style={[{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center' }, flattenStyles(style)]} />
 }
 
 interface FinalCatalogProps {
@@ -83,7 +84,7 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                   </View>
               </View>
               <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
-                CATALOG FINAL{'\n'}
+                {catalogName.toLocaleUpperCase()}{'\n'}
                 EXAMEN DE {paperTypeString.toLocaleUpperCase()}
               </Text>
               {pageGroup.map((promotionGroup, index) => (
@@ -109,6 +110,8 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                           ].filter(Boolean).join(' ')
                         }
                         width={leftSpace}
+                        style={{ justifyContent: 'flex-start' }}
+                        textStyle={{ textAlign: 'left' }}
                       />
                       <Cell value={paper.student.matriculationYear} width={matriculationYearColumnWidth} />
                       <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />
@@ -122,7 +125,7 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
         <View fixed style={[styles.footer, { bottom: footerMarginBottom }]}>
           <PeopleSignatureFooter
             people={[
-              { column: 'left', position: 'DECAN', name: 'Prof. Dr. Ioana Leuștean', stamp: true },
+              { column: 'left', position: 'DECAN', name: 'Conf. Dr. Cătălin Gherghe', stamp: true },
               { column: 'right', position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
               { column: 'right', position: 'Întocmit', name: ''}
             ]}

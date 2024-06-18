@@ -5,6 +5,7 @@ import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/tab
 import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
 import { CommitteeCatalogFooter } from "../components/committee-catalog-footer";
+import { flattenStyles } from "../utils";
 
 const styles = StyleSheet.create({
   footer: {
@@ -18,8 +19,8 @@ function HeaderCell({ ...props }: React.ComponentProps<typeof _Cell>) {
   return <_HeaderCell {...props} style={{ paddingHorizontal: 6 }} />
 }
 
-function Cell({ ...props }: React.ComponentProps<typeof _Cell>) {
-  return <_Cell {...props} style={{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center', }} />
+function Cell({ style, ...props }: React.ComponentProps<typeof _Cell>) {
+  return <_Cell {...props} style={[{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center' }, flattenStyles(style)]} />
 }
 
 interface CommitteeFinalCatalogProps {
@@ -103,6 +104,8 @@ export function CommitteeFinalCatalog({ committee, paperPromotionGroups, session
                           ].filter(Boolean).join(' ')
                         }
                         width={leftSpace}
+                        style={{ justifyContent: 'flex-start' }}
+                        textStyle={{ textAlign: 'left' }}
                       />
                       <Cell value={paper.student.matriculationYear} width={matriculationYearColumnWidth} />
                       <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />

@@ -33,9 +33,10 @@ interface CellProps {
   width: number | string;
   borderLeft?: boolean;
   style?: React.ComponentProps<typeof View>['style'];
+  textStyle?: React.ComponentProps<typeof Text>['style'];
 }
 
-export function Cell({ value, width, borderLeft = false, style }: CellProps) {
+export function Cell({ value, width, borderLeft = false, style, textStyle }: CellProps) {
   return (
     <View 
       style={[
@@ -52,7 +53,9 @@ export function Cell({ value, width, borderLeft = false, style }: CellProps) {
         flattenStyles(style),
       ]}
     >
-      <Text style={{ textAlign: 'center' }}>{value}</Text>
+      <Text style={[{ textAlign: 'center' }, flattenStyles(textStyle)]}>
+        {value}
+      </Text>
     </View>
   )
 }
