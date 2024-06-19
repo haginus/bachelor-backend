@@ -1,5 +1,5 @@
 import { Op, Transaction } from "sequelize";
-import { Document, Domain, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
+import { Document, DocumentReuploadRequest, Domain, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
 import { changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
 import { getStoragePath } from "./document.controller";
 import * as DocumentController from './document.controller';
@@ -158,4 +158,21 @@ export async function submitPaper(user: User, paperId: number, submit: boolean) 
   } catch (err) {
     throw err;
   }
+}
+
+export async function getDocumentReuploadRequests(user: User, paperId: number) {
+  const paper = await Paper.scope(['student', 'teacher']).findOne({ where: { id: paperId }});
+  if (!paper) {
+    throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
+  }
+  if(['admin', 'secretary'].includes(user.type)) {
+    if(![paper.studentId, paper.teacherId].includes(user.id)) {
+      throw new ResponseErrorForbidden();
+    }
+  }
+  return DocumentReuploadRequest.findAll({
+    where: {
+      paperId: paper.id,
+    }
+  });
 }

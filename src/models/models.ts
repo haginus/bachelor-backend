@@ -519,6 +519,9 @@ export class DocumentReuploadRequest extends Model<DocumentReuploadRequestAttrib
   deadline: Date;
   comment: string;
 
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+
   paper?: Paper;
 
   public static associations: {
@@ -1318,7 +1321,7 @@ DocumentReuploadRequest.init({
     allowNull: false,
   }
 }, {
-  timestamps: false,
+  timestamps: true,
   sequelize,
   modelName: "documentReuploadRequest"
 });

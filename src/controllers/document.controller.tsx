@@ -1,7 +1,8 @@
 import React from "react";
 import {
   Document, DocumentCategory, DocumentType, Paper, sequelize, SessionSettings,
-  StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes
+  StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes,
+  DocumentReuploadRequest
 } from "../models/models";
 import fs from 'fs';
 import path from 'path';
@@ -66,7 +67,8 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
       if (!isMember) {
         throw new ResponseErrorForbidden();
       }
-    } if (user.type == 'student') {
+    }
+    if (user.type == 'student') {
       if (document.paper.studentId != user.id) {
         throw new ResponseErrorForbidden();
       }
@@ -78,7 +80,10 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
     throw new ResponseErrorForbidden();
   }
   // Check if document category can be modified
-  if (user.type == 'student' && !(await checkFileSubmissionPeriod(document.category))) {
+  if (
+    user.type == 'student' && 
+    !(await studentCanEditDocument({ name: document.name, category: document.category }, document.paperId))
+  ) {
     throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
   }
 
@@ -154,6 +159,23 @@ export async function generateLiquidationForm(props: StudentDocumentGenerationPr
   return renderToBuffer(<LiquidationForm {...props} />);
 }
 
+export async function studentCanEditDocument(document: Pick<PaperRequiredDocument, 'name' | 'category'>, paperId: number, sessionSettings?: SessionSettings) {
+  async function getReuploadRequest() {
+    let reuploadRequest = await DocumentReuploadRequest.findOne({
+      where: { 
+        paperId,
+        documentName: document.name,
+      },
+      order: [['deadline', 'DESC']]
+    });
+    if(Date.now() > inclusiveDate(reuploadRequest.deadline).getTime()) {
+      reuploadRequest = null;
+    }
+    return reuploadRequest;
+  }
+  return await checkFileSubmissionPeriod(document.category, sessionSettings) || !!(await getReuploadRequest());
+}
+
 export const uploadPaperDocument = async (user: User, documentFile: UploadedFile,
   name: string, type: DocumentType, perspective: UploadPerspective, paperId: number) => {
 
@@ -194,7 +216,7 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
   const category = requiredDoc.category;
 
   // Check if document category can be uploaded
-  if (perspective == 'student' && !(await checkFileSubmissionPeriod(category, sessionSettings))) {
+  if (perspective == 'student' && !(await studentCanEditDocument(requiredDoc, paperId, sessionSettings))) {
     throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
   }
 

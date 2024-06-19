@@ -25,4 +25,10 @@ router.post('/:id/unsubmit', async (req, res, next) => {
     .catch((err) => next(err));
 });
 
+router.get('/:id/reupload-requests', async (req, res, next) => {
+  PaperController.getDocumentReuploadRequests(req._user, +req.params['id'])
+    .then((result) => res.json(result))
+    .catch((err) => next(err));
+});
+
 export default router;
