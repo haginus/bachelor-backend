@@ -1,7 +1,7 @@
 import React from 'react';
 import { createTransport, Transporter } from "nodemailer";
 import { config } from '../config/config';
-import { Application, Paper, User } from "../models/models";
+import { Application, DocumentReuploadRequest, Paper, User } from "../models/models";
 import Mail from "nodemailer/lib/mailer";
 import { sleep } from "../util/util";
 import { ProblemReport } from "../controllers/user.controller";
@@ -14,6 +14,7 @@ import { ApplicationAccepted } from './templates/application-accepted';
 import { PaperRemoved } from './templates/paper-removed';
 import { PaperCreated } from './templates/paper-created';
 import { Feedback } from './templates/feedback';
+import { DocumentReuploadRequestNotice } from './templates/document-reupload-request-notice';
 
 interface SendInterval {
   timeStart: number;
@@ -188,6 +189,16 @@ export async function sendFeedbackMail(user: User, report: ProblemReport) {
   });
 }
 
+export async function sendDocumentReuploadRequestNotice(user: User, requests: DocumentReuploadRequest[]) {
+  const url = `${config.WEBSITE_URL}/student/paper`;
+  const html = await renderAsync(<DocumentReuploadRequestNotice user={user} requests={requests} url={url} />);
+  await mailSender.sendMail({
+    to: user.email,
+    subject: "Solicitare de reîncărcare a documentelor",
+    html
+  });
+}
+
 export const testEmail = async (templateName: string) => {
   const user = {
     firstName: "John",
@@ -214,12 +225,23 @@ export const testEmail = async (templateName: string) => {
     description: "Lorem ipdum dolor sit amet...",
     email: "john.doe@gmail.com",
   }
+  const requests = [
+    { 
+      documentName: 'sign_up_form',
+      deadline: "2024-06-19",
+      comment: "Unele date au fost introduse greșit, acestea fiind actualizate de secretariat. Semnați noul document generat."
+    },
+    { 
+      documentName: 'statutory_declaration',
+      deadline: "2024-06-19",
+    },
+  ];
   const url = '';
   const importResult = await import(`./templates/${templateName}.tsx`);
   let normalizedTemplateName = templateName.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
   normalizedTemplateName = normalizedTemplateName.charAt(0).toUpperCase() + normalizedTemplateName.slice(1);
   const [_, Component] = Object.entries(importResult).find(([key]) => key === normalizedTemplateName) as [string, any];
-  const props = { user, studentUser, teacherUser, application, paper, report, url };
+  const props = { user, studentUser, teacherUser, application, paper, report, requests, url };
   return renderAsync(<Component {...props} />);
 };
 

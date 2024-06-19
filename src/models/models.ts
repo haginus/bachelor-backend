@@ -501,6 +501,31 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   }
 }
 
+
+interface DocumentReuploadRequestAttributes {
+  id: number;
+  paperId: number;
+  documentName: string;
+  deadline: Date;
+  comment: string;
+}
+
+export interface DocumentReuploadRequestCreationAttributes extends Optional<DocumentReuploadRequestAttributes, "id"> {}
+
+export class DocumentReuploadRequest extends Model<DocumentReuploadRequestAttributes, DocumentReuploadRequestCreationAttributes> implements DocumentReuploadRequestAttributes {
+  id: number;
+  paperId: number;
+  documentName: string;
+  deadline: Date;
+  comment: string;
+
+  paper?: Paper;
+
+  public static associations: {
+    paper: Association<Document, Paper>;
+  }
+}
+
 interface CommitteeAttributes {
   id: number;
   name: string;
@@ -1271,6 +1296,36 @@ Document.belongsTo(Paper);
 User.hasMany(Document, { foreignKey: 'uploadedBy' });
 Document.belongsTo(User, { foreignKey: 'uploadedBy' });
 
+DocumentReuploadRequest.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  paperId: {
+    type: DataTypes.INTEGER,
+  },
+  documentName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  comment: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  deadline: {
+    type: DataTypes.DATEONLY,
+    allowNull: false,
+  }
+}, {
+  timestamps: false,
+  sequelize,
+  modelName: "documentReuploadRequest"
+});
+
+Paper.hasMany(DocumentReuploadRequest, { onDelete: 'CASCADE' });
+Document.belongsTo(Paper);
+
 Paper.addScope('documents', {
   include: [ sequelize.model("document") ]
 });
@@ -1281,6 +1336,10 @@ Paper.addScope('documentsPaperFiles', {
     required: false,
     where: { category: 'paper_files' }
   }]
+});
+
+Paper.addScope('documentReuploadRequests', {
+  include: [ sequelize.model("documentReuploadRequest") ]
 });
 
 Paper.addScope('topics', {

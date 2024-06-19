@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm, DocumentReuploadRequest, DocumentReuploadRequestCreationAttributes } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../mail/mailer';
@@ -1079,6 +1079,7 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
     let scopes = ['student', 'teacher', 'topics'];
     if(!minified) {
         scopes.push('documents');
+        scopes.push('documentReuploadRequests');
         scopes.push('committee');
         scopes.push('grades');
     }
@@ -1130,17 +1131,34 @@ const checkRequiredDocuments = (requiredDocs: PaperRequiredDocument[], documents
     }
 }
 
-export const submitPaper = async (paperId: number, submit = true) => {
-    const paper = await Paper.findOne({ where: { id: paperId } });
+export async function requestDocumentsReupload(paperId: number, dtos: DocumentReuploadRequestCreationAttributes[]) {
+    const paper = await Paper.scope(['student']).findOne({ where: { id: paperId } });
     if(!paper) {
-        throw new ResponseErrorNotFound("Lucrarea nu a fost găsită.");
+        throw new ResponseErrorNotFound('Lucrarea nu există.');
     }
-    if(paper.isValid != null) {
-        throw new ResponseError("Lucrarea a fost deja validată.", "ALREADY_VALIDATED");
+    const mappedPaper = mapPaper(paper);
+    const existingRequests = await DocumentReuploadRequest.findAll({
+        where: { 
+            paperId,
+            documentName: { [Op.in]: dtos.map(dto => dto.documentName) }
+        } 
+    });
+    dtos.forEach(dto => {
+        dto.paperId = paperId;
+    });
+    const transaction = await sequelize.transaction();
+    try {
+        const requests = await DocumentReuploadRequest.bulkCreate(dtos, { transaction });
+        for(const request of existingRequests) {
+            await request.destroy({ transaction });
+        }
+        await Mailer.sendDocumentReuploadRequestNotice(mappedPaper.student as any, requests);
+        await transaction.commit();
+        return requests;
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
     }
-    paper.submitted = submit;
-    await paper.save();
-    return true;
 }
 
 /** Validate/Invalidate a paper by its ID. */

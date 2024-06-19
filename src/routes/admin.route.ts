@@ -380,10 +380,10 @@ router.get('/papers', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/papers/submit', (req, res, next) => {
-    const { paperId, submit } = req.body;
-    AdminController.submitPaper(paperId, submit)
-        .then(result => res.json({ success: true }))
+router.post('/papers/:id/reupload-requests', (req, res, next) => {
+    const { id } = req.params;
+    AdminController.requestDocumentsReupload(+id, req.body)
+        .then(result => res.json(result))
         .catch(err => next(err));
 });
 
