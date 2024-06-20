@@ -1179,6 +1179,11 @@ export async function requestDocumentsReupload(paperId: number, dtos: DocumentRe
     }
 }
 
+export async function cancelDocumentReuploadRequest(requestId: number) {
+    await DocumentReuploadRequest.destroy({ where: { id: requestId } });
+    return true;
+}
+
 /** Validate/Invalidate a paper by its ID. */
 export const validatePaper = async (paperId: number, validate: boolean, generalAverage?: number, ignoreRequiredDocs: boolean = false) => {
     const paper = await Paper.scope(['documents', 'student', 'teacher']).findOne({

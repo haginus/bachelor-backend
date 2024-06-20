@@ -380,10 +380,17 @@ router.get('/papers', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/papers/:id/reupload-requests', (req, res, next) => {
-    const { id } = req.params;
-    AdminController.requestDocumentsReupload(+id, req.body)
+router.post('/papers/:paperId/reupload-requests', (req, res, next) => {
+    const { paperId } = req.params;
+    AdminController.requestDocumentsReupload(+paperId, req.body)
         .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.delete('/papers/:paperId/reupload-requests/:id', (req, res, next) => {
+    const { id } = req.params;
+    AdminController.cancelDocumentReuploadRequest(+id)
+        .then(_ => res.json({ success: true }))
         .catch(err => next(err));
 });
 
