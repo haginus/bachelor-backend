@@ -1305,6 +1305,7 @@ export const beginNewSession = async (user: User) => {
             }
         };
         await Document.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
+        await DocumentReuploadRequest.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
         await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
         await Application.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
         await SessionSettings.update({ sessionName: 'Sesiune nouă', allowGrading: false }, { where: { lock: 'X' }, transaction });
