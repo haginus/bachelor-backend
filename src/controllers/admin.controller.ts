@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions} from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
-import { copyObject, makeNameClause, removeDiacritics, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorNotFound } from "../util/util";
+import { makeNameClause, removeDiacritics, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorNotFound } from "../util/util";
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
@@ -15,7 +15,7 @@ import { redisDel, redisSet } from "../util/redis";
 import { Request } from "express";
 import { resetPassword } from "./auth.controller";
 import { StudentDocumentGenerationProps } from "../documents/types";
-import { mapPaper } from "./paper.controller";
+import { generatePaperDocuments, mapPaper } from "./paper.controller";
 import { StudentController } from "./student.controller";
 var stream = require('stream');
 
@@ -166,7 +166,7 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
 
 export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number, 
     identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
-    let previousStudent = await Student.findOne({ where: { userId: id }, include: [User] });
+    let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
     if(!previousStudent) {
         throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
     }
@@ -175,25 +175,43 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
         throw "SPECIALIZATION_NOT_FOUND";
     }
     let domainId = specialization.domainId;
+    let documentsGenerated = false;
     const transaction = await sequelize.transaction();
     try {
-        let userUpdate = await User.update({ firstName, lastName, CNP, email }, { // update user data
+        const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
             where: { id }, transaction
         });
-        let studentUpdate = await Student.update({ group, domainId, identificationCode, promotion, specializationId,
+        const [studentUpdateCount] = await Student.update({ group, domainId, identificationCode, promotion, specializationId,
             studyForm, fundingForm, matriculationYear }, { // update student data
             where: { userId: id }, transaction
         });
         if(previousStudent.user.email != email) {
             await resetPassword(email, transaction);
         }
+        if((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
+            const paper = await Paper.findOne({
+                where: { studentId: previousStudent.id },
+                include: [Student, Teacher]
+            });
+            if(paper) {
+                if(paper.isValid === true) {
+                    throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
+                }
+                const sessionSettings = await SessionSettings.findOne();
+                await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
+                documentsGenerated = true;
+            }
+        }
         await transaction.commit();
+        return {
+            user: await UserController.getUserData(id),
+            documentsGenerated,
+        }
     } catch(err) {
         console.log(err);
         await transaction.rollback(); // if anything goes wrong, rollback
         handleUserUpdateError(err);
     }
-    return UserController.getUserData(id);
 }
 
 export async function editStudentExtraData(studentId: number, data: StudentExtraData) {

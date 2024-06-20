@@ -320,6 +320,9 @@ export class StudentController {
     if(!studentPaper) {
       throw new ResponseErrorInternal('Datele suplimentare nu pot fi modificate fără o lucrare asociată.');
     }
+    if(studentPaper.isValid) {
+      throw new ResponseErrorInternal('Datele suplimentare nu pot fi modificate după ce lucrarea a fost validată.');
+    }
     if (oldData) { // if data exists
       try {
         let [dataUpdated] = await StudentExtraData.update(newMainData, {

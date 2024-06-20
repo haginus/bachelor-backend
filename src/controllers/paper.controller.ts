@@ -70,13 +70,15 @@ export async function editPaper(user: User, paperId: number, title: string, desc
 }
 
 export async function generatePaperDocuments(paper: MappedPaper, extraData: StudentExtraData, sessionSettings: SessionSettings, transaction?: Transaction) {
+  const ownTransaction = !transaction;
+  transaction = transaction || (await sequelize.transaction());
+
   const student = await Student.findOne({
     where: { id: paper.studentId }, 
-    include: [User, Domain, Specialization] 
+    include: [User, Domain, Specialization],
+    transaction
   });
-  const ownTransaction = !transaction;
-
-  transaction = transaction || (await sequelize.transaction());
+  
   try {
     // delete old generated and signed documents
     await Document.destroy({
