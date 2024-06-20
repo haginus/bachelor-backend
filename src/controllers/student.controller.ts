@@ -312,7 +312,6 @@ export class StudentController {
     } catch (err) {
       throw new ResponseError('Date invalide.', 'INVALID_DATA');
     }
-    const transaction = await sequelize.transaction(); // initialize a SQL transaction
     const studentPaper = await Paper.findOne({ 
       where: { studentId: student.id }, 
       include: [{ model: Teacher, include: [User] }] 
@@ -323,6 +322,7 @@ export class StudentController {
     if(studentPaper.isValid) {
       throw new ResponseErrorInternal('Datele suplimentare nu pot fi modificate după ce lucrarea a fost validată.');
     }
+    const transaction = await sequelize.transaction();
     if (oldData) { // if data exists
       try {
         let [dataUpdated] = await StudentExtraData.update(newMainData, {
