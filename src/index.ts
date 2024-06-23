@@ -11,10 +11,9 @@ import documentsRoutes from './routes/documents.route';
 import paperRoutes from './routes/papers.route';
 import devRoutes from './routes/dev.route';
 import miscRoutes from './routes/misc.route';
+import logsRoutes from './routes/logs.route';
 import { config } from './config/config';
-import { copyObject } from './util/util';
 
-import isLoggedIn from './routes/middlewares/isLoggedIn';
 import errorHandler from './routes/middlewares/errorHandler';
 import path from 'path';
 
@@ -40,6 +39,7 @@ app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
 app.use('/papers', paperRoutes);
+app.use('/logs', logsRoutes);
 app.use('', miscRoutes);
 app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')));
 

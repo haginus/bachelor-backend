@@ -21,6 +21,8 @@ import {
   HasOneSetAssociationMixin
 } from "sequelize";
 import { toFixedTruncate } from '../util/util';
+import { LogName } from '../lib/types/enums/log-name.enum';
+import { LogSeverity } from '../lib/types/enums/log-severity.enum';
 
 export const sequelize = new Sequelize(config.DATABASE_STRING, {
   logging: !config.DISABLE_SEQUELIZE_LOGGING
@@ -658,6 +660,44 @@ export class SessionSettings extends Model<SessionSettingsAttributes, SessionSet
   allowGrading: boolean;
 }
 
+export interface LogAttributes {
+  id: number;
+  name: LogName;
+  timestamp: Date;
+  severity: LogSeverity;
+  byUserId: number | null;
+  impersonatedByUserId?: number;
+  meta?: Record<string, any>;
+  userId?: number;
+  studentExtraDataId?: number;
+  paperId?: number;
+  documentId?: number;
+  documentReuploadRequestId?: number;
+}
+
+export interface LogCreationAttributes extends Optional<LogAttributes, "id" | "timestamp"> {}
+
+export class Log extends Model<LogAttributes, LogCreationAttributes> implements LogAttributes {
+  readonly id: number;
+  readonly name: LogName;
+  readonly timestamp: Date;
+  readonly severity: LogSeverity;
+  readonly byUserId: number | null;
+  readonly impersonatedByUserId?: number;
+  readonly meta?: Record<string, any>;
+  readonly userId?: number;
+  readonly studentExtraDataId?: number;
+  readonly paperId?: number;
+  readonly documentId?: number;
+  readonly documentReuploadRequestId?: number;
+
+  readonly user: User;
+  readonly studentExtraData: StudentExtraData;
+  readonly paper: Paper;
+  readonly document: Document;
+  readonly documentReuploadRequest: DocumentReuploadRequest;
+}
+
 SessionSettings.init({
   lock: { // table with one row
     type: DataTypes.CHAR,
@@ -933,6 +973,7 @@ User.init({
   }
 }, {
   timestamps: false,
+  paranoid: true,
   sequelize,
   modelName: 'user'
 });
@@ -1028,6 +1069,7 @@ Student.init({
   },
 }, {
   timestamps: false,
+  paranoid: true,
   sequelize,
   modelName: "student"
 });
@@ -1060,6 +1102,7 @@ Teacher.init({
   },
 }, {
   sequelize,
+  paranoid: true,
   modelName: "teacher",
   timestamps: false
 });
@@ -1241,6 +1284,7 @@ Paper.init({
 }, {
   timestamps: true,
   updatedAt: false,
+  paranoid: true,
   sequelize,
   modelName: "paper"
 })
@@ -1322,6 +1366,7 @@ DocumentReuploadRequest.init({
   }
 }, {
   timestamps: true,
+  paranoid: true,
   sequelize,
   modelName: "documentReuploadRequest"
 });
@@ -1440,6 +1485,7 @@ StudentExtraData.init({
 },
 {
   timestamps: false,
+  paranoid: true,
   sequelize,
   modelName: "studentExtraData"
 });
@@ -1723,6 +1769,64 @@ SignUpRequest.init({
 Specialization.hasMany(SignUpRequest);
 SignUpRequest.belongsTo(Specialization);
 
+Log.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  timestamp: {
+    type: DataTypes.DATE,
+    allowNull: false,
+  },
+  severity: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  byUserId: {
+    type: DataTypes.INTEGER,
+  },
+  impersonatedByUserId: {
+    type: DataTypes.INTEGER,
+  },
+  meta: {
+    type: DataTypes.JSON,
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+  },
+  studentExtraDataId: {
+    type: DataTypes.INTEGER,
+  },
+  paperId: {
+    type: DataTypes.INTEGER,
+  },
+  documentId: {
+    type: DataTypes.INTEGER,
+  },
+  documentReuploadRequestId: {
+    type: DataTypes.INTEGER,
+  }
+}, {
+  timestamps: true,
+  createdAt: 'timestamp',
+  updatedAt: false,
+  sequelize,
+  modelName: "log"
+});
+
+Log.belongsTo(User, { constraints: false, foreignKey: 'byUserId', as: 'byUser' });
+Log.belongsTo(User, { constraints: false, foreignKey: 'impersonatedByUserId', as: 'impersonatedByUser' });
+Log.belongsTo(User, { constraints: false, foreignKey: 'userId' });
+Log.belongsTo(StudentExtraData, { constraints: false, foreignKey: 'studentExtraDataId' });
+Log.belongsTo(Paper, { constraints: false, foreignKey: 'paperId' });
+Log.belongsTo(Document, { constraints: false, foreignKey: 'documentId' });
+Log.belongsTo(DocumentReuploadRequest, { constraints: false, foreignKey: 'documentReuploadRequestId' });
+
 sequelize.sync()
   .then(() => {
     SessionSettings.findOrCreate(
@@ -1744,4 +1848,3 @@ sequelize.sync()
     });
   })
   .catch(error => console.log('This error occured', error));
-
