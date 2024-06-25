@@ -6,7 +6,7 @@ export class Logger {
   static async log(byUser: User, log: LogInput, options: LogOptions = {}) {
     return Log.create({
       ...log,
-      byUserId: byUser.id,
+      byUserId: byUser?.id || null,
       severity: log.severity || LogSeverity.Info,
     }, options);
   }

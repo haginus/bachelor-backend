@@ -972,7 +972,9 @@ User.init({
     }
   }
 }, {
-  timestamps: false,
+  timestamps: true,
+  createdAt: false,
+  updatedAt: false,
   paranoid: true,
   sequelize,
   modelName: 'user'
@@ -1068,7 +1070,9 @@ Student.init({
     type: DataTypes.DOUBLE,
   },
 }, {
-  timestamps: false,
+  timestamps: true,
+  createdAt: false,
+  updatedAt: false,
   paranoid: true,
   sequelize,
   modelName: "student"
@@ -1102,9 +1106,11 @@ Teacher.init({
   },
 }, {
   sequelize,
+  timestamps: true,
+  createdAt: false,
+  updatedAt: false,
   paranoid: true,
   modelName: "teacher",
-  timestamps: false
 });
 
 User.hasOne(Teacher, {
@@ -1484,7 +1490,9 @@ StudentExtraData.init({
   },
 },
 {
-  timestamps: false,
+  timestamps: true,
+  createdAt: false,
+  updatedAt: false,
   paranoid: true,
   sequelize,
   modelName: "studentExtraData"
@@ -1822,7 +1830,7 @@ Log.init({
 Log.belongsTo(User, { constraints: false, foreignKey: 'byUserId', as: 'byUser' });
 Log.belongsTo(User, { constraints: false, foreignKey: 'impersonatedByUserId', as: 'impersonatedByUser' });
 Log.belongsTo(User, { constraints: false, foreignKey: 'userId' });
-Log.belongsTo(StudentExtraData, { constraints: false, foreignKey: 'studentExtraDataId' });
+Log.belongsTo(StudentExtraData, { constraints: false, foreignKey: 'studentExtraDataId', as: 'studentExtraData' });
 Log.belongsTo(Paper, { constraints: false, foreignKey: 'paperId' });
 Log.belongsTo(Document, { constraints: false, foreignKey: 'documentId' });
 Log.belongsTo(DocumentReuploadRequest, { constraints: false, foreignKey: 'documentReuploadRequestId' });

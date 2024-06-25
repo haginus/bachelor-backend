@@ -27,6 +27,8 @@ import { CommitteeStudents } from "../documents/templates/committee-students";
 import { CommitteeCatalog } from "../documents/templates/committee-catalog";
 import { CommitteeFinalCatalog } from "../documents/templates/committee-final-catalog";
 import { FinalCatalog } from "../documents/templates/final-catalog";
+import { Logger } from "../util/logger";
+import { LogName } from "../lib/types/enums/log-name.enum";
 
 Font.register({
   family: 'Liberation Serif',
@@ -86,16 +88,19 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
   ) {
     throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
   }
-
+  const transaction = await sequelize.transaction();
   try {
-    const ext = mime.extension(document.mimeType);
-    const documentPath = getStoragePath(`${documentId}.${ext}`);
-    fs.unlinkSync(documentPath);
+    await document.destroy({ transaction });
+    await Logger.log(user, {
+      name: LogName.DocumentDeleted,
+      documentId: document.id,
+      paperId: document.paperId,
+    }, { transaction });
+    await transaction.commit();
   } catch (err) {
-    // pass
+    await transaction.rollback();
+    throw err;
   }
-
-  await document.destroy();
   return true;
 }
 
@@ -246,6 +251,11 @@ export const uploadPaperDocument = async (user: User, documentFile: UploadedFile
     }
     const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
     fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
+    await Logger.log(user, {
+      name: LogName.DocumentCreated,
+      documentId: newDocument.id,
+      paperId: paperId,
+    }, { transaction });
     await transaction.commit(); // commit if everything is fine
     return newDocument;
   } catch (err) {

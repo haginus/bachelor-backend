@@ -1,10 +1,12 @@
 import { Op, Transaction } from "sequelize";
-import { Document, DocumentReuploadRequest, Domain, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
+import { Document, DocumentReuploadRequest, Domain, Log, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
 import { changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
 import { getStoragePath } from "./document.controller";
 import * as DocumentController from './document.controller';
 import * as fs from 'fs';
 import { StudentDocumentGenerationProps } from "../documents/types";
+import { Logger } from "../util/logger";
+import { LogName } from "../lib/types/enums/log-name.enum";
 
 export function mapPaper(paper: Paper) {
   const plainPaper = copyObject(paper);
@@ -51,14 +53,20 @@ export async function editPaper(user: User, paperId: number, title: string, desc
     paper.description = description;
     await paper.save({ transaction });
     await paper.setTopics(topicIds, { transaction });
+    let documentsGenerated = false;
+    await Logger.log(user, {
+      name: LogName.PaperUpdated,
+      paperId: paper.id,
+    }, { transaction });
     if (titleUpdated) {
       const extraData = await paper.student.getStudentExtraDatum();
       if (extraData != null) {
         await generatePaperDocuments(mapPaper(paper), extraData, sessionSettings, transaction);
+        documentsGenerated = true;
       }
     }
     await transaction.commit();
-    return { success: true, documentsGenerated: titleUpdated };
+    return { success: true, documentsGenerated };
   } catch (err) {
     await transaction.rollback();
     throw err;
@@ -77,7 +85,7 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
   
   try {
     // delete old generated and signed documents
-    await Document.destroy({
+    const oldDocuments = await Document.findAll({
       transaction,
       where: {
         paperId: paper.id,
@@ -86,6 +94,16 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
         }
       }
     });
+    await Promise.all(
+      oldDocuments.map(async doc => {
+        await doc.destroy({ transaction });
+        await Logger.log(null, {
+          name: LogName.DocumentDeleted,
+          documentId: doc.id,
+          paperId: paper.id,
+        }, { transaction });
+      })
+    );
 
     const generationProps: StudentDocumentGenerationProps = {
       student,
@@ -124,6 +142,16 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
 
     fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
 
+    await Promise.all(
+      [signUpFormDocument, statutoryDeclarationDocument, liquidationFormDocument].map(async doc => {
+        await Logger.log(null, {
+          name: LogName.DocumentCreated,
+          documentId: doc.id,
+          paperId: paper.id,
+        }, { transaction });
+      })
+    );
+
     if(ownTransaction) await transaction.commit();
   } catch (err) {
     if(ownTransaction) await transaction.rollback();
@@ -146,14 +174,21 @@ export async function submitPaper(user: User, paperId: number, submit: boolean) 
       throw new ResponseErrorForbidden();
     }
   }
+  const transaction = await sequelize.transaction();
   try {
     paper.submitted = submit;
     if(!submit) {
       paper.committeeId = null;
     }
-    await paper.save();
+    await paper.save({ transaction });
+    await Logger.log(user, {
+      name: submit ? LogName.PaperSubmitted : LogName.PaperUnsubmitted,
+      paperId: paper.id,
+    }, { transaction });
+    await transaction.commit();
     return { success: true };
   } catch (err) {
+    await transaction.rollback();
     throw err;
   }
 }

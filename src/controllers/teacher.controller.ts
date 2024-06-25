@@ -6,6 +6,8 @@ import { Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../mail/mailer";
 import { UploadedFile } from "express-fileupload";
 import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorNotFound } from "../util/util";
+import { Logger } from "../util/logger";
+import { LogName } from "../lib/types/enums/log-name.enum";
 
 
 export const validateTeacher = async (user: User) => {
@@ -237,11 +239,25 @@ export const acceptApplication = async (user: User, applicationId: number) => {
         const domain = await Domain.findOne({ where: { id: application.student.domainId } }); // get the domain for type
         // CREATE PAPER
         const { title, description, studentId } = application;
-        const paper = await Paper.create({
-            title, description, studentId, teacherId: user.teacher.id, type: domain.paperType
-        }, { transaction });
+        const paperPayload = {
+            title,
+            description,
+            studentId,
+            teacherId: user.teacher.id,
+            type: domain.paperType
+        };
+        const paper = await Paper.create(paperPayload, { transaction });
         const topicIds = application.offer.topics.map(topic => topic.id);
         await paper.setTopics(topicIds, { transaction });
+        await Logger.log(user, {
+            name: LogName.PaperCreated,
+            paperId: paper.id,
+            meta: {
+                creationMode: 'applicationAccepted',
+                applicationId,
+                paperPayload,
+            }
+        }, { transaction });
         await transaction.commit();
     } catch(err) {
         await transaction.rollback();
@@ -311,9 +327,23 @@ export const removePaper = async (user: User, paperId: number): Promise<boolean>
     }
     const studentId = paper.studentId;
     const transaction = await sequelize.transaction();
-    try { 
-        await StudentExtraData.destroy({ where: { studentId }, transaction });
-        await Paper.destroy({ where: { studentId }, transaction });
+    try {
+        const studentExtraData = await StudentExtraData.findOne({ where: { studentId }, transaction });
+        if(studentExtraData) {
+            await studentExtraData.destroy({ transaction });
+            await Logger.log(user, {
+                name: LogName.StudentExtraDataDeleted,
+                studentExtraDataId: studentExtraData.id,
+                meta: {
+                    reason: 'paperDeleted'
+                }
+            }, { transaction });
+        }
+        await paper.destroy({ transaction });
+        await Logger.log(user, {
+            name: LogName.PaperDeleted,
+            paperId: paper.id,
+        }, { transaction });
         // Change application status to declined so that student can't apply to the same offer again
         await Application.update({ accepted: false }, { where: { studentId }, transaction });
         // Get student data to send email
@@ -376,25 +406,44 @@ export const getCommittee = async (user: User, committeeId: number) => {
 }
 
 export const gradePaper = async (user: User, paperId: number, forPaper: number, forPresentation: number) => {
+    if([forPaper, forPresentation].some(grade => grade < 1 || grade > 10 || !Number.isInteger(grade))) {
+        throw new ResponseError('Notele trebuie să fie întregi de la 1 la 10.');
+    }
     const paper = await Paper.findByPk(paperId, {
-        include: [ Committee.scope("min") ]
+        include: [Committee.scope("min")]
     });
-    if(!paper) {
+    if(!paper || !paper.committee) {
         throw new ResponseErrorForbidden();
     }
     // Check if teacher is in the committee the paper is assigned to and they have right to grade
-    if(paper.committee.members.findIndex(member => 
-        member.id == user.teacher.id && member.committeeMember.role != 'secretary') < 0) {
+    const isGradingMember = !!paper.committee.members.find(member => member.id == user.teacher.id && member.committeeMember.role != 'secretary');
+    if(!isGradingMember) {
         throw new ResponseErrorForbidden();
     }
     if(paper.committee.finalGrades) {
         throw new ResponseErrorForbidden("Nu puteți modifica nota deoarece notele au fost marcate drept finale.");
     }
+    const transaction = await sequelize.transaction();
     try {
-        await PaperGrade.upsert({ paperId: paper.id, teacherId: user.teacher.id, forPaper, forPresentation });
+        await PaperGrade.upsert({ 
+            paperId: paper.id, 
+            teacherId: user.teacher.id,
+            forPaper, 
+            forPresentation 
+        }, { transaction });
+        await Logger.log(user, {
+            name: LogName.PaperGraded,
+            paperId: paper.id,
+            meta: {
+                forPaper,
+                forPresentation
+            }
+        }, { transaction });
+        await transaction.commit();
         return true;
     } catch(err) {
-        throw new ResponseError('Notele trebuie să fie întregi de la 1 la 10.');
+        await transaction.rollback();
+        throw err;
     }
 }
 
@@ -474,12 +523,24 @@ export async function addPaper(user: User, studentId: number, title: string, des
     }
     const transaction = await sequelize.transaction();
     try {
-        const newPaper = await Paper.create(
-            { title, description, type: student.domain.paperType, studentId, teacherId: user.id },
-            { transaction }
-        );
+        const paperPayload = {
+            title,
+            description,
+            studentId,
+            teacherId: user.id,
+            type: student.domain.paperType
+        }
+        const newPaper = await Paper.create(paperPayload, { transaction });
         await newPaper.setTopics(topics, { transaction });
         await Application.destroy({ where: { studentId }}), { transaction };
+        await Logger.log(user, {
+            name: LogName.PaperCreated,
+            paperId: newPaper.id,
+            meta: {
+                creationMode: 'manual',
+                paperPayload
+            }
+        }, { transaction });
         await transaction.commit();
         Mailer.sendAddedPaperNotice(student.user, user, newPaper);
         return newPaper;

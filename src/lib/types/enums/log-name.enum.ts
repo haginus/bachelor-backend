@@ -4,6 +4,7 @@ export enum LogName {
   UserDeleted = 'user.deleted',
   StudentExtraDataCreated = 'studentExtraData.created',
   StudentExtraDataUpdated = 'studentExtraData.updated',
+  StudentExtraDataDeleted = 'studentExtraData.deleted',
   PaperCreated = 'paper.created',
   PaperUpdated = 'paper.updated',
   PaperDeleted = 'paper.deleted',

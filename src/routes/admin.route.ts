@@ -320,7 +320,7 @@ router.post('/committees/assign-papers', isType('admin'), (req, res, next) => {
     if(!id || !Array.isArray(paperIds)) {
         return next(new ResponseError("Parametri lipsă."));
     }
-    AdminController.setCommitteePapers(id, paperIds)
+    AdminController.setCommitteePapers(req._user, id, paperIds)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
@@ -382,28 +382,28 @@ router.get('/papers', function (req, res, next) {
 
 router.post('/papers/:paperId/reupload-requests', (req, res, next) => {
     const { paperId } = req.params;
-    AdminController.requestDocumentsReupload(+paperId, req.body)
+    AdminController.requestDocumentsReupload(req._user, +paperId, req.body)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
 
 router.delete('/papers/:paperId/reupload-requests/:id', (req, res, next) => {
     const { id } = req.params;
-    AdminController.cancelDocumentReuploadRequest(+id)
+    AdminController.cancelDocumentReuploadRequest(req._user, +id)
         .then(_ => res.json({ success: true }))
         .catch(err => next(err));
 });
 
 router.post('/papers/validate', (req, res, next) => {
     const { paperId, validate, generalAverage, ignoreRequiredDocs } = req.body;
-    AdminController.validatePaper(paperId, validate, parseFloat(generalAverage), ignoreRequiredDocs)
+    AdminController.validatePaper(req._user, paperId, validate, parseFloat(generalAverage), ignoreRequiredDocs)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
 
 router.post('/papers/validate/undo', (req, res, next) => {
     const { paperId } = req.body;
-    AdminController.undoPaperValidation(paperId)
+    AdminController.undoPaperValidation(req._user, paperId)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });
