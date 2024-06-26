@@ -371,6 +371,15 @@ export const getCommittees = async (user: User) => {
     });
 }
 
+function isCommitteeMember(user: User, committee: Committee, rights: { grading?: boolean; markGradesAsFinal?: boolean } = { grading: false, markGradesAsFinal: false }) {
+    const member = committee.members.find(member => member.id == user.teacher?.id);
+    const rightChecks = {
+        grading: (teacher: Teacher) => teacher.committeeMember.role != 'secretary',
+        markGradesAsFinal: (teacher: Teacher) => ['president', 'secretary'].includes(teacher.committeeMember.role),
+    }
+    return !!member && Object.keys(rightChecks).every(key => !rights[key] || rightChecks[key](member));
+}
+
 export const getCommittee = async (user: User, committeeId: number) => {
     const committee = await Committee.findOne({
         where: { id: committeeId },
@@ -379,7 +388,7 @@ export const getCommittee = async (user: User, committeeId: number) => {
     if(!committee) {
         throw new ResponseErrorNotFound();
     }
-    if(committee.members.findIndex(member => member.id == user.teacher?.id) < 0) {
+    if(!isCommitteeMember(user, committee)) {
         throw new ResponseErrorForbidden();
     }
     let resp: any = copyObject(committee);
@@ -416,8 +425,7 @@ export const gradePaper = async (user: User, paperId: number, forPaper: number, 
         throw new ResponseErrorForbidden();
     }
     // Check if teacher is in the committee the paper is assigned to and they have right to grade
-    const isGradingMember = !!paper.committee.members.find(member => member.id == user.teacher.id && member.committeeMember.role != 'secretary');
-    if(!isGradingMember) {
+    if(!isCommitteeMember(user, paper.committee, { grading: true })) {
         throw new ResponseErrorForbidden();
     }
     if(paper.committee.finalGrades) {
@@ -452,8 +460,7 @@ export const markGradesAsFinal = async (user: User, committeeId: number) => {
     if(!committee) {
         throw new ResponseError("Comisie inexistentă.", "COMMITTEE_NOT_FOUND", 404);
     }
-    const member = committee.members.find(member => member.id == user.teacher.id);
-    if(!member || !['president', 'secretary'].includes(member.committeeMember.role)) {
+    if(!isCommitteeMember(user, committee, { markGradesAsFinal: true })) {
         throw new ResponseErrorForbidden();
     }
     if(committee.finalGrades) {
@@ -462,6 +469,21 @@ export const markGradesAsFinal = async (user: User, committeeId: number) => {
     committee.finalGrades = true;
     await committee.save();
     return { success: true };
+}
+
+export async function getCommitteePaperDocumentsArchieve(user: User, committeeId: number) {
+    const committee = await Committee.findByPk(committeeId);
+    if(!committee) {
+        throw new ResponseErrorNotFound();
+    }
+    if(!isCommitteeMember(user, committee)) {
+        throw new ResponseErrorForbidden();
+    }
+    const papers = await Paper.findAll({
+        where: { committeeId },
+    });
+    const paperIds = papers.map(paper => paper.id);
+    return DocumentController.generatePaperDocumentsArchive(paperIds, ['paper']);
 }
 
 export async function getStudents(firstName?: string, lastName?: string, email?: string, domainId?: number): Promise<User[]> {

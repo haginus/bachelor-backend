@@ -1,4 +1,5 @@
-import { DocumentCategory, DomainType, Paper, SessionSettings, UploadPerspective } from "./models/models"
+import { DocumentCategory, Paper, SessionSettings, UploadPerspective } from "./models/models"
+import { StudentDocumentGenerationProps } from "./documents/types";
 
 // 'signed' cannot exist without 'generated', 'copy' is exclusive
 export type PaperRequiredDocumentTypes = { generated: true, signed?: boolean } | { copy: true } 
@@ -11,7 +12,8 @@ export interface PaperRequiredDocument {
     acceptedMimeTypes: string;
     acceptedExtensions?: string[]; // will be calculated using mime
     uploadBy: UploadPerspective;
-    onlyFor?: (paper: Paper, sessionSettings: SessionSettings) => boolean; 
+    onlyFor?: (paper: Paper, sessionSettings: SessionSettings) => boolean;
+    getGenerationMetadata?: (generationProps: any) => Record<string, any>;
 }
 
 export const paperRequiredDocuments: PaperRequiredDocument[] = [
@@ -21,7 +23,52 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { generated: true, signed: true },
       acceptedMimeTypes: 'application/pdf',
-      uploadBy: 'student'
+      uploadBy: 'student',
+      getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
+        student: {
+          user: {
+            lastName: generationProps.student.user.lastName,
+            firstName: generationProps.student.user.firstName,
+            email: generationProps.student.user.email,
+            CNP: generationProps.student.user.CNP,
+          },
+          domain: {
+            name: generationProps.student.domain.name,
+          },
+          specialization: {
+            name: generationProps.student.specialization.name,
+          },
+          promotion: generationProps.student.promotion,
+          fundingForm: generationProps.student.fundingForm,
+          studyForm: generationProps.student.studyForm,
+          identificationCode: generationProps.student.identificationCode,
+          group: generationProps.student.group,
+          generalAverage: generationProps.student.generalAverage,
+        },
+        extraData: {
+          birthLastName: generationProps.extraData.birthLastName,
+          parentInitial: generationProps.extraData.parentInitial,
+          fatherName: generationProps.extraData.fatherName,
+          motherName: generationProps.extraData.motherName,
+          dateOfBirth: generationProps.extraData.dateOfBirth,
+          civilState: generationProps.extraData.civilState,
+          citizenship: generationProps.extraData.citizenship,
+          ethnicity: generationProps.extraData.ethnicity,
+          placeOfBirthCountry: generationProps.extraData.placeOfBirthCountry,
+          placeOfBirthCounty: generationProps.extraData.placeOfBirthCounty,
+          placeOfBirthLocality: generationProps.extraData.placeOfBirthLocality,
+          landline: generationProps.extraData.landline,
+          mobilePhone: generationProps.extraData.mobilePhone,
+        },
+        paper: {
+          type: generationProps.paper.type,
+          title: generationProps.paper.title,
+          teacher: {
+            lastName: generationProps.paper.teacher.lastName,
+            firstName: generationProps.paper.teacher.firstName,
+          }
+        }
+      })
     },
     {
       title: 'Declarație pe proprie răspundere',
@@ -29,7 +76,22 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { generated: true, signed: true },
       acceptedMimeTypes: 'application/pdf',
-      uploadBy: 'student'
+      uploadBy: 'student',
+      getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
+        student: {
+          user: {
+            lastName: generationProps.student.user.lastName,
+            firstName: generationProps.student.user.firstName,
+            email: generationProps.student.user.email,
+          },
+          specialization: {
+            name: generationProps.student.specialization.name,
+          },
+        },
+        paper: {
+          type: generationProps.paper.type,
+        },
+      }),
     },
     {
       title: 'Formular de lichidare',
@@ -37,7 +99,48 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       category: 'secretary_files',
       types: { generated: true, signed: true },
       acceptedMimeTypes: 'application/pdf',
-      uploadBy: 'student'
+      uploadBy: 'student',
+      getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
+        student: {
+          user: {
+            lastName: generationProps.student.user.lastName,
+            firstName: generationProps.student.user.firstName,
+            email: generationProps.student.user.email,
+            CNP: generationProps.student.user.CNP,
+          },
+          domain: {
+            name: generationProps.student.domain.name,
+            type: generationProps.student.domain.type,
+          },
+          specialization: {
+            name: generationProps.student.specialization.name,
+          },
+          promotion: generationProps.student.promotion,
+          fundingForm: generationProps.student.fundingForm,
+          studyForm: generationProps.student.studyForm,
+        },
+        extraData: {
+          dateOfBirth: generationProps.extraData.dateOfBirth,
+          placeOfBirthCountry: generationProps.extraData.placeOfBirthCountry,
+          placeOfBirthCounty: generationProps.extraData.placeOfBirthCounty,
+          placeOfBirthLocality: generationProps.extraData.placeOfBirthLocality,
+          address: {
+            locality: generationProps.extraData.address.locality,
+            county: generationProps.extraData.address.county,
+            street: generationProps.extraData.address.street,
+            streetNumber: generationProps.extraData.address.streetNumber,
+            building: generationProps.extraData.address.building,
+            stair: generationProps.extraData.address.stair,
+            floor: generationProps.extraData.address.floor,
+            apartment: generationProps.extraData.address.apartment,
+          },
+          mobilePhone: generationProps.extraData.mobilePhone,
+          personalEmail: generationProps.extraData.personalEmail,
+        },
+        paper: {
+          type: generationProps.paper.type,
+        },
+      }),
     },
     {
       title: 'Carte de identitate',

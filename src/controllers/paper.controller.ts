@@ -1,12 +1,14 @@
 import { Op, Transaction } from "sequelize";
 import { Document, DocumentReuploadRequest, Domain, Log, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
-import { changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { arrayMap, changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
 import { getStoragePath } from "./document.controller";
 import * as DocumentController from './document.controller';
 import * as fs from 'fs';
 import { StudentDocumentGenerationProps } from "../documents/types";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
+import { paperRequiredDocuments } from "../paper-required-documents";
+import { isEqual } from "lodash";
 
 export function mapPaper(paper: Paper) {
   const plainPaper = copyObject(paper);
@@ -72,87 +74,104 @@ export async function editPaper(user: User, paperId: number, title: string, desc
     throw err;
   }
 }
-
 export async function generatePaperDocuments(paper: MappedPaper, extraData: StudentExtraData, sessionSettings: SessionSettings, transaction?: Transaction) {
+  function equalGenerationMetadata(a: Record<string, any>, b: Record<string, any>) {
+    if(!a || !b) return false;
+    return isEqual(a, b);
+  }
+  
   const ownTransaction = !transaction;
   transaction = transaction || (await sequelize.transaction());
 
-  const student = await Student.findOne({
-    where: { id: paper.studentId }, 
-    include: [User, Domain, Specialization],
-    transaction
-  });
-  
   try {
-    // delete old generated and signed documents
-    const oldDocuments = await Document.findAll({
-      transaction,
+    const student = await Student.findOne({
+      where: { id: paper.studentId }, 
+      include: [User, Domain, Specialization],
+      transaction
+    });
+    const requiredGeneratedDocuments = paperRequiredDocuments.filter(doc => 'generated' in doc.types && doc.types.generated);
+    const actualGeneratedDocuments = await Document.findAll({
       where: {
         paperId: paper.id,
+        type: 'generated',
         name: {
-          [Op.in]: ['sign_up_form', 'statutory_declaration', 'liquidation_form']
+          [Op.in]: requiredGeneratedDocuments.map(doc => doc.name)
         }
-      }
+      },
+      transaction,
     });
-    await Promise.all(
-      oldDocuments.map(async doc => {
-        await doc.destroy({ transaction });
-        await Logger.log(null, {
-          name: LogName.DocumentDeleted,
-          documentId: doc.id,
-          paperId: paper.id,
-        }, { transaction });
-      })
-    );
+    const actualGeneratedDocumentsByName = arrayMap(actualGeneratedDocuments, doc => doc.name);
 
     const generationProps: StudentDocumentGenerationProps = {
       student,
       extraData,
       paper,
       sessionSettings,
+    };
+
+    async function generateDocument(name: string) {
+      switch(name) {
+        case 'sign_up_form':
+          return DocumentController.generateSignUpForm(generationProps);
+        case 'statutory_declaration':
+          return DocumentController.generateStatutoryDeclaration(generationProps);
+        case 'liquidation_form':
+          return DocumentController.generateLiquidationForm(generationProps);
+        default:
+          throw new ResponseError("Documentul nu poate fi generat.", "INVALID_DOCUMENT_NAME");
+      }
     }
 
-    let signUpFormBuffer = await DocumentController.generateSignUpForm(generationProps);
-    let signUpFormDocument = await Document.create({
-      name: 'sign_up_form',
-      category: "secretary_files",
-      type: 'generated',
-      paperId: paper.id,
-      mimeType: 'application/pdf',
-      uploadedBy: null
-    }, { transaction });
-    fs.writeFileSync(getStoragePath(`${signUpFormDocument.id}.pdf`), signUpFormBuffer); // write to storage
-
-    let statutoryDeclarationBuffer = await DocumentController.generateStatutoryDeclaration(generationProps);
-    let statutoryDeclarationDocument = await Document.create({
-      name: 'statutory_declaration',
-      category: "secretary_files",
-      type: 'generated',
-      paperId: paper.id,
-      mimeType: 'application/pdf',
-      uploadedBy: null
-    }, { transaction });
-    fs.writeFileSync(getStoragePath(`${statutoryDeclarationDocument.id}.pdf`), statutoryDeclarationBuffer); // write to storage
-
-    let liquidationFormBuffer = await DocumentController.generateLiquidationForm(generationProps);  // generate PDF
-    let liquidationFormDocument = await Document.create({
-      name: 'liquidation_form', category: "secretary_files", type: 'generated',
-      paperId: paper.id, mimeType: 'application/pdf', uploadedBy: null
-    }, { transaction });
-
-    fs.writeFileSync(getStoragePath(`${liquidationFormDocument.id}.pdf`), liquidationFormBuffer); // write to storage
-
-    await Promise.all(
-      [signUpFormDocument, statutoryDeclarationDocument, liquidationFormDocument].map(async doc => {
+    const generatedDocuments: Document[] = [];
+    for(const requiredDocument of requiredGeneratedDocuments) {
+      const generationMetadata = requiredDocument.getGenerationMetadata(generationProps);
+      const existingDocument = actualGeneratedDocumentsByName[requiredDocument.name];
+      if(equalGenerationMetadata(generationMetadata, existingDocument?.meta?.['generationMetadata'])) {
+        // There is no need to regenerate the document
+        continue;
+      }
+      // Remove the generated and signed documents if they exist
+      const toRemoveDocuments = await Document.findAll({
+        where: {
+          paperId: paper.id,
+          name: requiredDocument.name,
+        },
+        transaction,
+      });
+      for(const removedDocument of toRemoveDocuments) {
+        await removedDocument.destroy({ transaction });
         await Logger.log(null, {
-          name: LogName.DocumentCreated,
-          documentId: doc.id,
+          name: LogName.DocumentDeleted,
+          documentId: removedDocument.id,
           paperId: paper.id,
         }, { transaction });
-      })
-    );
+      }
 
-    if(ownTransaction) await transaction.commit();
+      const buffer = await generateDocument(requiredDocument.name);
+      const document = await Document.create({
+        name: requiredDocument.name,
+        category: requiredDocument.category,
+        type: 'generated',
+        paperId: paper.id,
+        mimeType: 'application/pdf',
+        uploadedBy: null,
+        meta: {
+          generationMetadata,
+        }
+      }, { transaction });
+      fs.writeFileSync(getStoragePath(`${document.id}.pdf`), buffer);
+      await Logger.log(null, {
+        name: LogName.DocumentCreated,
+        documentId: document.id,
+        paperId: paper.id,
+      }, { transaction });
+      generatedDocuments.push(document);
+    }
+
+    if(ownTransaction) {
+      await transaction.commit();
+    }
+    return generatedDocuments;
   } catch (err) {
     if(ownTransaction) await transaction.rollback();
     console.log(err);

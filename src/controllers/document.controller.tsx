@@ -11,7 +11,7 @@ import { Op, WhereOptions } from "sequelize";
 import * as AuthController from "./auth.controller"
 import { PaperRequiredDocument, paperRequiredDocuments } from '../paper-required-documents';
 import { UploadedFile } from "express-fileupload";
-import { compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, streamToBuffer, truncateInMiddle } from "../util/util";
+import { arrayMap, compare, groupBy, inclusiveDate, parseDate, removeCharacters, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, safePath, sortMembersByTitle, streamToBuffer, truncateInMiddle } from "../util/util";
 import { config } from "../config/config";
 import ExcelJS from 'exceljs';
 import { redisHGet, redisHSet } from "../util/redis";
@@ -29,6 +29,7 @@ import { CommitteeFinalCatalog } from "../documents/templates/committee-final-ca
 import { FinalCatalog } from "../documents/templates/final-catalog";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
+import archiver from "archiver";
 
 Font.register({
   family: 'Liberation Serif',
@@ -737,4 +738,40 @@ export async function generateSignUpRequestExcel() {
   });
   const buffer = (await wb.xlsx.writeBuffer());
   return buffer as Buffer;
+}
+
+export async function generatePaperDocumentsArchive(paperIds: number[], documentNames: string[]) {
+  const papers = await Paper.scope('student').findAll({
+    where: { id: { [Op.in]: paperIds } },
+    include: [
+      { model: Document, where: { name: { [Op.in]: documentNames } } },
+    ]
+  });
+  if(papers.flatMap(paper => paper.documents).length == 0) {
+    throw new ResponseError('Nu există documente pentru lucrările selectate.', 'NO_DOCUMENTS');
+  }
+  const requiredDocumentsMap = arrayMap(paperRequiredDocuments, doc => doc.name);
+  const archive = archiver('zip', {
+    zlib: { level: config.COMPRESSION_LEVEL } 
+  });
+  papers.forEach(paper => {
+    const documentSuffix = `${paper.student.user.fullName}, ${paper.title}`;
+    const lastDocuments = paper.documents.reduce((acc, doc) => {
+      acc[doc.name] = !acc[doc.name] || acc[doc.name].id < doc.id ? doc : acc[doc.name];
+      return acc;
+    }, {} as Record<string, Document>);
+    Object.values(lastDocuments).forEach(document => {
+      const requiredDoc = requiredDocumentsMap[document.name];
+      const extension = mime.extension(document.mimeType);
+      const buffer = fs.createReadStream(getStoragePath(`${document.id}.${extension}`));
+      archive.append(buffer, { name: `${requiredDoc.title} - ${documentSuffix}.${extension}` });
+    });
+  });
+  return new Promise<Buffer>((resolve, reject) => {
+    const buffers: Buffer[] = [];
+    archive.on('data', (data: Buffer) => buffers.push(data));
+    archive.on('end', () => resolve(Buffer.concat(buffers)));
+    archive.on('error', reject);
+    archive.finalize();
+  });
 }

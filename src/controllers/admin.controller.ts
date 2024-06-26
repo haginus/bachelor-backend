@@ -168,56 +168,53 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
   }
 }
 
-export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
-  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
-  let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
-  if (!previousStudent) {
-    throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
-  }
-  let specialization = await Specialization.findOne({ where: { id: specializationId } });
-  if (!specialization) {
-    throw "SPECIALIZATION_NOT_FOUND";
-  }
-  let domainId = specialization.domainId;
-  let documentsGenerated = false;
-  const transaction = await sequelize.transaction();
-  try {
-    const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
-      where: { id }, transaction
-    });
-    const [studentUpdateCount] = await Student.update({
-      group, domainId, identificationCode, promotion, specializationId,
-      studyForm, fundingForm, matriculationYear
-    }, { // update student data
-      where: { userId: id }, transaction
-    });
-    if (previousStudent.user.email != email) {
-      await resetPassword(email, transaction);
+export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number, 
+    identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
+    let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
+    if(!previousStudent) {
+        throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
     }
-    if ((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
-      const paper = await Paper.findOne({
-        where: { studentId: previousStudent.id },
-        include: [Student, Teacher]
-      });
-      if (paper) {
-        if (paper.isValid === true) {
-          throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
+    let specialization = await Specialization.findOne({ where: { id: specializationId } });
+    if (!specialization) {
+        throw "SPECIALIZATION_NOT_FOUND";
+    }
+    let domainId = specialization.domainId;
+    let documentsGenerated = false;
+    const transaction = await sequelize.transaction();
+    try {
+        const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
+            where: { id }, transaction
+        });
+        const [studentUpdateCount] = await Student.update({ group, domainId, identificationCode, promotion, specializationId,
+            studyForm, fundingForm, matriculationYear }, { // update student data
+            where: { userId: id }, transaction
+        });
+        if(previousStudent.user.email != email) {
+            await resetPassword(email, transaction);
         }
-        const sessionSettings = await SessionSettings.findOne();
-        await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
-        documentsGenerated = true;
-      }
+        if((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
+            const paper = await Paper.scope(['student', 'teacher']).findOne({
+                where: { studentId: previousStudent.id },
+            });
+            if(paper) {
+                if(paper.isValid === true) {
+                    throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
+                }
+                const sessionSettings = await SessionSettings.findOne();
+                const generatedDocuments = await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
+                documentsGenerated = generatedDocuments.length > 0;
+            }
+        }
+        await transaction.commit();
+        return {
+            user: await UserController.getUserData(id),
+            documentsGenerated,
+        }
+    } catch(err) {
+        console.log(err);
+        await transaction.rollback(); // if anything goes wrong, rollback
+        handleUserUpdateError(err);
     }
-    await transaction.commit();
-    return {
-      user: await UserController.getUserData(id),
-      documentsGenerated,
-    }
-  } catch (err) {
-    console.log(err);
-    await transaction.rollback(); // if anything goes wrong, rollback
-    handleUserUpdateError(err);
-  }
 }
 
 export async function editStudentExtraData(studentId: number, data: StudentExtraData) {
