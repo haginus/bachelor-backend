@@ -478,6 +478,7 @@ interface DocumentAttributes {
   type: DocumentType;
   mimeType: string;
   uploadedBy: number | null;
+  meta?: Record<string, any>;
 }
 
 interface DocumentCreationAttributes extends Optional<DocumentAttributes, "id"> {}
@@ -490,6 +491,7 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   type: DocumentType;
   mimeType: string;
   uploadedBy: number | null;
+  meta?: Record<string, any>;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -1284,6 +1286,10 @@ Document.init({
   mimeType: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  meta: {
+    type: DataTypes.JSON,
+    allowNull: true
   }
 }, {
   timestamps: true,

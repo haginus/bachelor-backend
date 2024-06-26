@@ -189,17 +189,16 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
             await resetPassword(email, transaction);
         }
         if((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
-            const paper = await Paper.findOne({
+            const paper = await Paper.scope(['student', 'teacher']).findOne({
                 where: { studentId: previousStudent.id },
-                include: [Student, Teacher]
             });
             if(paper) {
                 if(paper.isValid === true) {
                     throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
                 }
                 const sessionSettings = await SessionSettings.findOne();
-                await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
-                documentsGenerated = true;
+                const generatedDocuments = await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
+                documentsGenerated = generatedDocuments.length > 0;
             }
         }
         await transaction.commit();
