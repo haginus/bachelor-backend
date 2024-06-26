@@ -140,6 +140,16 @@ router.post('/committees/:id/mark-grades-final', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.get('/committees/:id/papers-archive', function (req, res, next) {
+    const { id } = req.params;
+    TeacherController.getCommitteePaperDocumentsArchieve(req._user, +id)
+        .then(result => {
+            res.setHeader('Content-Type', 'application/zip');
+            res.send(result);
+        })
+        .catch(err => next(err));
+});
+
 router.get('/students/', function (req, res, next) {
     const { firstName, lastName, email, domainId } = req.query;
     TeacherController.getStudents(firstName as string, lastName as string, email as string, +domainId)
