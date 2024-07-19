@@ -574,7 +574,7 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final', forma
   let paperGroups = groupArr.map(group => {
     return papers.filter(paper => {
       let paperGroup: Group = [null, paper.student.studyForm, paper.student.specialization.name];
-      return paper.gradeAverage != null && equalGroups(group, paperGroup);
+      return equalGroups(group, paperGroup);
     });
   }).filter(group => group.length > 0);
 
