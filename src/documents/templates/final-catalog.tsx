@@ -31,8 +31,8 @@ interface FinalCatalogProps {
 
 export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: FinalCatalogProps) {
   const footerMarginBottom = 40;
-  const footerMarginTop = 16;
-  const footerRows = 4;
+  const footerMarginTop = 30;
+  const footerRows = 5;
   const pagePaddingBottom = footerRows * 10 + footerMarginBottom + footerMarginTop;
   const catalogName = {
     final: 'Catalog final',

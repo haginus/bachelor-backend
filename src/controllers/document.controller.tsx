@@ -16,7 +16,7 @@ import { config } from "../config/config";
 import ExcelJS from 'exceljs';
 import { redisHGet, redisHSet } from "../util/redis";
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../util/constants";
-import { CommitteeCatalog as CommitteeCatalogWord } from "../util/word-templates";
+import { CommitteeCatalog as CommitteeCatalogWord, FinalCatalogWord } from "../util/word-templates";
 import { Font, renderToBuffer } from "@react-pdf/renderer";
 import { SignUpForm } from "../documents/templates/sign-up-form";
 import { StatutoryDeclaration } from "../documents/templates/statutory_declaration";
@@ -545,7 +545,7 @@ const sortCommittees = (committees: Committee[]) => {
   });
 }
 
-export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
+export const generateFinalCatalog = async (mode: 'centralizing' | 'final', format: 'pdf' | 'docx' = 'pdf'): Promise<Buffer> => {
   let papers = await Paper.scope(['grades']).findAll({
     include: [{
       association: Paper.associations.student,
@@ -596,10 +596,13 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final') => {
 
   // Get session settings
   const sessionSettings = await SessionSettings.findOne();
-
-  return renderToBuffer(
-    <FinalCatalog paperPromotionGroups={paperPromotionGroups} sessionSettings={sessionSettings} mode={mode} />
-  );
+  if(format === 'pdf') {
+    return renderToBuffer(
+      <FinalCatalog mode={mode} paperPromotionGroups={paperPromotionGroups} sessionSettings={sessionSettings} />
+    );
+  } else if(format === 'docx') {
+    return FinalCatalogWord({ mode, paperPromotionGroups, sessionSettings });
+  }
 }
 
 export async function generatePaperList(where: WhereOptions<PaperAttributes> = { submitted: true }) {
