@@ -582,7 +582,7 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final', forma
   let paperPromotionGroups = paperGroups.map(paperGroup => {
     // Get unique promotions in group
     let promotions = new Set(paperGroup.map(paper => paper.student.promotion));
-    let promotionItems = [];
+    let promotionItems: { promotion: string; items: Paper[] }[] = [];
     // For every promotion, get the papers
     promotions.forEach(promotion => {
       let result = {
@@ -591,7 +591,7 @@ export const generateFinalCatalog = async (mode: 'centralizing' | 'final', forma
       };
       promotionItems.push(result);
     });
-    return promotionItems;
+    return promotionItems.sort((a, b) => +b.promotion - +a.promotion);
   });
 
   // Get session settings
