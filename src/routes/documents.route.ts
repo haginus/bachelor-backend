@@ -50,12 +50,16 @@ router.get('/committee/:document', isType(['admin', 'secretary', 'teacher']), as
 });
 
 router.get('/final_catalog', isType(['admin']), (req, res, next) => {
-    let { mode } = req.query;
+    let { mode, format } = req.query;
     mode = mode || 'final';
+    format = format || 'pdf';
     if(!['centralizing', 'final'].includes(mode as string)) {
         throw new ResponseError('Parametrul de mod este incorect.');
     }
-    DocumentController.generateFinalCatalog(mode as any)
+    if(!['pdf', 'docx'].includes(format as string)) {
+        throw new ResponseError('Format invalid. Valori acceptate: pdf,docx');
+    }
+    DocumentController.generateFinalCatalog(mode as any, format as any)
         .then(result => res.send(result))
         .catch(err => next(err));
 });
