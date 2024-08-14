@@ -29,11 +29,11 @@ interface Statistic {
 }
 
 export const getStats = async (): Promise<Statistic[]> => {
-  const studentPromise = Student.count();
-  const validatedStudentPromise = User.sum('validated', { where: { type: 'student' } });
+  const studentPromise = User.count({ where: { type: 'student' } });
+  const validatedStudentPromise = User.count({ where: { type: 'student', validated: true } });
   const signUpRequestsPromise = SignUpRequest.count();
-  const teacherPromise = Teacher.count();
-  const validatedTeacherPromise = User.sum('validated', { where: { type: 'teacher' } });
+  const teacherPromise = User.count({ where: { type: 'teacher' } });
+  const validatedTeacherPromise = User.count({ where: { type: 'teacher', validated: true } });
   const paperPromise = Paper.count({ where: { submitted: true } });
   const assignedPaperPromise = Paper.count({ col: 'committeeId' });
   const committeePromise = Committee.scope('min').findAll();
@@ -1427,6 +1427,8 @@ export const beginNewSession = async (user: User) => {
     await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
     await Application.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });
     await SessionSettings.update({ sessionName: 'Sesiune nouă', allowGrading: false }, { where: { lock: 'X' }, transaction });
+    await redisDel('paperRequiredDocs');
+    await redisDel('sessionSettings');
     await transaction.commit();
     return SessionSettings.findOne();
   } catch (err) {

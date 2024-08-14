@@ -3,17 +3,14 @@ import { config } from '../config/config';
 import {
   Sequelize,
   Model,
-  ModelDefined,
   DataTypes,
   HasManyGetAssociationsMixin,
   HasManyAddAssociationMixin,
-  HasManyHasAssociationMixin,
   Association,
   HasManyCountAssociationsMixin,
   HasManyCreateAssociationMixin,
   HasOneCreateAssociationMixin,
   Optional,
-  BelongsToCreateAssociationMixin,
   BelongsToGetAssociationMixin,
   BelongsToSetAssociationMixin,
   HasOneGetAssociationMixin,
@@ -952,7 +949,6 @@ User.init({
   },
   email: {
     type: DataTypes.STRING,
-    unique: true,
     allowNull: false
   },
   password: {
@@ -979,7 +975,14 @@ User.init({
   updatedAt: false,
   paranoid: true,
   sequelize,
-  modelName: 'user'
+  modelName: 'user',
+  indexes: [
+    {
+      name: 'uniqueEmail',
+      unique: true,
+      fields: ['email', 'deletedAt'],
+    }
+  ]
 });
 
 User.addScope("min", {
