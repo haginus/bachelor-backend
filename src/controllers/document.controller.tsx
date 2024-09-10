@@ -656,6 +656,7 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
       matriculationYear,
       promotion,
       paperValid,
+      paper.student.generalAverage,
       isSubmitted
     ];
   });
@@ -684,6 +685,7 @@ export async function generatePaperList(where: WhereOptions<PaperAttributes> = {
         { name: 'Anul înmatriculării' },
         { name: 'Promoție' },
         { name: 'Lucrare validată' },
+        { name: 'M.G. ani studiu' },
         { name: 'Lucrare înscrisă' }
       ],
       rows
