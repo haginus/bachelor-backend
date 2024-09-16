@@ -31,7 +31,8 @@
     "prompt": "^1.1.0",
     "react-email": "2.1.4",
     "redis": "^4.1.0",
-    "sequelize": "^6.21.0"
+    "sequelize": "^6.21.0",
+    "sharp": "^0.33.5"
   },
   "overrides": {
     "restructure": "3.0.0"

@@ -659,6 +659,18 @@ export class SessionSettings extends Model<SessionSettingsAttributes, SessionSet
   allowGrading: boolean;
 }
 
+export interface SignatureAttributes {
+  id: number;
+  userId: number;
+}
+
+interface SignatureCreationAttributes extends Optional<SignatureAttributes, "id"> {}
+
+export class Signature extends Model<SignatureAttributes, SignatureCreationAttributes> implements SignatureAttributes {
+  id: number;
+  userId: number;
+}
+
 export interface LogAttributes {
   id: number;
   name: LogName;
@@ -1785,6 +1797,25 @@ SignUpRequest.init({
 
 Specialization.hasMany(SignUpRequest);
 SignUpRequest.belongsTo(Specialization);
+
+Signature.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+  },
+}, {
+  timestamps: true,
+  paranoid: true,
+  sequelize,
+  modelName: 'signature'
+});
+
+User.hasOne(Signature, { onDelete: "CASCADE" });
+Signature.belongsTo(User, { onDelete: "CASCADE" });
 
 Log.init({
   id: {

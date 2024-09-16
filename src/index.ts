@@ -12,6 +12,7 @@ import paperRoutes from './routes/papers.route';
 import devRoutes from './routes/dev.route';
 import miscRoutes from './routes/misc.route';
 import logsRoutes from './routes/logs.route';
+import signaturesRoutes from './routes/signatures.route';
 import { config } from './config/config';
 
 import errorHandler from './routes/middlewares/errorHandler';
@@ -39,6 +40,7 @@ app.use('/topics', topicsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/documents', documentsRoutes);
 app.use('/papers', paperRoutes);
+app.use('/signatures', signaturesRoutes);
 app.use('/logs', logsRoutes);
 app.use('', miscRoutes);
 app.use('/static', express.static(path.join(config.PROJECT_ROOT, 'static')));
