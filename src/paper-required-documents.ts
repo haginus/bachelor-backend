@@ -168,7 +168,7 @@ export const paperRequiredDocuments: PaperRequiredDocument[] = [
       uploadBy: 'student'
     },
     {
-      title: 'Certificatul de competență lingvistică',
+      title: 'Certificat de competență lingvistică',
       name: 'language_certificate',
       category: 'secretary_files',
       types: { copy: true },
