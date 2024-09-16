@@ -480,7 +480,7 @@ interface DocumentAttributes {
   meta?: Record<string, any>;
 }
 
-interface DocumentCreationAttributes extends Optional<DocumentAttributes, "id"> {}
+export interface DocumentCreationAttributes extends Optional<DocumentAttributes, "id"> {}
 
 export class Document extends Model<DocumentAttributes, DocumentCreationAttributes> implements DocumentAttributes {
   id: number;

@@ -1,12 +1,13 @@
-import { Text, View } from "@react-pdf/renderer";
+import { Text, View, Image } from "@react-pdf/renderer";
 import React from "react";
 import { globalStyles } from "../global-styles";
 
 interface DateAndSignatureProps {
   date: Date;
+  signatureSample?: string;
 }
 
-export function DateAndSignature({ date }: DateAndSignatureProps) {
+export function DateAndSignature({ date, signatureSample }: DateAndSignatureProps) {
   return (
     <View style={[globalStyles.section, globalStyles.footer]}>
       <View style={[globalStyles.sectionColumn, globalStyles.footerSection]}>
@@ -16,8 +17,7 @@ export function DateAndSignature({ date }: DateAndSignatureProps) {
       </View>
       <View style={[globalStyles.sectionColumn, globalStyles.footerSection]}>
         <Text>Semnătura</Text>
-        <Text>{'\n'}</Text>
-        <Text>_________________</Text>
+        {signatureSample && <Image src={signatureSample} style={{ width: 90 }} />}
       </View>
     </View>
   );

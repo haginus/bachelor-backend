@@ -2,7 +2,8 @@ import React from "react";
 import {
   Document, DocumentCategory, DocumentType, Paper, sequelize, SessionSettings,
   StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes,
-  DocumentReuploadRequest
+  DocumentReuploadRequest,
+  DocumentCreationAttributes
 } from "../models/models";
 import fs from 'fs';
 import path from 'path';
@@ -30,6 +31,8 @@ import { FinalCatalog } from "../documents/templates/final-catalog";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
 import archiver from "archiver";
+import { SignaturesController } from "./signatures.controller";
+import { mapPaper } from "./paper.controller";
 
 Font.register({
   family: 'Liberation Serif',
@@ -182,88 +185,190 @@ export async function studentCanEditDocument(document: Pick<PaperRequiredDocumen
   return await checkFileSubmissionPeriod(document.category, sessionSettings) || !!(await getReuploadRequest());
 }
 
-export const uploadPaperDocument = async (user: User, documentFile: UploadedFile,
-  name: string, type: DocumentType, perspective: UploadPerspective, paperId: number) => {
-
+export async function checkPaperDocumentUploadRights(
+  user: User, 
+  name: string,
+  type: DocumentType,
+  perspective: UploadPerspective,
+  paperId: number,
+  documentFile?: UploadedFile,
+) {
   const sessionSettings = await SessionSettings.findOne();
 
-  if (type == 'generated') { // do not allow "uploading" generated files
+  // Uploading 'generated' documents is not allowed
+  if (type == 'generated') {
     throw new ResponseErrorForbidden();
   }
-  // Find the paper and check if it is valid
   const paper = await Paper.findOne({ where: { id: paperId } });
-  if (paper.isValid != null) {
-    // allow teachers to upload documents even if the paper is validated
-    if (perspective == 'teacher') {
-      if (sessionSettings.allowGrading) {
-        throw new ResponseErrorForbidden();
-      }
-    } else if (perspective != 'committee') {
-      throw new ResponseErrorForbidden();
-    }
+  // If the paper is validated, the only allowed perspectives are 'teacher' (while grading hasn't started yet) and 'committee'
+  if(
+    paper.isValid !== null &&
+    (
+      (perspective !== 'teacher' && perspective !== 'committee') ||
+      (perspective === 'teacher' && sessionSettings.allowGrading)
+    )
+  ) {
+    throw new ResponseErrorForbidden();
   }
 
   const requiredDocuments = await getPaperRequiredDocuments(paperId, sessionSettings);
-  const mimeType = documentFile.mimetype; // get uploaded file mimeType
-  const uploadedBy = user.id;
-  const requiredDoc = requiredDocuments
-    .find(doc => doc.name == name && (perspective == 'admin' || doc.uploadBy == perspective)); // find uploaded doc name in required list
-  if (!requiredDoc) { // if it is not then throw error
+  // We look for the document with the provided name
+  const requiredDoc = requiredDocuments.find(doc => doc.name == name);
+  // If there is no such document, we throw an error
+  if (!requiredDoc) {
     throw new ResponseError('Document invalid.', 'INVALID_DOCUMENT');
   }
-  if (!requiredDoc.types[type]) { // check if uploaded doc type is required
+  // Check if the perspective matches with whom should upload the document; admins can upload from any perspective
+  if(requiredDoc.uploadBy !== perspective && perspective !== 'admin') {
+    throw new ResponseErrorForbidden('Nu aveți permisiunea de a încărca acest document.');
+  }
+  // Check if the provided type matches the required document types
+  if (!requiredDoc.types[type]) {
     throw new ResponseError('Tip document invalid.', 'INVALID_DOCUMENT_TYPE');
   }
-  const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(','); // get accepted mimeTypes
-  if (!acceptedMimeTypes.includes(mimeType)) { // check if uploaded doc mimeType is in the accepted array
+  const acceptedMimeTypes = requiredDoc.acceptedMimeTypes.split(',');
+  // For 'copy' documents, check if document mime type matches
+  if (type == 'copy' && !acceptedMimeTypes.includes(documentFile?.mimetype)) {
     throw new ResponseError('MIME type-ul documentului este invalid.', 'INVALID_DOCUMENT_MIMETYPE');
   }
-
-  const category = requiredDoc.category;
 
   // Check if document category can be uploaded
   if (perspective == 'student' && !(await studentCanEditDocument(requiredDoc, paperId, sessionSettings))) {
     throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
   }
 
-  const fileExtension = mime.extension(mimeType); // get the file extension
-
   const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
 
-  const transaction = await sequelize.transaction(); // start a db transaction
-  try {
-    if (perspective == 'admin') {
-      const oldDocuments = paperDocuments.filter(doc => doc.type == type);
-      oldDocuments.forEach(doc => doc.destroy({ transaction }));
-    } else {
-      if (type == 'signed') { // if uploaded document type is signed
-        if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) { // check if generated document exists
-          throw new ResponseErrorForbidden('Nu puteți încărca un semnat fără generat.', "MISSING_GENERATED_DOCUMENT");
-        }
-        if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) { // check if not signed before
-          throw new ResponseErrorForbidden('Documentul este deja semnat.', "ALREADY_SIGNED");
-        }
+  // Lastly, check if the documents are already there - we skip this for admins because they are allowed to make reuploads
+  if(perspective !== 'admin') {
+    // If the provided type is 'signed'
+    if (type == 'signed') {
+      // Check if a prior generated document exists
+      if (paperDocuments.filter(doc => doc.type == 'generated').length == 0) {
+        throw new ResponseErrorForbidden('Nu puteți încărca un semnat fără generat.', "MISSING_GENERATED_DOCUMENT");
       }
-      if (type == 'copy') { // if uploaded document type is copy
-        if (paperDocuments.filter(doc => doc.type == 'copy').length > 0) { // check if uploaded before
-          throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
-        }
+      // Check if the document is already signed
+      if (paperDocuments.filter(doc => doc.type == 'signed').length > 0) {
+        throw new ResponseErrorForbidden('Documentul este deja semnat.', "ALREADY_SIGNED");
       }
     }
-    const newDocument = await Document.create({ name, type, mimeType, paperId, category, uploadedBy }, { transaction }); // create a new doc in db
-    fs.writeFileSync(getStoragePath(`${newDocument.id}.${fileExtension}`), documentFile.data); // write doc to storage, throws error
+    // If the provided type is 'copy', check if the document is already uploaded
+    if (type == 'copy' && paperDocuments.filter(doc => doc.type == 'copy').length > 0) { 
+      throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
+    }
+  }
+  return { requiredDoc, paper };
+}
+
+async function createDocument(documentAttributes: DocumentCreationAttributes, content: Buffer, user?: User, isReupload = false) {
+  const transaction = await sequelize.transaction();
+  try {
+    if(isReupload) {
+      await Document.destroy({ 
+        where: {
+          name: documentAttributes.name,
+          type: documentAttributes.type,
+          paperId: documentAttributes.paperId,
+        },
+        transaction,
+      });
+    }
+    const document = await Document.create(documentAttributes, { transaction });
+    const fileExtension = mime.extension(documentAttributes.mimeType);
+    fs.writeFileSync(getStoragePath(`${document.id}.${fileExtension}`), content);
     await Logger.log(user, {
       name: LogName.DocumentCreated,
-      documentId: newDocument.id,
-      paperId: paperId,
+      documentId: document.id,
+      paperId: document.paperId,
     }, { transaction });
-    await transaction.commit(); // commit if everything is fine
-    return newDocument;
-  } catch (err) {
-    console.log(err);
-    await transaction.rollback(); // rollback if anything goes wrong
-    throw err;
+    await transaction.commit();
+    return document;
+  } catch(err) {
+    await transaction.rollback();
   }
+}
+
+export async function uploadPaperDocument(
+  user: User, 
+  documentFile: UploadedFile,
+  name: string,
+  type: DocumentType,
+  perspective: UploadPerspective,
+  paperId: number
+) {
+  // Signing documents has moved to another endpoint
+  if(type === 'signed') {
+    throw new ResponseError('Nu puteți încărca un document semnat.');
+  }
+  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, type, perspective, paperId, documentFile);
+  return createDocument(
+    {
+      name,
+      type,
+      mimeType: documentFile.mimetype,
+      paperId,
+      category,
+      uploadedBy: user.id,
+    },
+    documentFile.data,
+    user,
+    perspective === 'admin',
+  );
+}
+
+export async function signPaperDocument(
+  user: User, 
+  name: string,
+  perspective: UploadPerspective,
+  paperId: number
+) {
+  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, 'signed', perspective, paperId);
+  const paper = await Paper.scope(['student', 'teacher']).findByPk(paperId);
+  const signature = await SignaturesController.findOneByUserId(paper.studentId);
+  if(!signature) {
+    throw new ResponseError("Înregistrați un specimen de semnătură înainte de a semna documente.");
+  }
+  const signatureSampleBuffer = await SignaturesController.getSample(signature.id);
+  const signatureSample = `data:image/png;base64,${signatureSampleBuffer.toString('base64')}`;
+  const student = await Student.findOne({
+    where: { id: paper.studentId }, 
+    include: [User, Domain, Specialization],
+  });
+  const generationProps: StudentDocumentGenerationProps = {
+    student,
+    extraData: await student.getStudentExtraDatum(),
+    paper: mapPaper(paper),
+    sessionSettings: await SessionSettings.findOne(),
+    signatureSample,
+  };
+  let documentContent: Buffer;
+  switch(name) {
+    case 'sign_up_form':
+      documentContent = await generateSignUpForm(generationProps);
+      break;
+    case 'statutory_declaration':
+      documentContent = await generateStatutoryDeclaration(generationProps);
+      break;
+    case 'liquidation_form':
+      documentContent = await generateLiquidationForm(generationProps);
+      break;
+    default:
+      throw new ResponseError("Documentul nu poate fi semnat.", "INVALID_DOCUMENT_NAME");
+  }
+
+  return createDocument(
+    {
+      name,
+      type: 'signed',
+      mimeType: 'application/pdf',
+      paperId,
+      category,
+      uploadedBy: user.id,
+    },
+    documentContent,
+    user,
+    perspective === 'admin',
+  );
 }
 
 

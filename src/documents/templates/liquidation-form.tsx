@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export function LiquidationForm({ student, extraData, paper, sessionSettings }: StudentDocumentGenerationProps) {
+export function LiquidationForm({ student, extraData, paper, sessionSettings, signatureSample }: StudentDocumentGenerationProps) {
   return (
     <Document title={`Formular de lichidare - ${student.user.lastName} ${student.user.firstName}`}>
       <Page size="A4" style={globalStyles.page}>
@@ -45,7 +45,7 @@ export function LiquidationForm({ student, extraData, paper, sessionSettings }: 
           {' '}telefon {extraData.mobilePhone}, e-mail {extraData.personalEmail}.
         </Text>
         <GraduateStatementText style={{ marginTop: 10 }} />
-        <DateAndSignature date={new Date()} />
+        <DateAndSignature date={new Date()} signatureSample={signatureSample} />
         <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: 'bold', marginVertical: '1cm' }}>
           ARE/NU ARE DEBITE{'\n'}
           (se completează de către serviciile menționate¹)

@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export function SignUpForm({ student, extraData, paper, sessionSettings }: StudentDocumentGenerationProps) {
+export function SignUpForm({ student, extraData, paper, sessionSettings, signatureSample }: StudentDocumentGenerationProps) {
   const date = new Date();
   return (
     <Document title={`Cerere de înscriere - ${student.user.lastName} ${student.user.firstName}`}>
@@ -98,7 +98,7 @@ export function SignUpForm({ student, extraData, paper, sessionSettings }: Stude
           </Text>
         </View>
         <GraduateStatementText style={{ marginTop: 10 }} />
-        <DateAndSignature date={date} />
+        <DateAndSignature date={date} signatureSample={signatureSample} />
       </Page>
     </Document>
   );

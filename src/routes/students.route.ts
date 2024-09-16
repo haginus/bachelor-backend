@@ -106,4 +106,11 @@ router.post('/paper/documents/upload', fileUpload({
         .catch(err => next(err));
 });
 
+router.post('/paper/documents/sign', function(req, res, next) {
+    const { name } = req.body;
+    StudentController.signPaperDocument(req._user, name)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 export default router;

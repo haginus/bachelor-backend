@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export function StatutoryDeclaration({ student, paper, sessionSettings }: StudentDocumentGenerationProps) {
+export function StatutoryDeclaration({ student, paper, sessionSettings, signatureSample }: StudentDocumentGenerationProps) {
   return (
     <Document title={`Declarație pe proprie răspundere - ${student.user.lastName} ${student.user.firstName}`}>
       <Page size="A4" style={[styles.page]}>
@@ -34,7 +34,7 @@ export function StatutoryDeclaration({ student, paper, sessionSettings }: Studen
           Declar că lucrarea nu a mai fost prezentată sub această formă vreunei instituții de învățământ 
           superior în vederea obţinerii unui grad sau titlu științific ori didactic.
         </Text>
-        <DateAndSignature date={new Date()} />
+        <DateAndSignature date={new Date()} signatureSample={signatureSample} />
       </Page>
     </Document>
   );

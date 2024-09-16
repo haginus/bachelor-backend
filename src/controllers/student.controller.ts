@@ -374,6 +374,10 @@ export class StudentController {
     return DocumentController.uploadPaperDocument(user, documentFile, name, type, 'student', user.student.paper.id);
   }
 
+  public static signPaperDocument = (user: User, name: string) => {
+    return DocumentController.signPaperDocument(user, name, 'student', user.student.paper.id);
+  }
+
 
   public static getPaperRequiredDocuments = (user: User) => {
     return DocumentController.getPaperRequiredDocuments(user.student.paper.id);

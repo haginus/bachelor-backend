@@ -6,4 +6,5 @@ export interface StudentDocumentGenerationProps {
   extraData: StudentExtraData;
   paper: MappedPaper;
   sessionSettings: SessionSettings;
+  signatureSample?: string;
 }
