@@ -97,20 +97,4 @@ router.get('/paper/documents/get-required', (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.post('/paper/documents/upload', fileUpload({
-    limits: { fileSize: 100 * 1024 * 1024 }  // 100MB limit
-}), function(req, res, next) {
-    const { name, type } = req.body;
-    StudentController.uploadPaperDocument(req._user, req.files.file as UploadedFile, name, type)
-        .then(result => res.json(result))
-        .catch(err => next(err));
-});
-
-router.post('/paper/documents/sign', function(req, res, next) {
-    const { name } = req.body;
-    StudentController.signPaperDocument(req._user, name)
-        .then(result => res.json(result))
-        .catch(err => next(err));
-});
-
 export default router;

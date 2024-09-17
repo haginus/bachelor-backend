@@ -308,14 +308,6 @@ export const getStudentPapersExcel = async (user: User) => {
     return DocumentController.generatePaperList({ teacherId: user.teacher.id });
 }
 
-export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType,
-    perspective: UploadPerspective, paperId: number) => {
-    if(!['teacher', 'committee'].includes(perspective)) {
-        throw new ResponseErrorForbidden();
-    }
-    return DocumentController.uploadPaperDocument(user, documentFile, name, type, perspective, paperId);
-}
-
 /** Remove association with a student by deleting their paper and allowing them to look for other teacher. */
 export const removePaper = async (user: User, paperId: number): Promise<boolean> => {
     const paper = await Paper.findOne({ where: { id: paperId } });

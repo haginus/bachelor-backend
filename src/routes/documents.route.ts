@@ -4,6 +4,7 @@ import * as DocumentController from '../controllers/document.controller';
 import { ResponseError, ResponseErrorUnauthorized } from '../util/util';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
+import fileUpload, { UploadedFile } from 'express-fileupload';
 
 router.use(isLoggedIn());
 
@@ -19,7 +20,20 @@ router.post('/delete', async (req, res, next) => {
     DocumentController.deleteDocument(req._user, +id)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
-    
+});
+
+router.post('/upload', fileUpload({ limits: { fileSize: 100 * 1024 * 1024 } }), function(req, res, next) {
+    const { name, type, paperId } = req.body;
+    DocumentController.uploadPaperDocument(req._user, req.files.file as UploadedFile, name, type, +paperId)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.post('/sign', function(req, res, next) {
+    const { name, paperId } = req.body;
+    DocumentController.signPaperDocument(req._user, name, +paperId)
+        .then(result => res.json(result))
+        .catch(err => next(err));
 });
 
 router.get('/committee/:document', isType(['admin', 'secretary', 'teacher']), async (req, res, next) => {

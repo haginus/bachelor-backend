@@ -90,14 +90,6 @@ router.get('/papers/excel', function (req, res, next) {
         .catch(err => next(err));
 });
 
-router.post('/papers/documents/upload', fileUpload(), function (req, res, next) {
-    const { paperId, perspective, name, type } = req.body;
-    TeacherController.uploadPaperDocument(req._user, req.files.file as UploadedFile,
-        name, type, perspective, +paperId)
-        .then(document => res.json(document))
-        .catch(err => next(err));
-});
-
 router.post('/papers/remove', function (req, res, next) {
     const { paperId } = req.body;
     TeacherController.removePaper(req._user, +paperId)

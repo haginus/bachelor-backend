@@ -177,7 +177,7 @@ export async function studentCanEditDocument(document: Pick<PaperRequiredDocumen
       },
       order: [['deadline', 'DESC']]
     });
-    if(Date.now() > inclusiveDate(reuploadRequest.deadline).getTime()) {
+    if(Date.now() > inclusiveDate(reuploadRequest?.deadline).getTime()) {
       reuploadRequest = null;
     }
     return reuploadRequest;
@@ -189,7 +189,6 @@ export async function checkPaperDocumentUploadRights(
   user: User, 
   name: string,
   type: DocumentType,
-  perspective: UploadPerspective,
   paperId: number,
   documentFile?: UploadedFile,
 ) {
@@ -200,16 +199,6 @@ export async function checkPaperDocumentUploadRights(
     throw new ResponseErrorForbidden();
   }
   const paper = await Paper.findOne({ where: { id: paperId } });
-  // If the paper is validated, the only allowed perspectives are 'teacher' (while grading hasn't started yet) and 'committee'
-  if(
-    paper.isValid !== null &&
-    (
-      (perspective !== 'teacher' && perspective !== 'committee') ||
-      (perspective === 'teacher' && sessionSettings.allowGrading)
-    )
-  ) {
-    throw new ResponseErrorForbidden();
-  }
 
   const requiredDocuments = await getPaperRequiredDocuments(paperId, sessionSettings);
   // We look for the document with the provided name
@@ -217,10 +206,6 @@ export async function checkPaperDocumentUploadRights(
   // If there is no such document, we throw an error
   if (!requiredDoc) {
     throw new ResponseError('Document invalid.', 'INVALID_DOCUMENT');
-  }
-  // Check if the perspective matches with whom should upload the document; admins can upload from any perspective
-  if(requiredDoc.uploadBy !== perspective && perspective !== 'admin') {
-    throw new ResponseErrorForbidden('Nu aveți permisiunea de a încărca acest document.');
   }
   // Check if the provided type matches the required document types
   if (!requiredDoc.types[type]) {
@@ -231,16 +216,40 @@ export async function checkPaperDocumentUploadRights(
   if (type == 'copy' && !acceptedMimeTypes.includes(documentFile?.mimetype)) {
     throw new ResponseError('MIME type-ul documentului este invalid.', 'INVALID_DOCUMENT_MIMETYPE');
   }
+  // We allow admins and secretaries to upload any documents
+  if(user.type !== 'admin' && user.type !== 'secretary') {
+    if(requiredDoc.uploadBy === 'student') {
+      if(user.type !== 'student' || paper.studentId !== user.id) {
+        throw new ResponseErrorForbidden();
+      }
+      if(!(await studentCanEditDocument(requiredDoc, paperId, sessionSettings))) {
+        throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
+      }
+    } else if(requiredDoc.uploadBy === 'teacher') {
+      if(user.type !== 'teacher' || paper.teacherId !== user.id) {
+        throw new ResponseErrorForbidden();
+      }
+    } else if(requiredDoc.uploadBy === 'committee') {
+      if(user.type !== 'teacher') {
+        throw new ResponseErrorForbidden();
+      }
+      const isInCommittee = (await user.teacher.getCommittees({
+        include: [{
+          model: Paper,
+          required: true,
+          where: {
+            id: paperId,
+          }
+        }]
+      })).length > 0;
+      if(!isInCommittee) {
+        throw new ResponseErrorForbidden('Nu faceți parte din comisia ce evaluează această lucrare.');
+      }
+    } else {
+      throw new ResponseErrorForbidden();
+    }
 
-  // Check if document category can be uploaded
-  if (perspective == 'student' && !(await studentCanEditDocument(requiredDoc, paperId, sessionSettings))) {
-    throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
-  }
-
-  const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
-
-  // Lastly, check if the documents are already there - we skip this for admins because they are allowed to make reuploads
-  if(perspective !== 'admin') {
+    const paperDocuments = await Document.findAll({ where: { name, paperId } }); // find all documents of name from paper
     // If the provided type is 'signed'
     if (type == 'signed') {
       // Check if a prior generated document exists
@@ -257,6 +266,17 @@ export async function checkPaperDocumentUploadRights(
       throw new ResponseErrorForbidden('Documentul este deja încărcat.', "ALREADY_UPLOADED");
     }
   }
+  // If the paper is validated, the only allowed perspectives are 'teacher' (while grading hasn't started yet) and 'committee'
+  if(
+    paper.isValid !== null &&
+    (
+      (requiredDoc.uploadBy !== 'teacher' && requiredDoc.uploadBy !== 'committee') ||
+      (requiredDoc.uploadBy === 'teacher' && sessionSettings.allowGrading && user.type !== 'admin' && user.type !== 'secretary')
+    )
+  ) {
+    throw new ResponseErrorForbidden();
+  }
+
   return { requiredDoc, paper };
 }
 
@@ -293,14 +313,13 @@ export async function uploadPaperDocument(
   documentFile: UploadedFile,
   name: string,
   type: DocumentType,
-  perspective: UploadPerspective,
   paperId: number
 ) {
   // Signing documents has moved to another endpoint
   if(type === 'signed') {
     throw new ResponseError('Nu puteți încărca un document semnat.');
   }
-  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, type, perspective, paperId, documentFile);
+  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, type, paperId, documentFile);
   return createDocument(
     {
       name,
@@ -312,17 +331,16 @@ export async function uploadPaperDocument(
     },
     documentFile.data,
     user,
-    perspective === 'admin',
+    user.type === 'admin' || user.type === 'secretary',
   );
 }
 
 export async function signPaperDocument(
   user: User, 
   name: string,
-  perspective: UploadPerspective,
   paperId: number
 ) {
-  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, 'signed', perspective, paperId);
+  const { requiredDoc: { category } } = await checkPaperDocumentUploadRights(user, name, 'signed', paperId);
   const paper = await Paper.scope(['student', 'teacher']).findByPk(paperId);
   const signature = await SignaturesController.findOneByUserId(paper.studentId);
   if(!signature) {
@@ -367,7 +385,7 @@ export async function signPaperDocument(
     },
     documentContent,
     user,
-    perspective === 'admin',
+    user.type === 'admin' || user.type === 'secretary',
   );
 }
 

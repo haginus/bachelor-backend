@@ -1372,10 +1372,6 @@ export const undoPaperValidation = async (user: User, paperId: number) => {
   }
 }
 
-export const uploadPaperDocument = (user: User, documentFile: UploadedFile, name: string, type: DocumentType, paperId: number) => {
-  return DocumentController.uploadPaperDocument(user, documentFile, name, type, 'admin', paperId);
-}
-
 // SESSION SETTINGS
 
 export const changeSessionSettings = async (settings: SessionSettings) => {
