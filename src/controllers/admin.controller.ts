@@ -19,6 +19,7 @@ import { generatePaperDocuments, mapPaper } from "./paper.controller";
 import { StudentController } from "./student.controller";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
+import { SignaturesController } from "./signatures.controller";
 var stream = require('stream');
 
 interface Statistic {
@@ -1303,15 +1304,21 @@ export const validatePaper = async (user: User, paperId: number, validate: boole
         paperId: paper.id,
         meta: { generalAverage, missingRequiredDocuments }
       }, { transaction });
-      const sessionSettings = await SessionSettings.findOne();
-      const generationProps: StudentDocumentGenerationProps = {
-        student: paper.student,
-        extraData: await StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
-        paper: mapPaper(paper),
-        sessionSettings,
-      }
       const signUpFormDocument = await Document.findOne({ where: { paperId: paper.id, name: 'sign_up_form', type: 'signed' }, transaction });
       if (signUpFormDocument) {
+        let signatureSample: string | undefined;
+        const signature = await SignaturesController.findOneByUserId(paper.studentId);
+        if(signature) {
+          const signatureSampleBuffer = await SignaturesController.getSample(signature.id);
+          signatureSample = `data:image/png;base64,${signatureSampleBuffer.toString('base64')}`;
+        }
+        const generationProps: StudentDocumentGenerationProps = {
+          student: paper.student,
+          extraData: await StudentExtraData.findOne({ where: { studentId: paper.student.id } }),
+          paper: mapPaper(paper),
+          sessionSettings: await SessionSettings.findOne(),
+          signatureSample,
+        }
         let signUpFormBuffer = await DocumentController.generateSignUpForm(generationProps);
         await Logger.log(null, {
           name: LogName.DocumentContentUpdated,
