@@ -6,6 +6,12 @@ import fileUpload, { UploadedFile } from 'express-fileupload';
 const router = express.Router();
 router.use(isLoggedIn());
 
+router.get('/user/:userId', (req, res, next) => {
+  SignaturesController.findOneByUserId(+req.params.userId, req._user)
+    .then(result => res.json(result))
+    .catch(err => next(err));
+});
+
 router.get('/me', (req, res, next) => {
   SignaturesController.findOneByUser(req._user)
     .then(result => res.json(result))

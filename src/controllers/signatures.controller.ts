@@ -14,7 +14,10 @@ export class SignaturesController {
     return SignaturesController.findOneByUserId(user.id);
   }
 
-  static async findOneByUserId(userId: number) {
+  static async findOneByUserId(userId: number, user?: User) {
+    if(user && user.type !== 'admin' && userId !== user.id) {
+      throw new ResponseErrorForbidden();
+    }
     return Signature.findOne({ 
       where: {
         userId,
@@ -22,7 +25,7 @@ export class SignaturesController {
     });
   }
 
-  static async findOne(id: number, user: User) {
+  static async findOne(id: number, user?: User) {
     const signature = await Signature.findByPk(id);
     if(user && user.type !== 'admin' && signature.userId !== user.id) {
       throw new ResponseErrorForbidden();
