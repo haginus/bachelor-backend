@@ -533,6 +533,8 @@ export class DocumentReuploadRequest extends Model<DocumentReuploadRequestAttrib
 interface CommitteeAttributes {
   id: number;
   name: string;
+  location: string | null;
+  activityStartTime: Date | null;
   finalGrades: boolean;
 }
 
@@ -541,6 +543,8 @@ interface CommitteeCreationAttributes extends Optional<CommitteeAttributes, "id"
 export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttributes> implements CommitteeAttributes {
   id: number;
   name: string;
+  location: string | null;
+  activityStartTime: Date | null;
   finalGrades: boolean;
 
   members: Teacher[];
@@ -1600,6 +1604,14 @@ Committee.init({
   name: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  activityStartTime: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
   finalGrades: {
     type: DataTypes.BOOLEAN,

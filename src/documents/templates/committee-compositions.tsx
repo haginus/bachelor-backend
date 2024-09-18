@@ -19,12 +19,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   committee: {
-    marginBottom: 5,
+    marginBottom: 8,
   },
   committeeTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 6,
   },
   committeeRow: {
     flexDirection: 'row',
@@ -39,7 +38,7 @@ const styles = StyleSheet.create({
 
 export function CommitteeCompositions({ groups, sessionSettings }: CommitteeCompositionsProps) {
   return (
-    <Document title="Componență comisii">
+    <Document title="Componență comisii și repartiții pe zile">
       <Page size="A4" style={globalStyles.page}>
         {groups.map((group, index) => {
           const domains = group[0].domains;
@@ -66,8 +65,19 @@ export function CommitteeCompositions({ groups, sessionSettings }: CommitteeComp
                       <Text style={styles.committeeTitle}>
                         {committee.name}
                       </Text>
+                      {(committee.location || committee.activityStartTime) && (
+                        <Text style={{ fontStyle: 'italic', marginTop: 2, marginBottom: 6 }}>
+                          {[
+                            committee.location,
+                            committee.activityStartTime?.toLocaleDateString('ro-RO', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          ].filter(str => !!str).join(' | ')}
+                        </Text>
+                      )}
                       {rows.map(([position, people], index) => (
-                        <View style={styles.committeeRow}>
+                        <View style={styles.committeeRow} key={index}>
                           <Text style={styles.committeeRowFirstColumn}>
                             {position}:
                           </Text>

@@ -884,13 +884,13 @@ const _checkDomains = (domains: Domain[]) => {
   }
 }
 
-export const addCommittee = async (name, domainsIds, members) => {
+export const addCommittee = async (name: string, domainsIds: number[], members, location?: string, activityStartTime?: string) => {
   // Will throw if the committee is badly formed
   checkCommitteeComponence(members);
 
   const transaction = await sequelize.transaction();
   try {
-    const committee = await Committee.create({ name }, { transaction });
+    const committee = await Committee.create({ name, location, activityStartTime: activityStartTime ? new Date(activityStartTime) : null }, { transaction });
     const domains = await Domain.findAll({
       where: { // get domains from ids
         id: {
@@ -912,7 +912,7 @@ export const addCommittee = async (name, domainsIds, members) => {
   }
 }
 
-export const editCommittee = async (id, name, domainsIds, members) => {
+export const editCommittee = async (id, name, domainsIds, members, location?: string, activityStartTime?: string) => {
   // Will throw if the committee is badly formed
   checkCommitteeComponence(members);
   // Find the old committee by ID
@@ -924,6 +924,8 @@ export const editCommittee = async (id, name, domainsIds, members) => {
   const transaction = await sequelize.transaction(); // init a transaction
   try {
     oldCommittee.name = name;
+    oldCommittee.location = location;
+    oldCommittee.activityStartTime = activityStartTime ? new Date(activityStartTime) : null;
     await oldCommittee.save({ transaction });
     const domains = await Domain.findAll({
       where: { // get domains from ids
