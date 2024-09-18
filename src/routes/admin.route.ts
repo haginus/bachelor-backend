@@ -15,6 +15,7 @@ import { ServerSentEventsHandler } from '../util/sse';
 router.get('/session/report/download', (req, res, next) => {
     const reportPath = getReport(req.query.token as string);
     res.setHeader('Content-Disposition', 'attachment; filename=Raport final.zip');
+    res.setHeader('content-length', fs.statSync(reportPath).size);
     res.setHeader("content-type", "archive/zip");
     fs.createReadStream(reportPath).pipe(res);
 });
