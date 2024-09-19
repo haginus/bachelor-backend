@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
-import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize, SignUpRequestCreationAttributes, Profile, SignUpRequest } from "../models/models";
+import { User, Student, Domain, Paper, ActivationToken, SessionSettings, Teacher, sequelize, SignUpRequestCreationAttributes, Profile, SignUpRequest, Specialization } from "../models/models";
 import { config } from "../config/config";
 import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../mail/mailer';
@@ -153,5 +153,12 @@ export const signUp = async (data: SignUpRequestCreationAttributes) => {
     if(await User.findOne({ where: { email: data.email } }) || await SignUpRequest.findOne({ where: { email: data.email }})) {
         throw new ResponseError('Acest e-mail este deja înregistrat sau cererea este în curs de procesare.', 'EMAIL_EXISTS');
     }
-    return SignUpRequest.create(data);
+    const specialization = await Specialization.findByPk(data.specializationId);
+    if(!specialization) {
+        throw new ResponseError('Programul de studii nu există.');
+    }
+    const result = await SignUpRequest.create(data);
+    result.specialization = specialization;
+    Mailer.sendSignUpRequrestNotice(result);
+    return result;
 }

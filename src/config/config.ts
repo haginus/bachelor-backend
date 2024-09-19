@@ -14,6 +14,7 @@ export const config = {
     COMPRESSION_LEVEL: Number(process.env.COMPRESSION_LEVEL) || 0,
     DISABLE_SEQUELIZE_LOGGING: process.env.DISABLE_SEQUELIZE_LOGGING === 'true',
     SYSADMIN_EMAIL: process.env.SYSADMIN_EMAIL || process.env.MAILER_FROM_ADDRESS,
+    SECRETARY_EMAIL: process.env.SECRETARY_EMAIL || process.env.MAILER_FROM_ADDRESS,
     SENTRY_KEY: process.env.SENTRY_KEY,
     IS_PROD,
     CORS: {
