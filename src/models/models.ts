@@ -533,8 +533,6 @@ export class DocumentReuploadRequest extends Model<DocumentReuploadRequestAttrib
 interface CommitteeAttributes {
   id: number;
   name: string;
-  location: string | null;
-  activityStartTime: Date | null;
   finalGrades: boolean;
 }
 
@@ -543,13 +541,12 @@ interface CommitteeCreationAttributes extends Optional<CommitteeAttributes, "id"
 export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttributes> implements CommitteeAttributes {
   id: number;
   name: string;
-  location: string | null;
-  activityStartTime: Date | null;
   finalGrades: boolean;
 
   members: Teacher[];
   papers?: Paper[]
   domains: Domain[];
+  activityDays: CommitteeActivityDay[];
 
   setDomains: HasManySetAssociationsMixin<Committee, Domain>;
   setPapers: HasManySetAssociationsMixin<Paper, number>;
@@ -563,6 +560,23 @@ export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttri
     members: Association<Committee, Teacher>;
   }
 
+}
+
+interface CommitteeActivityDayAttributes {
+  id: number;
+  location: string;
+  startTime: Date | null;
+  committeeId: number;
+}
+
+export interface CommitteeActivityDayCreationAttributes extends Optional<CommitteeActivityDayAttributes, "id"> {}
+
+
+export class CommitteeActivityDay extends Model<CommitteeActivityDayAttributes, CommitteeActivityDayCreationAttributes> implements CommitteeActivityDayAttributes {
+  id: number;
+  location: string;
+  startTime: Date | null;
+  committeeId: number;
 }
 
 type CommitteMemberRole = 'president' | 'secretary' | 'member';
@@ -1605,14 +1619,6 @@ Committee.init({
     type: DataTypes.STRING,
     allowNull: false
   },
-  location: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  activityStartTime: {
-    type: DataTypes.DATE,
-    allowNull: true,
-  },
   finalGrades: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -1629,7 +1635,11 @@ Committee.init({
         include: [User.scope("min")]
       },
       Paper,
-      Domain
+      Domain,
+      {
+        model: CommitteeActivityDay,
+        as: 'activityDays',
+      }
     ] 
   }
 });
@@ -1641,8 +1651,36 @@ Committee.addScope("min", {
       as: 'members',
       include: [User.scope("min")]
     },
+    {
+      model: CommitteeActivityDay,
+      as: 'activityDays',
+    }
   ]
-}); 
+});
+
+CommitteeActivityDay.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  startTime: {
+    type: DataTypes.DATE,
+    allowNull: false,
+  },
+  committeeId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+}, {
+  timestamps: false,
+  sequelize,
+  modelName: "committeeActivityDay",
+});
 
 CommitteeMember.init({
   committeeId: {
@@ -1712,6 +1750,9 @@ Teacher.belongsToMany(Committee, { through: sequelize.model('committeeMember') }
 
 Committee.belongsToMany(Domain, { through: 'committeeDomains', timestamps: false });
 Domain.belongsToMany(Committee, { through: 'committeeDomains', timestamps: false });
+
+Committee.hasMany(CommitteeActivityDay, { as: 'activityDays' });
+CommitteeActivityDay.belongsTo(Committee);
 
 Committee.hasMany(Paper);
 Paper.belongsTo(Committee);

@@ -24,6 +24,7 @@ const styles = StyleSheet.create({
   committeeTitle: {
     fontSize: 13,
     fontWeight: 'bold',
+    marginBottom: 2,
   },
   committeeRow: {
     flexDirection: 'row',
@@ -65,17 +66,18 @@ export function CommitteeCompositions({ groups, sessionSettings }: CommitteeComp
                       <Text style={styles.committeeTitle}>
                         {committee.name}
                       </Text>
-                      {(committee.location || committee.activityStartTime) && (
-                        <Text style={{ fontStyle: 'italic', marginTop: 2, marginBottom: 6 }}>
+                      {committee.activityDays?.map(day => (
+                        <Text key={day.id} style={{ fontStyle: 'italic' }}>
                           {[
-                            committee.location,
-                            committee.activityStartTime?.toLocaleDateString('ro-RO', {
+                            day.location,
+                            day.startTime?.toLocaleDateString('ro-RO', {
                               hour: '2-digit',
                               minute: '2-digit',
                             })
                           ].filter(str => !!str).join(' | ')}
                         </Text>
-                      )}
+                      ))}
+                      <View style={{ height: 4 }} />
                       {rows.map(([position, people], index) => (
                         <View style={styles.committeeRow} key={index}>
                           <Text style={styles.committeeRowFirstColumn}>

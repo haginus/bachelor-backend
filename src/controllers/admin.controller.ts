@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm, DocumentReuploadRequest, DocumentReuploadRequestCreationAttributes } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm, DocumentReuploadRequest, DocumentReuploadRequestCreationAttributes, CommitteeActivityDay, CommitteeActivityDayCreationAttributes } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../mail/mailer';
@@ -884,13 +884,13 @@ const _checkDomains = (domains: Domain[]) => {
   }
 }
 
-export const addCommittee = async (name: string, domainsIds: number[], members, location?: string, activityStartTime?: string) => {
+export const addCommittee = async (name: string, domainsIds: number[], members, activityDays: Omit<CommitteeActivityDayCreationAttributes, 'committeeId'>[]) => {
   // Will throw if the committee is badly formed
   checkCommitteeComponence(members);
 
   const transaction = await sequelize.transaction();
   try {
-    const committee = await Committee.create({ name, location, activityStartTime: activityStartTime ? new Date(activityStartTime) : null }, { transaction });
+    const committee = await Committee.create({ name }, { transaction });
     const domains = await Domain.findAll({
       where: { // get domains from ids
         id: {
@@ -904,6 +904,10 @@ export const addCommittee = async (name: string, domainsIds: number[], members, 
       return { ...member, committeeId: committee.id }
     });
     await CommitteeMember.bulkCreate(committeeMembers, { transaction });
+    await CommitteeActivityDay.bulkCreate(
+      activityDays.map(day => ({ ...day, committeeId: committee.id })),
+      { transaction }
+    );
     await transaction.commit();
   } catch (err) {
     console.log(err)
@@ -912,7 +916,7 @@ export const addCommittee = async (name: string, domainsIds: number[], members, 
   }
 }
 
-export const editCommittee = async (id, name, domainsIds, members, location?: string, activityStartTime?: string) => {
+export const editCommittee = async (id, name, domainsIds, members, activityDays: Omit<CommitteeActivityDayCreationAttributes, 'committeeId'>[]) => {
   // Will throw if the committee is badly formed
   checkCommitteeComponence(members);
   // Find the old committee by ID
@@ -924,8 +928,6 @@ export const editCommittee = async (id, name, domainsIds, members, location?: st
   const transaction = await sequelize.transaction(); // init a transaction
   try {
     oldCommittee.name = name;
-    oldCommittee.location = location;
-    oldCommittee.activityStartTime = activityStartTime ? new Date(activityStartTime) : null;
     await oldCommittee.save({ transaction });
     const domains = await Domain.findAll({
       where: { // get domains from ids
@@ -941,6 +943,11 @@ export const editCommittee = async (id, name, domainsIds, members, location?: st
       return { ...member, committeeId: oldCommittee.id }
     });
     await CommitteeMember.bulkCreate(committeeMembers, { transaction });
+    await CommitteeActivityDay.destroy({ where: { committeeId: oldCommittee.id }, transaction });
+    await CommitteeActivityDay.bulkCreate(
+      activityDays.map(day => ({ ...day, committeeId: oldCommittee.id })),
+      { transaction }
+    );
     await transaction.commit();
 
   } catch (err) {

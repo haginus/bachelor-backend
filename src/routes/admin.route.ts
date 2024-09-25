@@ -289,15 +289,15 @@ router.get('/committees/:id', function (req, res, next) {
 });
 
 router.post('/committees/add', isType('admin'), (req, res, next) => {
-    const { name, domains, members, location, activityStartTime } = req.body;
-    AdminController.addCommittee(name, domains, members, location, activityStartTime)
+    const { name, domains, members, activityDays } = req.body;
+    AdminController.addCommittee(name, domains, members, activityDays)
         .then(result => res.json({ success: true })) 
         .catch(err => next(err));
 });
 
 router.post('/committees/edit', isType('admin'), (req, res, next) => {
-    const { id, name, domains, members, location, activityStartTime } = req.body;
-    AdminController.editCommittee(id, name, domains, members, location, activityStartTime)
+    const { id, name, domains, members, activityDays } = req.body;
+    AdminController.editCommittee(id, name, domains, members, activityDays)
         .then(result => res.json({ success: true })) 
         .catch(err => next(err));
 });
