@@ -424,6 +424,7 @@ export interface PaperAttributes {
   isValid: boolean | null;
   gradeAverage: number | null;
   submitted: boolean;
+  scheduledGrading: Date | null;
 }
 
 interface PaperCreationAttributes extends Optional<PaperAttributes, "id" | "committeeId" | "isValid" | "gradeAverage" | "submitted"> {}
@@ -439,6 +440,7 @@ export class Paper extends Model<PaperAttributes, PaperCreationAttributes> imple
   public isValid: boolean | null;
   public gradeAverage: number | null;
   public submitted: boolean;
+  public scheduledGrading: Date | null;
 
   public readonly createdAt!: Date;
 
@@ -1307,6 +1309,10 @@ Paper.init({
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  scheduledGrading: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   gradeAverage: {
     type: DataTypes.VIRTUAL,
     get() {
@@ -1321,14 +1327,20 @@ Paper.init({
       return null;
     }
   }
-  // documents
 }, {
   timestamps: true,
   updatedAt: false,
   paranoid: true,
   sequelize,
-  modelName: "paper"
-})
+  modelName: "paper",
+  hooks: {
+    beforeSave(instance) {
+      if(!instance.committeeId) {
+        instance.scheduledGrading = null;
+      }
+    },
+  }
+});
 
 Student.hasOne(Paper, { onDelete: 'CASCADE' });
 Paper.belongsTo(Student);

@@ -124,6 +124,13 @@ router.get('/committees/:id', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.patch('/committees/:id/scheduled-papers', function (req, res, next) {
+    const { id } = req.params;
+    TeacherController.schedulePapers(req._user, +id, req.body)
+        .then(papers => res.json(papers))
+        .catch(err => next(err));
+});
+
 router.post('/committees/:id/mark-grades-final', function (req, res, next) {
     const { id } = req.params;
     

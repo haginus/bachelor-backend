@@ -1,5 +1,5 @@
 "use strict"
-import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee } from "../models/models";
+import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee, CommitteeActivityDay } from "../models/models";
 import * as DocumentController from './/document.controller';
 import * as PaperController from "./paper.controller";
 import { Op, Sequelize, ValidationError } from "sequelize";
@@ -363,11 +363,12 @@ export const getCommittees = async (user: User) => {
     });
 }
 
-function isCommitteeMember(user: User, committee: Committee, rights: { grading?: boolean; markGradesAsFinal?: boolean } = { grading: false, markGradesAsFinal: false }) {
+function isCommitteeMember(user: User, committee: Committee, rights: { grading?: boolean; markGradesAsFinal?: boolean; schedulePapers?: boolean; } = { grading: false, markGradesAsFinal: false, schedulePapers: false }) {
     const member = committee.members.find(member => member.id == user.teacher?.id);
     const rightChecks = {
         grading: (teacher: Teacher) => teacher.committeeMember.role != 'secretary',
         markGradesAsFinal: (teacher: Teacher) => ['president', 'secretary'].includes(teacher.committeeMember.role),
+        schedulePapers: (teacher: Teacher) => ['president', 'secretary'].includes(teacher.committeeMember.role),
     }
     return !!member && Object.keys(rightChecks).every(key => !rights[key] || rightChecks[key](member));
 }
@@ -404,6 +405,45 @@ export const getCommittee = async (user: User, committeeId: number) => {
         return parsedPaper;
     }));
     return resp;
+}
+
+export async function schedulePapers(user: User, committeeId: number, papers: { paperId: number; scheduledGrading: string | null }[]) {
+    const committee = await Committee.findOne({
+        where: { id: committeeId },
+    });
+    if(!committee) {
+        throw new ResponseErrorNotFound();
+    }
+    if(!isCommitteeMember(user, committee, { schedulePapers: true })) {
+        throw new ResponseErrorForbidden();
+    }
+    const committeePapers = arrayMap(committee.papers, paper => paper.id);
+    const activityDays = arrayMap(committee.activityDays, day => day.startTime.toISOString().split('T')[0]);
+    if(!papers.every(paper => !!committeePapers[paper.paperId])) {
+        throw new ResponseError("Unele lucrări nu aparțin acestei comisii.");
+    }
+    if(
+        !papers.every(paper => {
+            const date = new Date(paper.scheduledGrading);
+            return paper.scheduledGrading === null || (!isNaN(date.getTime()) && activityDays[date.toISOString().split('T')[0]])
+        })
+    ) {
+        throw new ResponseError("Una sau mai multe date sunt invalide sau nu sunt în zilele de activitate atribuite comisiei.");
+    }
+    const transaction = await sequelize.transaction();
+    try {
+        for(const { paperId, scheduledGrading } of papers) {
+            await Paper.update(
+                { scheduledGrading: scheduledGrading ? new Date(scheduledGrading) : null },
+                { where: { id: paperId }, transaction }
+            );
+        }
+        await transaction.commit();
+        return papers;
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
 }
 
 export const gradePaper = async (user: User, paperId: number, forPaper: number, forPresentation: number) => {
