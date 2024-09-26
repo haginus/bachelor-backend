@@ -1,5 +1,5 @@
 import React from "react";
-import { Committee, SessionSettings, User } from "../../models/models";
+import { Committee, Paper, SessionSettings, User } from "../../models/models";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
 import { Cell as _Cell, HeaderCell, Row } from "../components/table";
@@ -20,7 +20,11 @@ const styles = StyleSheet.create({
 });
 
 function Cell({ ...props }: React.ComponentProps<typeof _Cell>) {
-  return <_Cell {...props} style={{ paddingHorizontal: 2, justifyContent: 'center', minHeight: 20 }} />
+  return <_Cell {...props} style={{ paddingHorizontal: 2, justifyContent: 'center', minHeight: 20, fontSize: 10 }} />
+}
+
+function sortFn(a: Paper, b: Paper): number {
+  return (new Date(a.scheduledGrading || 0).getTime() - new Date(b.scheduledGrading || 0).getTime()) || (a.id - b.id);
 }
 
 export function CommitteeStudents({ committees, sessionSettings }: CommitteeStudentsProps) {
@@ -28,6 +32,7 @@ export function CommitteeStudents({ committees, sessionSettings }: CommitteeStud
   const numberingColumnWidth = 35;
   const paperTitleColumnWidth = 140;
   const domainColumnWidth = 100;
+  const scheduledGradingWidth = 100;
   const leftSpace = rowWidth - numberingColumnWidth - paperTitleColumnWidth - domainColumnWidth;
 
   function getName(user: User) {
@@ -67,14 +72,23 @@ export function CommitteeStudents({ committees, sessionSettings }: CommitteeStud
                 <HeaderCell width={leftSpace / 2} value="Profesor coordonator" />
                 <HeaderCell width={paperTitleColumnWidth} value="Titlul lucrării" />
                 <HeaderCell width={domainColumnWidth} value="Domeniul" />
+                <HeaderCell width={scheduledGradingWidth} value="Programare" />
               </Row>
-              {committee.papers.map((paper, index) => (
+              {committee.papers.sort(sortFn).map((paper, index) => (
                 <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
                   <Cell width={numberingColumnWidth} value={(index + 1).toString()} borderLeft />
                   <Cell width={leftSpace / 2} value={getName(paper.student.user)} />
                   <Cell width={leftSpace / 2} value={getName(paper.teacher.user)} />
                   <Cell width={paperTitleColumnWidth} value={paper.title} />
                   <Cell width={domainColumnWidth} value={paper.student.domain.name} />
+                  <Cell 
+                    width={scheduledGradingWidth} 
+                    value={paper.scheduledGrading?.toLocaleDateString('ro-RO', {
+                      timeZone: 'Europe/Bucharest',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  />
                 </Row>
               ))}
             </View>

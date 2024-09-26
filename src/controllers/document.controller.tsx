@@ -600,29 +600,40 @@ export async function generateCommitteeCompositions() {
   return renderToBuffer(<CommitteeCompositions groups={groups} sessionSettings={sessionSettings} />);
 }
 
-export const generateCommitteeStudentsExcel = async () => {
+async function _getCommitteStudentsData(committeeIds?: number[]) {
   const committees = await Committee.findAll({
+    ...(committeeIds ? { where: { id: { [Op.in]: committeeIds } } } : {}),
     include: [{
       model: Paper.scope(['teacher', 'student']),
-      include: [{ // also include domains
+      include: [{
         association: Paper.associations.student,
         include: [Student.associations.domain]
       }]
     }]
   });
   sortCommittees(committees);
+  return committees;
+}
+
+export async function generateCommitteeStudentsExcel(committeeIds?: number[]) {
+  const committees = await _getCommitteStudentsData(committeeIds);
   const wb = new ExcelJS.Workbook();
   committees.forEach(committee => {
-    let rows: [string, string, string, string, string][] = committee.papers.map(paper => {
+    let rows: [string, string, string, string, string, string][] = committee.papers.map(paper => {
+      const scheduledGrading = paper.scheduledGrading?.toLocaleDateString('ro-RO', {
+        timeZone: 'Europe/Bucharest',
+        hour: '2-digit',
+        minute: '2-digit',
+      })?.replace(',', '') || '';
       const name = paper.student.user.fullName;
       const teacherName = paper.teacher.user.fullName;
       const title = paper.title;
       const domain = paper.student.domain.name;
       const email = paper.student.user.email;
-      return [name, teacherName, title, domain, email];
+      return [scheduledGrading, name, teacherName, title, domain, email];
     });
     if (rows.length == 0) {
-      rows = [['', '', '', '', '']];
+      rows = [['', '', '', '', '', '']];
     }
     const name = removeCharacters(committee.name, ['/', '\\', '?', '*', ':', '[', ']']);
     const sheet = wb.addWorksheet(truncateInMiddle(name, 31));
@@ -631,6 +642,7 @@ export const generateCommitteeStudentsExcel = async () => {
       ref: 'A1',
       headerRow: true,
       columns: [
+        { name: 'Programare' },
         { name: 'Nume și prenume' },
         { name: 'Profesor coordonator' },
         { name: 'Titlul lucrării' },
@@ -645,17 +657,8 @@ export const generateCommitteeStudentsExcel = async () => {
 }
 
 
-export async function generateCommitteeStudents() {
-  const committees = await Committee.findAll({
-    include: [{
-      model: Paper.scope(['teacher', 'student']),
-      include: [{ // also include domains
-        association: Paper.associations.student,
-        include: [Student.associations.domain]
-      }]
-    }]
-  });
-  sortCommittees(committees);
+export async function generateCommitteeStudents(committeeIds?: number[]) {
+  const committees = await _getCommitteStudentsData(committeeIds);
   const sessionSettings = await SessionSettings.findOne();
   return renderToBuffer(<CommitteeStudents committees={committees} sessionSettings={sessionSettings} />);
 }

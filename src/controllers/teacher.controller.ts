@@ -518,6 +518,27 @@ export async function getCommitteePaperDocumentsArchieve(user: User, committeeId
     return DocumentController.generatePaperDocumentsArchive(paperIds, ['paper']);
 }
 
+export async function generateCommitteStudentsDocument(user: User, committeeId: number, format: 'pdf' | 'excel' = 'pdf') {
+    if(!['pdf', 'excel'].includes(format)) {
+        throw new ResponseError('Format invalid.');
+    }
+    const committee = await Committee.findByPk(committeeId);
+    if(!committee) {
+        throw new ResponseErrorNotFound();
+    }
+    if(!isCommitteeMember(user, committee)) {
+        throw new ResponseErrorForbidden();
+    }
+    switch(format) {
+        case "pdf":
+            return DocumentController.generateCommitteeStudents([committeeId]);
+        case "excel":
+            return DocumentController.generateCommitteeStudentsExcel([committeeId]);
+        default:
+            throw new ResponseError('Format invalid.');
+    }
+}
+
 export async function getStudents(firstName?: string, lastName?: string, email?: string, domainId?: number): Promise<User[]> {
     const sessionSettings = await SessionSettings.findOne();
     if(!canApply(sessionSettings)) {

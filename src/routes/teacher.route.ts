@@ -5,6 +5,7 @@ import * as TeacherController from '../controllers/teacher.controller';
 import isLoggedIn from './middlewares/isLoggedIn';
 import isType from './middlewares/isType';
 import isValidated from './middlewares/isValidated';
+import { ResponseError } from '../util/util';
 
 router.use(isLoggedIn());
 router.use(isType('teacher'));
@@ -129,6 +130,23 @@ router.patch('/committees/:id/scheduled-papers', function (req, res, next) {
     TeacherController.schedulePapers(req._user, +id, req.body)
         .then(papers => res.json(papers))
         .catch(err => next(err));
+});
+
+router.get('/committees/:id/documents/:documentName', async (req, res, next) => {
+    const { id, documentName } = req.params;
+    try {
+        let result: Buffer;
+        switch(documentName) {
+            case 'committee_students':
+                result = await TeacherController.generateCommitteStudentsDocument(req._user, +id, req.query['format'] as any);
+                break;
+            default:
+                throw new ResponseError("Documentul cerut nu există.");
+        }
+        res.send(result);
+    } catch(err) {
+        next(err);
+    }
 });
 
 router.post('/committees/:id/mark-grades-final', function (req, res, next) {
