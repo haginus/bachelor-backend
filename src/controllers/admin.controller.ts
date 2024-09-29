@@ -1,4 +1,4 @@
-import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm, DocumentReuploadRequest, DocumentReuploadRequestCreationAttributes, CommitteeActivityDay, CommitteeActivityDayCreationAttributes } from "../models/models";
+import { Student, User, Domain, Specialization, ActivationToken, Teacher, Topic, Offer, SessionSettings, Committee, CommitteeMember, sequelize, Paper, Document, StudyForm, Application, Profile, PaperType, DomainType, StudentExtraData, DocumentType, PaperGrade, SignUpRequest, FundingForm, DocumentReuploadRequest, DocumentReuploadRequestCreationAttributes, CommitteeActivityDay, CommitteeActivityDayCreationAttributes, Log } from "../models/models";
 import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../mail/mailer';
@@ -1434,6 +1434,7 @@ export const beginNewSession = async (user: User) => {
         await PaperGrade.destroy({ where: { paperId }, transaction });
       }
     };
+    await Log.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 1000000000 });
     await Document.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
     await DocumentReuploadRequest.destroy({ where: { id: { [Op.ne]: null } }, transaction, force: true, limit: 100000 });
     await Committee.destroy({ where: { id: { [Op.ne]: null } }, transaction, limit: 100000 });

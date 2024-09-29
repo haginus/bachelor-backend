@@ -12,6 +12,7 @@ import { config } from '../config/config';
 import jwt from "jsonwebtoken";
 import { Op } from 'sequelize';
 import { ServerSentEventsHandler } from './sse';
+import { LogsController } from '../controllers/logs.controller';
 
 export let finalReportGenerationStatus = {
     isGenerating: false,
@@ -79,6 +80,9 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
         });
 
         let totalSize: number = 0;
+
+        const { rows: logs } = await LogsController.findAll({ limit: '100000000000' });
+        archive.append(JSON.stringify(logs, (k, v) => (v === null ? undefined : v), 2), { name: 'Loguri.json' });
 
         const centralizingCatalog = await DocumentController.generateFinalCatalog('centralizing');
         const finalCatalog = await DocumentController.generateFinalCatalog('final');
