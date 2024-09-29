@@ -130,9 +130,17 @@ export const getStudent = (id: number) => {
   });
 }
 
+async function _checkUserEmail(email: string, existingUserId?: number, transaction?: Transaction) {
+  email = email.trim();
+  const existingUser = await User.findOne({ where: { email }, transaction});
+  if(existingUser && existingUser.id !== existingUserId) {
+    throw new ResponseError("E-mailul introdus este deja luat.");
+  }
+  return email;
+}
+
 export const addStudent = async (firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
   identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, t?: Transaction) => {
-  email = email.trim();
   let specialization = await Specialization.findOne({ where: { id: specializationId } });
   if (!specialization) {
     throw "SPECIALIZATION_NOT_FOUND";
@@ -140,6 +148,7 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
   let domainId = specialization.domainId;
   let transaction = t || await sequelize.transaction();
   try {
+    email = await _checkUserEmail(email, null, transaction);
     let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
     // create student entity
     await Student.create({
@@ -183,6 +192,7 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
     let documentsGenerated = false;
     const transaction = await sequelize.transaction();
     try {
+        email = await _checkUserEmail(email, id, transaction);
         const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
             where: { id }, transaction
         });
@@ -294,6 +304,9 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
     }
     const email = user.email.trim();
     const existing = await User.findOne({ where: { email }, include: [Student] });
+    if(existing && !existing.student) {
+      throw new ResponseError("E-mailul introdus este luat, însă nu de un student.");
+    }
     if (existing && existing.student.specializationId == specializationId) return {
       status: 'edited' as const,
       row: user,
@@ -410,7 +423,7 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
 export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string) => {
   const transaction = await sequelize.transaction();
   try {
-    email = email.trim();
+    email = await _checkUserEmail(email, null, transaction);
     let user = await User.create({ title, firstName, lastName, CNP, email, type: 'teacher' }, { transaction });
     await Teacher.create({ id: user.id, userId: user.id }, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
@@ -436,9 +449,10 @@ export const editTeacher = async (id: number, title: string, firstName: string, 
   const transaction = await sequelize.transaction();
   let previousTeacher = await Teacher.findOne({ where: { userId: id }, include: [User] });
   if (!previousTeacher) {
-    throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+    throw new ResponseErrorNotFound('Profesorul nu a fost găsit.');
   }
   try {
+    email = await _checkUserEmail(email, id, transaction);
     let userUpdate = await User.update({ title, firstName, lastName, CNP, email }, {
       where: { id },
       transaction,
