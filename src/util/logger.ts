@@ -7,6 +7,7 @@ export class Logger {
     return Log.create({
       ...log,
       byUserId: byUser?.id || null,
+      impersonatedByUserId: byUser?._impersonatedById || null,
       severity: log.severity || LogSeverity.Info,
     }, options);
   }

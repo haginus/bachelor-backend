@@ -18,6 +18,7 @@ export default function(options?: IsLoggedInOptions) {
             let user = await getUser({ id });
             if(!user) throw '';
             req._user = user;
+            req._user._impersonatedById = impersonatedBy;
             req._impersonatedBy = impersonatedBy || null;
             next();
         } catch(err) {

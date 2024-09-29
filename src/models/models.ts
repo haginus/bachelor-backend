@@ -131,6 +131,8 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public validated!: boolean;
   public type!: UserType;
 
+  public _impersonatedById?: number;
+
   public student?: Student;
   public teacher?: Teacher;
   public profile?: Profile;
