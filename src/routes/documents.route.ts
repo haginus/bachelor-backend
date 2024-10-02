@@ -63,7 +63,7 @@ router.get('/committee/:document', isType(['admin', 'secretary', 'teacher']), as
     }
 });
 
-router.get('/final_catalog', isType(['admin']), (req, res, next) => {
+router.get('/final_catalog', isType(['admin', 'secretary']), (req, res, next) => {
     let { mode, format } = req.query;
     mode = mode || 'final';
     format = format || 'pdf';

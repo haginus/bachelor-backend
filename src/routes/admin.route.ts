@@ -418,18 +418,18 @@ router.post('/session', isType('admin'), (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get('/session/report', isType('admin'), (req, res, next) => {
+router.get('/session/report', isType(['admin', 'secretary']), (req, res, next) => {
     res.send(getGerationStatus());
 });
 
-router.get('/session/report/generate', isType('admin'), (req, res, next) => {
+router.get('/session/report/generate', isType(['admin', 'secretary']), (req, res, next) => {
     const handler = new ServerSentEventsHandler(res);
     generateFinalReport(handler)
         .catch(err => next(err))
         .finally(() => handler.close());
 });
 
-router.get('/session/report/token', isType('admin'), (req, res, next) => {
+router.get('/session/report/token', isType(['admin', 'secretary']), (req, res, next) => {
     const result = getLatestReportAccessToken();
     res.send(result);
 });
@@ -440,7 +440,7 @@ router.post('/session/new', isType('admin'), sudo(), (req, res, next) => {
         .catch(err => next(err));
 });
 
-router.get('/reports/paper_list', isType('admin'), (req, res, next) => {
+router.get('/reports/paper_list', isType(['admin', 'secretary']), (req, res, next) => {
     let where: Parameters<typeof DocumentController.generatePaperList>[0] = {};
     if(req.query.submitted !== undefined) {
         where.submitted = req.query.submitted == 'true';
