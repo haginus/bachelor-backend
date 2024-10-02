@@ -248,8 +248,19 @@ export const deleteUser = async (request: Request, id: number) => {
   if (['admin', 'secretary'].includes(user.type) && !request._sudo) {
     throw new ResponseErrorForbidden('Trebuie să vă autentificați cu parola pentru a putea șterge acest tip de utilizator.');
   }
-  let result = await User.destroy({ where: { id } });
-  return result;
+  const transaction = await sequelize.transaction();
+  try {
+    let result = await User.destroy({ where: { id }, transaction });
+    if(user.type === 'student') {
+      await Student.destroy({ where: { id }, transaction });
+      await Paper.destroy({ where: { studentId: id }, transaction });
+    }
+    await transaction.commit();
+    return result;
+  } catch(err) {
+    await transaction.rollback();
+    throw err;
+  }
 }
 
 export const addStudentBulk = async (file: Buffer, specializationId: number, studyForm: StudyForm) => {
