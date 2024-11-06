@@ -59,6 +59,16 @@ export async function editPaper(user: User, paperId: number, title: string, desc
     await Logger.log(user, {
       name: LogName.PaperUpdated,
       paperId: paper.id,
+      meta: {
+        paperPayload: {
+          title,
+          description,
+          topicIds,
+          studentId: paper.studentId,
+          teacherId: paper.teacherId,
+          type: paper.type,
+        }
+      }
     }, { transaction });
     if (titleUpdated) {
       const extraData = await paper.student.getStudentExtraDatum();
