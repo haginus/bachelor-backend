@@ -1450,7 +1450,7 @@ export const beginNewSession = async (user: User) => {
       if (!user.student.paper) continue;
       const paperId = user.student.paper.id;
       if (user.student.paper.gradeAverage >= 6) {
-        await user.destroy({ transaction });
+        await user.destroy({ transaction, force: true });
       } else {
         await Student.update({ generalAverage: null }, { where: { id: user.id }, transaction });
         await StudentExtraData.destroy({ where: { studentId: user.id }, transaction });
