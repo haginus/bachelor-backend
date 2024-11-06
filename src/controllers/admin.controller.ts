@@ -132,8 +132,8 @@ export const getStudent = (id: number) => {
 
 async function _checkUserEmail(email: string, existingUserId?: number, transaction?: Transaction) {
   email = email.trim();
-  const existingUser = await User.findOne({ where: { email }, transaction});
-  if(existingUser && existingUser.id !== existingUserId) {
+  const existingUser = await User.findOne({ where: { email }, transaction });
+  if (existingUser && existingUser.id !== existingUserId) {
     throw new ResponseError("E-mailul introdus este deja luat.");
   }
   return email;
@@ -178,54 +178,56 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
   }
 }
 
-export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number, 
-    identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
-    let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
-    if(!previousStudent) {
-        throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
+  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
+  let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
+  if (!previousStudent) {
+    throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
+  }
+  let specialization = await Specialization.findOne({ where: { id: specializationId } });
+  if (!specialization) {
+    throw "SPECIALIZATION_NOT_FOUND";
+  }
+  let domainId = specialization.domainId;
+  let documentsGenerated = false;
+  const transaction = await sequelize.transaction();
+  try {
+    email = await _checkUserEmail(email, id, transaction);
+    const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
+      where: { id }, transaction
+    });
+    const [studentUpdateCount] = await Student.update({
+      group, domainId, identificationCode, promotion, specializationId,
+      studyForm, fundingForm, matriculationYear
+    }, { // update student data
+      where: { userId: id }, transaction
+    });
+    if (previousStudent.user.email != email) {
+      await resetPassword(email, transaction);
     }
-    let specialization = await Specialization.findOne({ where: { id: specializationId } });
-    if (!specialization) {
-        throw "SPECIALIZATION_NOT_FOUND";
+    if ((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
+      const paper = await Paper.scope(['student', 'teacher']).findOne({
+        where: { studentId: previousStudent.id },
+      });
+      if (paper) {
+        if (paper.isValid === true) {
+          throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
+        }
+        const sessionSettings = await SessionSettings.findOne();
+        const generatedDocuments = await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
+        documentsGenerated = generatedDocuments.length > 0;
+      }
     }
-    let domainId = specialization.domainId;
-    let documentsGenerated = false;
-    const transaction = await sequelize.transaction();
-    try {
-        email = await _checkUserEmail(email, id, transaction);
-        const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
-            where: { id }, transaction
-        });
-        const [studentUpdateCount] = await Student.update({ group, domainId, identificationCode, promotion, specializationId,
-            studyForm, fundingForm, matriculationYear }, { // update student data
-            where: { userId: id }, transaction
-        });
-        if(previousStudent.user.email != email) {
-            await resetPassword(email, transaction);
-        }
-        if((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
-            const paper = await Paper.scope(['student', 'teacher']).findOne({
-                where: { studentId: previousStudent.id },
-            });
-            if(paper) {
-                if(paper.isValid === true) {
-                    throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
-                }
-                const sessionSettings = await SessionSettings.findOne();
-                const generatedDocuments = await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
-                documentsGenerated = generatedDocuments.length > 0;
-            }
-        }
-        await transaction.commit();
-        return {
-            user: await UserController.getUserData(id),
-            documentsGenerated,
-        }
-    } catch(err) {
-        console.log(err);
-        await transaction.rollback(); // if anything goes wrong, rollback
-        handleUserUpdateError(err);
+    await transaction.commit();
+    return {
+      user: await UserController.getUserData(id),
+      documentsGenerated,
     }
+  } catch (err) {
+    console.log(err);
+    await transaction.rollback(); // if anything goes wrong, rollback
+    handleUserUpdateError(err);
+  }
 }
 
 export async function editStudentExtraData(studentId: number, data: StudentExtraData) {
@@ -251,13 +253,13 @@ export const deleteUser = async (request: Request, id: number) => {
   const transaction = await sequelize.transaction();
   try {
     let result = await User.destroy({ where: { id }, transaction });
-    if(user.type === 'student') {
+    if (user.type === 'student') {
       await Student.destroy({ where: { id }, transaction });
       await Paper.destroy({ where: { studentId: id }, transaction });
     }
     await transaction.commit();
     return result;
-  } catch(err) {
+  } catch (err) {
     await transaction.rollback();
     throw err;
   }
@@ -305,28 +307,28 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
       });
   });
   let promises = users.map(async user => {
-    let fundingForm: string = removeDiacritics((user.fundingForm || '').trim().toLowerCase());
-    if (fundingForm == 'buget') {
-      fundingForm = 'budget';
-    } else if (fundingForm == 'taxa') {
-      fundingForm = 'tax';
+    user.fundingForm = removeDiacritics((user.fundingForm || '').trim().toLowerCase());
+    if (user.fundingForm == 'buget') {
+      user.fundingForm = 'budget';
+    } else if (user.fundingForm == 'taxa') {
+      user.fundingForm = 'tax';
     } else {
       throw new ResponseError('Câmpul "formă de finanțare" trebuie să fie buget/taxă.');
     }
     const email = user.email.trim();
     const existing = await User.findOne({ where: { email }, include: [Student] });
-    if(existing && !existing.student) {
+    if (existing && !existing.student) {
       throw new ResponseError("E-mailul introdus este luat, însă nu de un student.");
     }
     if (existing && existing.student.specializationId == specializationId) return {
       status: 'edited' as const,
       row: user,
-      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm as any, user.matriculationYear)
+      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm as any, user.matriculationYear)
     }
     return {
       status: 'added' as const,
       row: user,
-      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, fundingForm, user.matriculationYear)
+      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear)
     }
   });
 
@@ -1257,7 +1259,7 @@ export async function requestDocumentsReupload(user: User, paperId: number, dtos
       }, { transaction });
     }
     await Mailer.sendDocumentReuploadRequestNotice(mappedPaper.student as any, requests);
-    for(const request of requests) {
+    for (const request of requests) {
       await Logger.log(user, {
         name: LogName.DocumentReuploadRequestCreated,
         documentReuploadRequestId: request.id,
@@ -1274,7 +1276,7 @@ export async function requestDocumentsReupload(user: User, paperId: number, dtos
 
 export async function cancelDocumentReuploadRequest(user: User, requestId: number) {
   const request = await DocumentReuploadRequest.findByPk(requestId);
-  if(!request) {
+  if (!request) {
     throw new ResponseErrorNotFound("Cererea de reîncărcare a documentului nu există.");
   }
   const transaction = await sequelize.transaction();
@@ -1322,7 +1324,7 @@ export const validatePaper = async (user: User, paperId: number, validate: boole
     const requiredDocs = (await DocumentController.getPaperRequiredDocuments(paperId, null))
       .filter(doc => doc.uploadBy == 'student');
     const missingRequiredDocuments = getMissingRequiredDocuments(requiredDocs, paper.documents);
-    if(missingRequiredDocuments.length > 0 && !ignoreRequiredDocs) {
+    if (missingRequiredDocuments.length > 0 && !ignoreRequiredDocs) {
       throw new ResponseError(
         "Lucrarea nu conține toate documentele necesare. Validarea poate fi făcută prin ignorarea expresă a acestui fapt.",
         "MISSING_REQUIRED_DOCUMENTS"
@@ -1342,7 +1344,7 @@ export const validatePaper = async (user: User, paperId: number, validate: boole
       if (signUpFormDocument) {
         let signatureSample: string | undefined;
         const signature = await SignaturesController.findOneByUserId(paper.studentId);
-        if(signature) {
+        if (signature) {
           const signatureSampleBuffer = await SignaturesController.getSample(signature.id);
           signatureSample = `data:image/png;base64,${signatureSampleBuffer.toString('base64')}`;
         }
@@ -1368,7 +1370,7 @@ export const validatePaper = async (user: User, paperId: number, validate: boole
   } else {
     const transaction = await sequelize.transaction();
     try {
-      if(paper.committeeId) {
+      if (paper.committeeId) {
         paper.committeeId = null;
         await Logger.log(user, {
           name: LogName.PaperUnassigned,

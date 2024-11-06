@@ -1,4 +1,4 @@
-import { User, Student, Profile, sequelize } from "../models/models";
+import { User, Student, sequelize } from "../models/models";
 import imageThumbnail from 'image-thumbnail';
 import { safePath, ResponseError, ResponseErrorInternal } from "../util/util";
 import path from "path";
@@ -6,9 +6,9 @@ import fs from "fs";
 import crypto from 'crypto';
 import { config } from "../config/config";
 import * as Mailer from '../mail/mailer';
-import { Transaction } from "sequelize/types";
+import { Transaction, WhereOptions } from "sequelize/types";
 
-const getUser = async (where, transaction?: Transaction) => {
+const getUser = async (where: WhereOptions<User>, transaction?: Transaction) => {
   return User.findOne({
     transaction,
     where,
@@ -45,8 +45,8 @@ export async function validateUser(uid) {
   return user.save({ fields: ['validated'] });
 }
 
-export async function getUserData(uid: number, transaction?: Transaction) {
-  return getUser(uid, transaction);
+export async function getUserData(id: number, transaction?: Transaction) {
+  return getUser({ id }, transaction);
 }
 
 export async function patchProfile(user: User, picture: Buffer, bio: string, website: string) {
