@@ -54,7 +54,7 @@ router.post('/students/add', function (req, res, next) {
     let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
         studyForm, fundingForm, matriculationYear } = req.body;
     AdminController.addStudent(firstName, lastName, CNP, email, group,
-        specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear)
+        specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear, undefined, req._user)
         .then(student => res.json(student))
         .catch(err => next(err));
 });
@@ -63,14 +63,14 @@ router.post('/students/edit', function (req, res, next) {
     let { id, firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
         studyForm, fundingForm, matriculationYear } = req.body;
     AdminController.editStudent(id, firstName, lastName, CNP, email, group, specializationId,
-        identificationCode, promotion, studyForm, fundingForm, matriculationYear)
+        identificationCode, promotion, studyForm, fundingForm, matriculationYear, req._user)
         .then(student => res.json(student))
         .catch(err => next(err));
 });
 
 router.post('/students/:id/extra-data', function (req, res, next) {
     let { id } = req.params;
-    AdminController.editStudentExtraData(+id, req.body)
+    AdminController.editStudentExtraData(+id, req.body, req._user)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
@@ -88,7 +88,7 @@ router.post('/students/add-bulk', fileUpload(), async function(req, res, next) {
             throw new ResponseError('Lipsește fișierul CSV.');
         }
         let fileBuffer = (req.files.file as UploadedFile).data;
-        let result = await AdminController.addStudentBulk(fileBuffer, specializationId, studyForm);
+        let result = await AdminController.addStudentBulk(fileBuffer, specializationId, studyForm, req._user);
         res.json(result);
     } catch(err) {
         next(err);
@@ -119,20 +119,20 @@ router.get('/teachers', isType('admin'), function (req, res, next) {
 
 router.post('/teachers/add', isType('admin'), function (req, res, next) {
     let { title, firstName, lastName, CNP, email } = req.body;
-    AdminController.addTeacher(title, firstName, lastName, CNP, email)
+    AdminController.addTeacher(title, firstName, lastName, CNP, email, req._user)
         .then(teacher => res.json(teacher))
         .catch(err => next(err));
 });
 
 router.post('/teachers/edit', isType('admin'), function (req, res, next) {
     let { id, title, firstName, lastName, CNP, email } = req.body;
-    AdminController.editTeacher(id, title, firstName, lastName, CNP, email)
+    AdminController.editTeacher(id, title, firstName, lastName, CNP, email, req._user)
         .then(teacher => res.json(teacher))
         .catch(err => next(err));
 });
 
 router.post('/teachers/add-bulk', isType('admin'), fileUpload(), function(req, res, next) {
-    AdminController.addTeacherBulk((req.files.file as UploadedFile).data)
+    AdminController.addTeacherBulk((req.files.file as UploadedFile).data, req._user)
         .then(result => res.json(result))
         .catch(err => next(err));
 });
@@ -147,14 +147,14 @@ router.get('/admins', isType('admin'), sudo(), function (req, res, next) {
 
 router.post('/admins/add', isType('admin'), sudo(), function (req, res, next) {
     let { firstName, lastName, email, type } = req.body;
-    AdminController.addAdmin(firstName, lastName, email, type)
+    AdminController.addAdmin(firstName, lastName, email, type, req._user)
         .then(admin => res.json(admin))
         .catch(err => next(err));
 });
 
 router.post('/admins/edit', isType('admin'), sudo(), function (req, res, next) {
     let { id, firstName, lastName, type } = req.body;
-    AdminController.editAdmin(+id, firstName, lastName, type)
+    AdminController.editAdmin(+id, firstName, lastName, type, req._user)
         .then(admin => res.json(admin))
         .catch(err => next(err));
 });
@@ -182,7 +182,7 @@ router.post('/sign-up-requests/:id/decline', function (req, res, next) {
 
 router.post('/sign-up-requests/:id/accept', function (req, res, next) {
     let { id } = req.params;
-    AdminController.acceptSignUpRequest(+id, req.body)
+    AdminController.acceptSignUpRequest(+id, req.body, req._user)
         .then(result => res.json({ success: true }))
         .catch(err => next(err));
 });

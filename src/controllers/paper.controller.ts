@@ -9,6 +9,7 @@ import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
 import { paperRequiredDocuments } from "../paper-required-documents";
 import { isEqual } from "lodash";
+import { deepDiff } from "../util/deep-diff";
 
 export function mapPaper(paper: Paper) {
   const plainPaper = copyObject(paper);
@@ -42,12 +43,13 @@ function editPaperGuard(paper: Paper, user: User, sessionSettings: SessionSettin
 }
 
 export async function editPaper(user: User, paperId: number, title: string, description: string, topicIds: number[]) {
-  const paper = await Paper.scope(['student', 'teacher']).findOne({ where: { id: paperId }});
+  const paper = await Paper.scope(['student', 'teacher', 'topics']).findOne({ where: { id: paperId }});
   if (!paper) {
     throw new ResponseError("Lucrarea nu există.", "PAPER_NOT_FOUND", 404);
   }
   const sessionSettings = await SessionSettings.findOne();
   editPaperGuard(paper, user, sessionSettings);
+  const oldPaper = JSON.parse(JSON.stringify(paper)) as Paper;
   const titleUpdated = paper.title != title;
   const transaction = await sequelize.transaction();
   try {
@@ -56,18 +58,20 @@ export async function editPaper(user: User, paperId: number, title: string, desc
     await paper.save({ transaction });
     await paper.setTopics(topicIds, { transaction });
     let documentsGenerated = false;
+    const paperPayload = {
+      title,
+      description,
+      topicIds,
+      studentId: paper.studentId,
+      teacherId: paper.teacherId,
+      type: paper.type,
+    };
     await Logger.log(user, {
       name: LogName.PaperUpdated,
       paperId: paper.id,
       meta: {
-        paperPayload: {
-          title,
-          description,
-          topicIds,
-          studentId: paper.studentId,
-          teacherId: paper.teacherId,
-          type: paper.type,
-        }
+        paperPayload,
+        changedProperties: deepDiff(paperPayload, { ...oldPaper, topicIds: oldPaper.topics.map(t => t.id) }),
       }
     }, { transaction });
     if (titleUpdated) {

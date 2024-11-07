@@ -10,6 +10,9 @@ import * as Mailer from "../mail/mailer";
 import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
 import { redisHSet } from "../util/redis";
 import * as PaperController from "./paper.controller";
+import { Logger } from "../util/logger";
+import { LogName } from "../lib/types/enums/log-name.enum";
+import { deepDiff } from "../util/deep-diff";
 
 export interface GetTeacherOffersFilters {
   teacherName?: string;
@@ -293,7 +296,7 @@ export class StudentController {
     return user.student.getStudentExtraDatum({ scope: 'noKeys' });
   }
 
-  public static setExtraData = async (user: User, data: StudentExtraData, skipChecks = false) => {
+  public static setExtraData = async (user: User, data: StudentExtraData, skipChecks = false, requestUser?: User) => {
     const sessionSettings = await SessionSettings.findOne();
     if (!skipChecks && !(await DocumentController.checkFileSubmissionPeriod('secretary_files', sessionSettings))) {
       throw new ResponseErrorForbidden('Nu suntem în perioada de trimitere de documente.', 'NOT_IN_FILE_SUBMISSION_PERIOD');
@@ -337,6 +340,16 @@ export class StudentController {
           fields: ["locality", "county", "street", "streetNumber", "building", "stair", "floor", "apartment"]
         }); // update address
         if (dataUpdated || addressUpdated) {
+          const resultPayload = JSON.parse(JSON.stringify(await StudentExtraData.findOne({ where: { studentId: student.id }, transaction })));
+          await Logger.log(requestUser || user, {
+            name: LogName.StudentExtraDataUpdated,
+            studentExtraDataId: oldData.id,
+            userId: student.id,
+            meta: {
+              resultPayload,
+              changedProperties: deepDiff(resultPayload, oldData),
+            }
+          }, { transaction });
           await PaperController.generatePaperDocuments(PaperController.mapPaper(studentPaper), data, sessionSettings, transaction);
         }
         redisHSet('paperRequiredDocs', student.paper?.id, null);
@@ -356,6 +369,15 @@ export class StudentController {
         let extraDataModel = await StudentExtraData.create(newMainData, { transaction });
         let addressModel = await Address.create(newAddress, { transaction });
         await extraDataModel.setAddress(addressModel, { transaction });
+        const resultPayload = JSON.parse(JSON.stringify(await StudentExtraData.findOne({ where: { studentId: student.id }, transaction })));
+        await Logger.log(requestUser || user, {
+          name: LogName.StudentExtraDataCreated,
+          studentExtraDataId: extraDataModel.id,
+          userId: student.id,
+          meta: {
+            resultPayload,
+          }
+        }, { transaction });
         await PaperController.generatePaperDocuments(PaperController.mapPaper(studentPaper), data, sessionSettings, transaction);
         await transaction.commit();
       } catch (err) {

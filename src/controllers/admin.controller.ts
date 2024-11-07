@@ -20,6 +20,7 @@ import { StudentController } from "./student.controller";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
 import { SignaturesController } from "./signatures.controller";
+import { deepDiff } from "../util/deep-diff";
 var stream = require('stream');
 
 interface Statistic {
@@ -140,21 +141,19 @@ async function _checkUserEmail(email: string, existingUserId?: number, transacti
 }
 
 export const addStudent = async (firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
-  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, t?: Transaction) => {
+  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, t?: Transaction, requestUser?: User) => {
   let specialization = await Specialization.findOne({ where: { id: specializationId } });
   if (!specialization) {
     throw "SPECIALIZATION_NOT_FOUND";
   }
   let domainId = specialization.domainId;
   let transaction = t || await sequelize.transaction();
+  const userPayload = { firstName, lastName, CNP, email, type: 'student' as const };
+  const studentPayload = { group, domainId, identificationCode, promotion, specializationId, studyForm, fundingForm, matriculationYear };
   try {
     email = await _checkUserEmail(email, null, transaction);
-    let user = await User.create({ firstName, lastName, CNP, email, type: 'student' }, { transaction }); // create user
-    // create student entity
-    await Student.create({
-      id: user.id, group, identificationCode, promotion, studyForm, fundingForm, matriculationYear,
-      domainId, specializationId, userId: user.id
-    }, { transaction });
+    let user = await User.create(userPayload, { transaction });
+    await Student.create({ ...studentPayload, id: user.id, userId: user.id }, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
     let token = crypto.randomBytes(64).toString('hex'); // generate activation token
     let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
@@ -166,6 +165,13 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
         'EMAIL_NOT_SENT'
       );
     }
+    await Logger.log(requestUser, {
+      name: LogName.UserCreated,
+      userId: user.id,
+      meta: {
+        resultPayload: { ...studentPayload, user: userPayload },
+      }
+    }, { transaction });
     if (!t) {
       await transaction.commit();
       transaction = undefined;
@@ -179,32 +185,36 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
 }
 
 export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
-  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string) => {
+  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string, requestUser?: User) => {
   let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
   if (!previousStudent) {
     throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
   }
   let specialization = await Specialization.findOne({ where: { id: specializationId } });
   if (!specialization) {
-    throw "SPECIALIZATION_NOT_FOUND";
+    throw new ResponseError('Specializarea nu există.', 'SPECIALIZATION_NOT_FOUND');
   }
   let domainId = specialization.domainId;
   let documentsGenerated = false;
   const transaction = await sequelize.transaction();
   try {
     email = await _checkUserEmail(email, id, transaction);
-    const [userUpdateCount] = await User.update({ firstName, lastName, CNP, email }, { // update user data
-      where: { id }, transaction
-    });
-    const [studentUpdateCount] = await Student.update({
-      group, domainId, identificationCode, promotion, specializationId,
-      studyForm, fundingForm, matriculationYear
-    }, { // update student data
-      where: { userId: id }, transaction
-    });
+    const userPayload = { firstName, lastName, CNP, email };
+    const studentPayload = { group, domainId, identificationCode, promotion, specializationId, studyForm, fundingForm, matriculationYear };
+    const [userUpdateCount] = await User.update(userPayload, { where: { id }, transaction });
+    const [studentUpdateCount] = await Student.update(studentPayload, { where: { userId: id }, transaction });
     if (previousStudent.user.email != email) {
       await resetPassword(email, transaction);
     }
+    const resultPayload = { ...studentPayload, user: userPayload };
+    await Logger.log(requestUser, {
+      name: LogName.UserUpdated,
+      userId: id,
+      meta: {
+        changedProperties: deepDiff(resultPayload, previousStudent),
+        resultPayload,
+      }
+    }, { transaction });
     if ((userUpdateCount || studentUpdateCount) && previousStudent.studentExtraDatum) {
       const paper = await Paper.scope(['student', 'teacher']).findOne({
         where: { studentId: previousStudent.id },
@@ -230,12 +240,12 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
   }
 }
 
-export async function editStudentExtraData(studentId: number, data: StudentExtraData) {
+export async function editStudentExtraData(studentId: number, data: StudentExtraData, requestUser: User) {
   const studentUser = await getStudent(studentId);
   if (!studentUser) {
     throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
   }
-  return StudentController.setExtraData(studentUser, data, true);
+  return StudentController.setExtraData(studentUser, data, true, requestUser);
 }
 
 export const deleteUser = async (request: Request, id: number) => {
@@ -257,6 +267,10 @@ export const deleteUser = async (request: Request, id: number) => {
       await Student.destroy({ where: { id }, transaction });
       await Paper.destroy({ where: { studentId: id }, transaction });
     }
+    await Logger.log(requestUser, {
+      name: LogName.UserDeleted,
+      userId: id,
+    }, { transaction });
     await transaction.commit();
     return result;
   } catch (err) {
@@ -265,7 +279,7 @@ export const deleteUser = async (request: Request, id: number) => {
   }
 }
 
-export const addStudentBulk = async (file: Buffer, specializationId: number, studyForm: StudyForm) => {
+export const addStudentBulk = async (file: Buffer, specializationId: number, studyForm: StudyForm, requestUser?: User) => {
   const specialization = await Specialization.findByPk(specializationId);
   if (!specialization) {
     throw new ResponseError('Specializarea nu a fost găsită.', 'SPECIALIZATION_NOT_FOUND');
@@ -323,12 +337,12 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
     if (existing && existing.student.specializationId == specializationId) return {
       status: 'edited' as const,
       row: user,
-      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm as any, user.matriculationYear)
+      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm as any, user.matriculationYear, requestUser)
     }
     return {
       status: 'added' as const,
       row: user,
-      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear)
+      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, undefined, requestUser)
     }
   });
 
@@ -433,12 +447,14 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
   return query;
 }
 
-export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string) => {
+export const addTeacher = async (title: string, firstName: string, lastName: string, CNP: string, email: string, requestUser?: User) => {
   const transaction = await sequelize.transaction();
+  const userPayload = { title, firstName, lastName, CNP, email, type: 'teacher' as const };
+  const teacherPayload = {};
   try {
     email = await _checkUserEmail(email, null, transaction);
-    let user = await User.create({ title, firstName, lastName, CNP, email, type: 'teacher' }, { transaction });
-    await Teacher.create({ id: user.id, userId: user.id }, { transaction });
+    let user = await User.create(userPayload, { transaction });
+    await Teacher.create({ ...teacherPayload, id: user.id, userId: user.id }, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
     let token = crypto.randomBytes(64).toString('hex');
     let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
@@ -450,6 +466,13 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
         'EMAIL_NOT_SENT'
       );
     }
+    await Logger.log(requestUser, {
+      name: LogName.UserCreated,
+      userId: user.id,
+      meta: {
+        resultPayload: { ...teacherPayload, user: userPayload },
+      }
+    }, { transaction });
     await transaction.commit();
     return UserController.getUserData(user.id);
   } catch (err) {
@@ -458,21 +481,28 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
   }
 }
 
-export const editTeacher = async (id: number, title: string, firstName: string, lastName: string, CNP: string, email: string) => {
+export const editTeacher = async (id: number, title: string, firstName: string, lastName: string, CNP: string, email: string, requestUser?: User) => {
   const transaction = await sequelize.transaction();
   let previousTeacher = await Teacher.findOne({ where: { userId: id }, include: [User] });
   if (!previousTeacher) {
     throw new ResponseErrorNotFound('Profesorul nu a fost găsit.');
   }
+  const userPayload = { title, firstName, lastName, CNP, email };
   try {
     email = await _checkUserEmail(email, id, transaction);
-    let userUpdate = await User.update({ title, firstName, lastName, CNP, email }, {
-      where: { id },
-      transaction,
-    });
+    await User.update(userPayload, { where: { id }, transaction });
     if (previousTeacher.user.email != email) {
       await resetPassword(email, transaction);
     }
+    const resultPayload = { user: userPayload };
+    await Logger.log(requestUser, {
+      name: LogName.UserUpdated,
+      userId: id,
+      meta: {
+        changedProperties: deepDiff(resultPayload, previousTeacher),
+        resultPayload,
+      }
+    }, { transaction });
     await transaction.commit();
     return UserController.getUserData(id);
   } catch (err) {
@@ -481,7 +511,7 @@ export const editTeacher = async (id: number, title: string, firstName: string, 
   }
 }
 
-export const addTeacherBulk = async (file: Buffer) => {
+export const addTeacherBulk = async (file: Buffer, requestUser?: User) => {
   const HEADERS = [
     ['TITLU', 'title'],
     ['NUME', 'lastName'],
@@ -517,7 +547,7 @@ export const addTeacherBulk = async (file: Buffer) => {
 
   let promises = users.map(user => {
     const { title, firstName, lastName, CNP, email } = user;
-    return addTeacher(title, firstName, lastName, CNP, email);
+    return addTeacher(title, firstName, lastName, CNP, email, requestUser);
   });
 
   let results = await Promise.allSettled(promises);
@@ -566,13 +596,14 @@ export const getAdmins = async () => {
   });
 }
 
-export const addAdmin = async (firstName: string, lastName: string, email: string, type: 'admin' | 'secretary') => {
+export const addAdmin = async (firstName: string, lastName: string, email: string, type: 'admin' | 'secretary', requestUser?: User) => {
   if (['admin', 'secretary'].indexOf(type) == -1) {
     throw new ResponseError('Tipul de utilizator nu este valid.', 'VALIDATION_ERROR');
   }
+  const userPayload = { firstName, lastName, email, type };
   const transaction = await sequelize.transaction();
   try {
-    let user = await User.create({ firstName, lastName, email, type, }, { transaction });
+    let user = await User.create(userPayload, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
     let token = crypto.randomBytes(64).toString('hex');
     let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction });
@@ -584,6 +615,13 @@ export const addAdmin = async (firstName: string, lastName: string, email: strin
         'EMAIL_NOT_SENT'
       );
     }
+    await Logger.log(requestUser, {
+      name: LogName.UserCreated,
+      userId: user.id,
+      meta: {
+        resultPayload: userPayload,
+      }
+    }, { transaction });
     await transaction.commit();
     return UserController.getUserData(user.id);
   } catch (err) {
@@ -598,14 +636,29 @@ export const addAdmin = async (firstName: string, lastName: string, email: strin
   }
 }
 
-export const editAdmin = async (id: number, firstName: string, lastName: string, type: 'admin' | 'secretary') => {
+export const editAdmin = async (id: number, firstName: string, lastName: string, type: 'admin' | 'secretary', requestUser?: User) => {
   if (['admin', 'secretary'].indexOf(type) == -1) {
     throw new ResponseError('Tipul de utilizator nu este valid.', 'VALIDATION_ERROR');
   }
-  let userUpdate = await User.update({ firstName, lastName, type }, {
-    where: { id }
-  });
-  return UserController.getUserData(id);
+  const previousAdmin = await User.findOne({ where: { id } });
+  const userPayload = { firstName, lastName, type };
+  const transaction = await sequelize.transaction();
+  try {
+    await User.update(userPayload, { where: { id }, transaction });
+    await Logger.log(requestUser, {
+      name: LogName.UserUpdated,
+      userId: id,
+      meta: {
+        changedProperties: deepDiff(userPayload, previousAdmin),
+        resultPayload: userPayload,
+      }
+    }, { transaction });
+    await transaction.commit();
+    return UserController.getUserData(id);
+  } catch(err) {
+    await transaction.rollback();
+    throw err;
+  }
 }
 
 // Requests
@@ -613,7 +666,7 @@ export const getSignUpRequests = async () => {
   return SignUpRequest.findAll();
 }
 
-export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpRequest & { generalAverage?: number }) => {
+export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpRequest & { generalAverage?: number }, requestUser?: User) => {
   let request = await SignUpRequest.findByPk(id);
   if (!request) {
     throw new ResponseError('Cererea nu există.');
@@ -623,7 +676,7 @@ export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpR
     await request.update({ ...additionalChanges }, { transaction });
     const student = await addStudent(request.firstName, request.lastName, request.CNP, request.email, request.group, request.specializationId,
       request.identificationCode, request.promotion, request.studyForm, request.fundingForm, request.matriculationYear,
-      transaction);
+      transaction, requestUser);
     if (additionalChanges.generalAverage) {
       await Student.update({ generalAverage: additionalChanges.generalAverage }, { where: { id: student.id }, transaction });
     }
