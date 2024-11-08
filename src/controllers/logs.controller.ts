@@ -9,12 +9,26 @@ export class LogsController {
   static async findAll(params: Record<string, string>) {
     const limit = parseInt(params.limit) || 20;
     const offset = parseInt(params.offset) || 0;
+    let parsedMeta: Record<any, any> = undefined;
+    if(params.meta) {
+      try {
+        parsedMeta = replaceOperators(JSON.parse(params.meta));
+      } catch(_) {
+        console.error(_)
+        throw new ResponseError("Câmpul 'meta' trebuie să fie un obiect.");
+      }
+    }
     const where = removeUndefined({
       name: computeInClause(params.name, withEnum(LogName)),
       severity: computeInClause(params.severity, withEnum(LogSeverity)),
       byUserId: computeInClause(params.byUserId, withNumbersOrNull),
       impersonatedByUserId: computeInClause(params.impersonatedByUserId, withNumbersOrNull),
+      userId: computeInClause(params.userId, withNumbersOrNull),
+      studentExtraDataId: computeInClause(params.studentExtraDataId, withNumbersOrNull),
       paperId: computeInClause(params.paperId, withNumbersOrNull),
+      documentId: computeInClause(params.documentId, withNumbersOrNull),
+      documentReuploadRequestId: computeInClause(params.documentReuploadRequestId, withNumbersOrNull),
+      meta: parsedMeta,
     });
     const count = await Log.count({ where });
     const rows = await Log.findAll({
@@ -107,5 +121,33 @@ function computeInClause(values: string | undefined, {
 function removeUndefined(obj: WhereOptions<LogAttributes>) {
   Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
   return obj;
+}
+
+function replaceOperators(meta: Record<any, any>) {
+  const operators = {
+    '$and': Op.and,
+    '$or': Op.or,
+    '$ne': Op.ne,
+    '$lt': Op.lt,
+    '$lte': Op.lte,
+    '$gt': Op.gt,
+    '$gte': Op.gte,
+    '$in': Op.in,
+    '$notIn': Op.notIn,
+    '$substring': Op.substring,
+    '$startsWith': Op.startsWith,
+    '$endsWith': Op.endsWith,
+  }
+  for(const key of Object.keys(meta)) {
+    const value = meta[key];
+    if(operators[key]) {
+      meta[operators[key]] = value;
+      delete meta[key];
+    }
+    if(typeof value === 'object') {
+      replaceOperators(value);
+    }
+  }
+  return meta;
 }
 
