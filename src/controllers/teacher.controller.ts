@@ -11,9 +11,20 @@ import { LogName } from "../lib/types/enums/log-name.enum";
 
 
 export const validateTeacher = async (user: User) => {
-    user.validated = true;
-    await user.save();
-    return user;
+    const transaction = await sequelize.transaction();
+    try {
+        user.validated = true;
+        await user.save({ transaction });
+        await Logger.log(user, {
+            name: LogName.UserValidated,
+            userId: user.id,
+          }, { transaction });
+        await transaction.commit();
+        return user;
+    } catch(err) {
+        await transaction.rollback();
+        throw err;
+    }
 }
 
 export const getTeacherByUserId = (uid) => {

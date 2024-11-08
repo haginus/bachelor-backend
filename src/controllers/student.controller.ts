@@ -33,6 +33,10 @@ export class StudentController {
       user.validated = true;
       await user.save({ transaction });
       await user.student.setTopics(topicIds, { transaction });
+      await Logger.log(user, {
+        name: LogName.UserValidated,
+        userId: user.id,
+      }, { transaction });
       await transaction.commit();
     } catch (err) {
       await transaction.rollback();

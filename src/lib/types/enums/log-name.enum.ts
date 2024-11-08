@@ -2,6 +2,7 @@ export enum LogName {
   UserCreated = 'user.created',
   UserUpdated = 'user.updated',
   UserDeleted = 'user.deleted',
+  UserValidated = 'user.validated',
   StudentExtraDataCreated = 'studentExtraData.created',
   StudentExtraDataUpdated = 'studentExtraData.updated',
   StudentExtraDataDeleted = 'studentExtraData.deleted',
