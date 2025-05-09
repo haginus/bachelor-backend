@@ -394,27 +394,31 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
     SELECT COUNT(*)
     FROM papers AS paper
     WHERE paper.teacherId = \`teacher\`.id
+    AND deletedAt IS null
   )`);
 
   const bachelorPaperLiteral = Sequelize.literal(`(
     SELECT COUNT(*)
     FROM papers AS paper
     WHERE paper.teacherId = \`teacher\`.id
-    and type = 'bachelor'
+    AND type = 'bachelor'
+    AND deletedAt IS null
   )`);
 
   const diplomaPaperLiteral = Sequelize.literal(`(
     SELECT COUNT(*)
     FROM papers AS paper
     WHERE paper.teacherId = \`teacher\`.id
-    and type = 'diploma'
+    AND type = 'diploma'
+    AND deletedAt IS null
   )`);
 
   const masterPaperLiteral = Sequelize.literal(`(
     SELECT COUNT(*)
     FROM papers AS paper
     WHERE paper.teacherId = \`teacher\`.id
-    and type = 'master'
+    AND type = 'master'
+    AND deletedAt IS null
   )`);
 
   const offerLiteral = Sequelize.literal(`(
@@ -431,7 +435,7 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
         attributes: {
           include: [
             [paperLiteral, 'paperNumber'],
-            [bachelorPaperLiteral, 'bachoolPaperNumber'],
+            [bachelorPaperLiteral, 'bachelorPaperNumber'],
             [diplomaPaperLiteral, 'diplomaPaperNumber'],
             [masterPaperLiteral, 'masterPaperNumber'],
             [offerLiteral, 'offerNumber']
