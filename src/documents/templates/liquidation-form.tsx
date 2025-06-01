@@ -2,10 +2,11 @@ import React from 'react';
 import { Page, Text, Document, StyleSheet } from '@react-pdf/renderer';
 import { FormHeader } from '../components/form-header';
 import { globalStyles } from '../global-styles';
-import { GraduateStatementText } from '../components/graduate-statement-text';
 import { DOMAIN_TYPES, PAPER_TYPES } from '../constants';
 import { DateAndSignature } from '../components/date-and-signature';
 import { StudentDocumentGenerationProps } from '../types';
+import { GdprPage } from '../components/gdpr-page';
+import { PageCount } from '../components/page-count';
 
 const styles = StyleSheet.create({
   footerNote: {
@@ -20,6 +21,7 @@ export function LiquidationForm({ student, extraData, paper, sessionSettings, si
   return (
     <Document title={`Formular de lichidare - ${student.user.lastName} ${student.user.firstName}`}>
       <Page size="A4" style={globalStyles.page}>
+        <PageCount />
         <FormHeader student={student} />
         <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: 'bold', marginBottom: '0.5cm' }}>
           Domnule rector,
@@ -44,7 +46,6 @@ export function LiquidationForm({ student, extraData, paper, sessionSettings, si
           }
           {' '}telefon {extraData.mobilePhone}, e-mail {extraData.personalEmail}.
         </Text>
-        <GraduateStatementText style={{ marginTop: 10 }} />
         <DateAndSignature date={new Date()} signatureSample={signatureSample} />
         <Text style={{ textAlign: 'center', fontSize: 12, fontWeight: 'bold', marginVertical: '1cm' }}>
           ARE/NU ARE DEBITE{'\n'}
@@ -65,6 +66,7 @@ export function LiquidationForm({ student, extraData, paper, sessionSettings, si
           pe baza tabelelor completate și asumate de către Bibliotecă și Servicul Social al Universității din București.
         </Text> 
       </Page>
+      <GdprPage />
     </Document>
   );
 }

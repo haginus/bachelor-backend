@@ -3,9 +3,10 @@ import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import { globalStyles } from '../global-styles';
 import { CIVIL_STATES, PAPER_TYPES } from '../constants';
 import { FormHeader } from '../components/form-header';
-import { GraduateStatementText } from '../components/graduate-statement-text';
 import { DateAndSignature } from '../components/date-and-signature';
 import { StudentDocumentGenerationProps } from '../types';
+import { GdprPage } from '../components/gdpr-page';
+import { PageCount } from '../components/page-count';
 
 const styles = StyleSheet.create({
   tableLabel: {
@@ -20,6 +21,7 @@ export function SignUpForm({ student, extraData, paper, sessionSettings, signatu
   return (
     <Document title={`Cerere de înscriere - ${student.user.lastName} ${student.user.firstName}`}>
       <Page size="A4" style={globalStyles.page}>
+        <PageCount />
         <FormHeader student={student} showIdentificationCode showMG />
         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: '0.5cm' }}>
           FIȘĂ DE ÎNSCRIERE {'\n'}
@@ -97,9 +99,9 @@ export function SignUpForm({ student, extraData, paper, sessionSettings, signatu
             {paper.teacher!.lastName} {paper.teacher!.firstName}
           </Text>
         </View>
-        <GraduateStatementText style={{ marginTop: 10 }} />
         <DateAndSignature date={date} signatureSample={signatureSample} />
       </Page>
+      <GdprPage />
     </Document>
   );
 }
