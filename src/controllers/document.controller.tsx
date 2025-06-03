@@ -63,6 +63,9 @@ export const deleteDocument = async (user: User, documentId: number): Promise<bo
   if (!document) {
     throw new ResponseError('Documentul nu există.', 'NOT_FOUND');
   }
+  if(document.type == 'generated') {
+    throw new ResponseErrorForbidden('Nu puteți șterge un document generat.');
+  }
   if (document.uploadedBy != user.id) {
     if (user.type == 'teacher') {
       if (!paperRequiredDocuments.find(reqDoc => reqDoc.uploadBy == 'committee')) {
