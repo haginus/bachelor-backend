@@ -1,6 +1,6 @@
 import { Op, Transaction } from "sequelize";
 import { Document, DocumentReuploadRequest, Domain, Log, Paper, sequelize, SessionSettings, Specialization, Student, StudentExtraData, Teacher, User } from "../models/models";
-import { arrayMap, changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
+import { arrayMap, arrayUniqueValues, changeUserTree, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden } from "../util/util";
 import { getStoragePath } from "./document.controller";
 import * as DocumentController from './document.controller';
 import * as fs from 'fs';
@@ -103,7 +103,11 @@ export async function generatePaperDocuments(paper: MappedPaper, extraData: Stud
       include: [User, Domain, Specialization],
       transaction
     });
-    const requiredGeneratedDocuments = paperRequiredDocuments.filter(doc => 'generated' in doc.types && doc.types.generated);
+    // Liquidation form has two entries in `paperRequiredDocuments`, so we need to filter one out
+    const requiredGeneratedDocuments = arrayUniqueValues(
+      paperRequiredDocuments.filter(doc => 'generated' in doc.types && doc.types.generated),
+      document => document.name
+    );
     const actualGeneratedDocuments = await Document.findAll({
       where: {
         paperId: paper.id,

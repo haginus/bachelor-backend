@@ -165,6 +165,11 @@ export function arrayMap<T, K extends keyof any>(arr: T[], getKey: (item: T) => 
     }, {} as Record<K, T>);
 }
 
+export function arrayUniqueValues<T, K extends keyof any>(arr: T[], getKey: (item: T) => K) {
+    const map = arrayMap(arr, getKey);
+    return Object.values<T>(map);
+}
+
 export function sortArr<T>(arr: T[], compareFns: ((a: T, b: T) => number)[]) {
     arr.sort((a, b) => {
         for(let fn of compareFns) {
