@@ -167,7 +167,7 @@ export const getDocumentUploadHistory = async (paperId: number, documentName: st
       name: documentName,
     },
     include: [{ model: User.scope('min'), as: 'uploadedByUser' }],
-    order: [['createdAt', 'DESC']],
+    order: [['id', 'DESC']],
     paranoid: false,
   });
   return documents;
