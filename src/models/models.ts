@@ -1400,7 +1400,7 @@ Paper.hasMany(Document, { onDelete: 'CASCADE' });
 Document.belongsTo(Paper);
 
 User.hasMany(Document, { foreignKey: 'uploadedBy' });
-Document.belongsTo(User, { foreignKey: 'uploadedBy' });
+Document.belongsTo(User, { foreignKey: 'uploadedBy', as: 'uploadedByUser' });
 
 DocumentReuploadRequest.init({
   id: {

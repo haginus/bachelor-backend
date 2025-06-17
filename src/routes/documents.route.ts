@@ -15,6 +15,16 @@ router.get('/view', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.get('/history', isType(['admin', 'secretary']), (req, res, next) => {
+    const { paperId, name } = req.query;
+    if (!paperId || !name) {
+        throw new ResponseError('Parametri lipsă.');
+    }
+    DocumentController.getDocumentUploadHistory(+paperId, name as string)
+        .then(history => res.json(history))
+        .catch(err => next(err));
+});
+
 router.post('/delete', async (req, res, next) => {
     let { id } = req.body;
     DocumentController.deleteDocument(req._user, +id)

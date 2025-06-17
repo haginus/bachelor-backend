@@ -1,7 +1,7 @@
 import React from "react";
 import {
   Document, DocumentCategory, DocumentType, Paper, sequelize, SessionSettings,
-  StudentExtraData, Domain, UploadPerspective, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes,
+  StudentExtraData, Domain, User, Student, Committee, Specialization, SignUpRequest, PaperAttributes,
   DocumentReuploadRequest,
   DocumentCreationAttributes
 } from "../models/models";
@@ -117,7 +117,8 @@ export const getDocument = async (user: User, documentId: number) => {
     include: [{
       association: Document.associations.paper,
       required: true
-    }]
+    }],
+    paranoid: user.type == 'admin' || user.type == 'secretary' ? false : true,
   });
   if (!document) {
     throw new ResponseError('Documentul nu există.', 'NOT_FOUND');
@@ -157,6 +158,19 @@ export const getDocument = async (user: User, documentId: number) => {
     console.log(err)
     throw new ResponseErrorInternal();
   }
+}
+
+export const getDocumentUploadHistory = async (paperId: number, documentName: string) => {
+  const documents = await Document.findAll({
+    where: {
+      paperId,
+      name: documentName,
+    },
+    include: [{ model: User.scope('min'), as: 'uploadedByUser' }],
+    order: [['createdAt', 'DESC']],
+    paranoid: false,
+  });
+  return documents;
 }
 
 export async function generateSignUpForm(props: StudentDocumentGenerationProps) {
