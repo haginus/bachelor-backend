@@ -386,8 +386,12 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
   let sortArray: OrderItem = ['id', 'ASC'];
   if (['id', 'firstName', 'lastName', 'CNP', 'email'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
     sortArray = [sort, order];
-  } else if (['offerNumber', 'paperNumber'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
-    sortArray = [Sequelize.literal(`\`teacher.${sort}\``), order];
+  } else if (['offerCount', 'paperCount', 'submittedPaperCount', 'plagiarismReportCount'].includes(sort) && ['ASC', 'DESC'].includes(order)) {
+    if(sort === 'plagiarismReportCount') {
+      sortArray = [Sequelize.literal(`\`teacher.submittedPaperCount\` - \`teacher.plagiarismReportCount\``), order];
+    } else {
+      sortArray = [Sequelize.literal(`\`teacher.${sort}\``), order];
+    }
   }
 
   const paperLiteral = Sequelize.literal(`(
@@ -397,28 +401,23 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
     AND deletedAt IS null
   )`);
 
-  const bachelorPaperLiteral = Sequelize.literal(`(
+  const submittedPaperLiteral = Sequelize.literal(`(
     SELECT COUNT(*)
     FROM papers AS paper
     WHERE paper.teacherId = \`teacher\`.id
-    AND type = 'bachelor'
+    AND paper.submitted = 1
     AND deletedAt IS null
   )`);
 
-  const diplomaPaperLiteral = Sequelize.literal(`(
+  const plagiarismReportLiteral = Sequelize.literal(`(
     SELECT COUNT(*)
-    FROM papers AS paper
+    FROM papers AS paper, documents AS document
     WHERE paper.teacherId = \`teacher\`.id
-    AND type = 'diploma'
-    AND deletedAt IS null
-  )`);
-
-  const masterPaperLiteral = Sequelize.literal(`(
-    SELECT COUNT(*)
-    FROM papers AS paper
-    WHERE paper.teacherId = \`teacher\`.id
-    AND type = 'master'
-    AND deletedAt IS null
+    AND document.paperId = paper.id
+    AND paper.submitted = 1
+    AND document.name = 'plagiarism_report'
+    AND paper.deletedAt IS null
+    AND document.deletedAt IS null
   )`);
 
   const offerLiteral = Sequelize.literal(`(
@@ -434,11 +433,10 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
         association: User.associations.teacher,
         attributes: {
           include: [
-            [paperLiteral, 'paperNumber'],
-            [bachelorPaperLiteral, 'bachelorPaperNumber'],
-            [diplomaPaperLiteral, 'diplomaPaperNumber'],
-            [masterPaperLiteral, 'masterPaperNumber'],
-            [offerLiteral, 'offerNumber']
+            [paperLiteral, 'paperCount'],
+            [submittedPaperLiteral, 'submittedPaperCount'],
+            [plagiarismReportLiteral, 'plagiarismReportCount'],
+            [offerLiteral, 'offerCount']
           ]
         }
       }
