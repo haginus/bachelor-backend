@@ -36,8 +36,8 @@ router.get('/stats', function (req, res, next) {
 // STUDENTS
 
 router.get('/students', function (req, res, next) {
-    let { sort, order, page, pageSize, domainId, specializationId, group, promotion, email } = req.query;
-    const filter = { domainId, specializationId, group, promotion, email } as any;
+    let { sort, order, page, pageSize, domainId, specializationId, group, promotion, lastName, firstName, email } = req.query;
+    const filter = { domainId, specializationId, group, promotion, lastName, firstName, email } as any;
     AdminController.getStudents(sort, order, filter, +page, +pageSize)
         .then(students => res.json(students))
         .catch(err => next(err));

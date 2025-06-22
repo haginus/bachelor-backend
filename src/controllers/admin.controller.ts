@@ -91,9 +91,12 @@ export const getStudents = async (sort, order, filter: StudentQueryFilters, page
     }
   });
   const userWhere = {};
-  if (filter.email) {
-    userWhere['email'] = { [Op.substring]: filter.email };
-  }
+  ['email', 'lastName', 'firstName'].forEach(filterKey => {
+    const value = filter[filterKey];
+    if (value) {
+      userWhere[filterKey] = { [Op.substring]: value };
+    }
+  });
 
   let query = await User.findAndCountAll({
     where: userWhere,
