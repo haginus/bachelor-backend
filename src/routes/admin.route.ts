@@ -111,8 +111,9 @@ router.post('/users/delete', sudo({ soft: true }), async function (req, res, nex
 // TEACHERS
 
 router.get('/teachers', isType('admin'), function (req, res, next) {
-    let { sort, order, page, pageSize } = req.query;
-    AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', null, +page, +pageSize)
+    let { sort, order, page, pageSize, firstName, lastName, email, onlyMissingReports } = req.query;
+    const filter = { firstName, lastName, email, onlyMissingReports } as any;
+    AdminController.getTeachers(sort as string, order as 'ASC' | 'DESC', filter, +page, +pageSize)
         .then(teachers => res.json(teachers))
         .catch(err => next(err));
 });

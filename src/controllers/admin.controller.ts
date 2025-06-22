@@ -21,6 +21,7 @@ import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
 import { SignaturesController } from "./signatures.controller";
 import { deepDiff } from "../util/deep-diff";
+import { Literal } from "sequelize/types/utils";
 var stream = require('stream');
 
 interface Statistic {
@@ -375,8 +376,14 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
 }
 
 // Teachers
+export type TeacherQueryFilters = {
+  lastName?: number;
+  firstName?: number;
+  email?: string;
+  onlyMissingReports?: boolean;
+}
 
-export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, page: number, pageSize: number) => {
+export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter: TeacherQueryFilters = {}, page: number, pageSize: number) => {
   const limit = pageSize || 10;
   const offset = page * pageSize || 0;
   if (limit <= 0 || offset < 0) {
@@ -426,11 +433,25 @@ export const getTeachers = async (sort: string, order: 'ASC' | 'DESC', filter, p
     WHERE offer.teacherId = \`teacher\`.id
   )`);
 
+  let userWhere: WhereOptions<User> = { type: 'teacher' }, teacherWhere: Literal;
+  ['email', 'lastName', 'firstName'].forEach(filterKey => {
+    const value = filter[filterKey];
+    if (value) {
+      userWhere[filterKey] = { [Op.substring]: value };
+    }
+  });
+  if(filter.onlyMissingReports) {
+    teacherWhere = Sequelize.literal(`(
+      ${submittedPaperLiteral.val} > ${plagiarismReportLiteral.val}
+    )`);
+  }
+
   let query = await User.findAndCountAll({
-    where: { type: "teacher" },
+    where: userWhere,
     include: [
       {
         association: User.associations.teacher,
+        where: teacherWhere,
         attributes: {
           include: [
             [paperLiteral, 'paperCount'],
