@@ -958,7 +958,6 @@ export const getCommittee = async (id: number) => {
     parsedMember.role = member.committeeMember.role;
     return parsedMember;
   });
-  console.log(resp)
   return resp;
 }
 
@@ -1165,6 +1164,8 @@ export interface GetPapersFilter {
   type?: PaperType;
   /** Student domain */
   domainId?: number;
+  /** Student specialization */
+  specializationId?: number;
   /** Student study form */
   studyForm?: StudyForm;
   /** Paper title */
@@ -1232,6 +1233,10 @@ export const getPapers = async (sort?: string, order?: SortOrder, filter?: GetPa
 
   if (filter.domainId != null) {
     studentWhere = { ...studentWhere, domainId: filter.domainId };
+  }
+
+  if (filter.specializationId != null) {
+    studentWhere = { ...studentWhere, specializationId: filter.specializationId };
   }
 
   if (filter.studyForm != null) {

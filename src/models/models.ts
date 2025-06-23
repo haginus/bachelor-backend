@@ -1667,7 +1667,10 @@ Committee.init({
         include: [User.scope("min")]
       },
       Paper,
-      Domain,
+      {
+        model: Domain,
+        include: [Specialization]
+      },
       {
         model: CommitteeActivityDay,
         as: 'activityDays',
