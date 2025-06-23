@@ -24,7 +24,7 @@ export type MappedPaper = ReturnType<typeof mapPaper>;
 
 /** Check if student or teacher can edit paper. */
 function editPaperGuard(paper: Paper, user: User, sessionSettings: SessionSettings) {
-  if(user.type == 'admin') return;
+  if(user.type == 'admin' || user.type == 'secretary') return;
   if(![paper.teacherId, paper.studentId].includes(user.id)) {
     throw new ResponseErrorForbidden("Nu puteți edita această lucrare.");
   }
