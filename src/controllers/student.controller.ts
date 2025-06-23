@@ -286,6 +286,9 @@ export class StudentController {
         grades = await paper.getGrades();
         paper.grades = grades;
       }
+      if(!committee.publicScheduling) {
+        paper.scheduledGrading = null;
+      }
     }
     let paperRes: any = paper.toJSON(); // sequelize will return the user info nested as `user` in paper.teacher
     if (paper) {

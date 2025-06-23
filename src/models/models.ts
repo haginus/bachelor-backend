@@ -537,6 +537,8 @@ export class DocumentReuploadRequest extends Model<DocumentReuploadRequestAttrib
 interface CommitteeAttributes {
   id: number;
   name: string;
+  paperPresentationTime: number;
+  publicScheduling: boolean;
   finalGrades: boolean;
 }
 
@@ -545,6 +547,8 @@ interface CommitteeCreationAttributes extends Optional<CommitteeAttributes, "id"
 export class Committee extends Model<CommitteeAttributes, CommitteeCreationAttributes> implements CommitteeAttributes {
   id: number;
   name: string;
+  paperPresentationTime: number;
+  publicScheduling: boolean;
   finalGrades: boolean;
 
   members: Teacher[];
@@ -1636,7 +1640,21 @@ Committee.init({
   finalGrades: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
-  }
+  },
+  paperPresentationTime: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 15,
+    validate: {
+      min: 1,
+      max: 120,
+      isInt: true
+    }
+  },
+  publicScheduling: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
 }, {
   timestamps: false,
   sequelize,

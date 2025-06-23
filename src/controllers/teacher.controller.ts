@@ -418,7 +418,8 @@ export const getCommittee = async (user: User, committeeId: number) => {
     return resp;
 }
 
-export async function schedulePapers(user: User, committeeId: number, papers: { paperId: number; scheduledGrading: string | null }[]) {
+export async function schedulePapers(user: User, committeeId: number, dto: { paperPresentationTime: number; publicScheduling: boolean; papers: { paperId: number; scheduledGrading: string | null }[]; }) {
+    const { papers, paperPresentationTime, publicScheduling } = dto;
     const committee = await Committee.findOne({
         where: { id: committeeId },
     });
@@ -443,6 +444,10 @@ export async function schedulePapers(user: User, committeeId: number, papers: { 
     }
     const transaction = await sequelize.transaction();
     try {
+        await Committee.update(
+            { paperPresentationTime, publicScheduling },
+            { where: { id: committeeId }, transaction }
+        );
         for(const { paperId, scheduledGrading } of papers) {
             await Paper.update(
                 { scheduledGrading: scheduledGrading ? new Date(scheduledGrading) : null },
@@ -450,7 +455,7 @@ export async function schedulePapers(user: User, committeeId: number, papers: { 
             );
         }
         await transaction.commit();
-        return papers;
+        return getCommittee(user, committeeId);
     } catch(err) {
         await transaction.rollback();
         throw err;
