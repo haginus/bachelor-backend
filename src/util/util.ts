@@ -28,7 +28,7 @@ export class ResponseErrorUnauthorized extends ResponseError {
 
 export class ResponseErrorForbidden extends ResponseError {
     constructor(message?: string, name?: string) {
-        super(message || 'Nu aveți dreptul să faceți să faceți această acțiune.', name || 'FORBIDDEN', 403);
+        super(message || 'Nu aveți dreptul să faceți această acțiune.', name || 'FORBIDDEN', 403);
     }
 }
 
