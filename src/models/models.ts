@@ -1491,7 +1491,7 @@ StudentExtraData.init({
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      is: /^[A-Z][a-z]?\.( [A-Z][a-z]?\.){0,2}$/
+      is: /^[A-ZĂÎȘȚ]\.( [A-ZĂÎȘȚ]\.){0,2}$/
     }
   },
   fatherName: {
