@@ -294,7 +294,7 @@ export class StudentController {
     if (paper) {
       paperRes.teacher = paper.teacher.user;
       paperRes.grades = [];
-      paperRes.committee = committee.toJSON();
+      paperRes.committee = committee?.toJSON();
       if(paperRes.committee) {
         paperRes.committee.members = sortMembersByTitle(paperRes.committee.members);
       }
