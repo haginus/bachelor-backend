@@ -5,7 +5,7 @@ import * as PaperController from "./paper.controller";
 import { Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../mail/mailer";
 import { UploadedFile } from "express-fileupload";
-import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorNotFound } from "../util/util";
+import { arrayMap, canApply, changeUserTree, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorNotFound, sortMembersByTitle } from "../util/util";
 import { Logger } from "../util/logger";
 import { LogName } from "../lib/types/enums/log-name.enum";
 
@@ -370,6 +370,7 @@ export const getCommittees = async (user: User) => {
             member.role = member.committeeMember.role;
             return member;
         })
+        committee.members = sortMembersByTitle(committee.members);
         return committee;
     });
 }
@@ -403,6 +404,7 @@ export const getCommittee = async (user: User, committeeId: number) => {
         parsedMember.role = member.committeeMember.role;
         return parsedMember;
     });
+    resp.members = sortMembersByTitle(resp.members);
 
     const memberDict = arrayMap(resp.members as Teacher[], (member) => member.id)
 

@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { UploadedFile } from "express-fileupload";
 import * as Mailer from "../mail/mailer";
-import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal } from "../util/util";
+import { canApply, copyObject, inclusiveDate, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, sortMembersByTitle } from "../util/util";
 import { redisHSet } from "../util/redis";
 import * as PaperController from "./paper.controller";
 import { Logger } from "../util/logger";
@@ -294,7 +294,10 @@ export class StudentController {
     if (paper) {
       paperRes.teacher = paper.teacher.user;
       paperRes.grades = [];
-      paperRes.committee = committee;
+      paperRes.committee = committee.toJSON();
+      if(paperRes.committee) {
+        paperRes.committee.members = sortMembersByTitle(paperRes.committee.members);
+      }
     }
     return paperRes;
   }

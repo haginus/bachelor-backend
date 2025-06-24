@@ -68,8 +68,14 @@ export function sortMembersByTitle(members: Teacher[]) {
         if(a.committeeMember.role == "president") {
             return -100;
         }
+        if(b.committeeMember.role == "president") {
+            return 100;
+        }
         if(a.committeeMember.role == "secretary") {
             return 100;
+        }
+        if(b.committeeMember.role == "secretary") {
+            return -100;
         }
         const aTitle = a.user.title?.[0];
         const bTitle = b.user.title?.[0];
