@@ -598,11 +598,6 @@ const paperComparator = (a: Paper, b: Paper) => {
 export async function generateCommitteeCompositions() {
   const committees = await Committee.findAll();
   let uniqueDomains = new Set();
-  // Sort committes by domain type and name
-  committees.sort((c1, c2) => {
-    return (c1.domains[0].type == 'bachelor' && c2.domains[0].type == 'master') ? -1 :
-      (c1.name < c2.name ? -1 : 1);
-  });
   // Group committees by domains
   committees.forEach(committee => {
     let domainIds = committee.domains.map(domain => domain.id).join('.');
