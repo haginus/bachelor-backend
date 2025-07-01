@@ -3,6 +3,8 @@ import { Committee, Paper, SessionSettings, User } from "../../models/models";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
 import { Cell as _Cell, HeaderCell, Row } from "../components/table";
+import { groupBy } from "../../util/util";
+import { PAPER_TYPES } from "../constants";
 
 interface CommitteeStudentsProps {
   committees: Committee[];
@@ -42,58 +44,62 @@ export function CommitteeStudents({ committees, sessionSettings }: CommitteeStud
   return (
     <Document title="Repartizarea studenților pe comisii">
       <Page size="A4" style={[globalStyles.page, { paddingHorizontal: '1cm' }]}>
-        {committees.map((committee, index) => (
-          <View key={index} break={index > 0}>
-            <View style={[globalStyles.section, { fontWeight: "bold" }]}>
-              <View style={globalStyles.sectionColumn}>
-                <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
-                <Text>Facultatea de Matematică și Informatică</Text>
+        {committees.map((committee, index) => {
+          const groupedPapers = groupBy(committee.papers, paper => paper.type);
+          const paperTypeString = Object.keys(groupedPapers).map(type => PAPER_TYPES[type]).sort((a, b) => b.localeCompare(a)).join("/");
+          return (
+            <View key={index} break={index > 0}>
+              <View style={[globalStyles.section, { fontWeight: "bold" }]}>
+                <View style={globalStyles.sectionColumn}>
+                  <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
+                  <Text>Facultatea de Matematică și Informatică</Text>
+                </View>
+                <View
+                  style={[
+                    globalStyles.sectionColumn,
+                    { flexDirection: "row", justifyContent: "flex-end" },
+                  ]}
+                >
+                  <Text>
+                    {"\n"}Sesiunea{" "}
+                    {sessionSettings.sessionName.toLocaleUpperCase()}
+                  </Text>
+                </View>
               </View>
-              <View
-                style={[
-                  globalStyles.sectionColumn,
-                  { flexDirection: "row", justifyContent: "flex-end" },
-                ]}
-              >
-                <Text>
-                  {"\n"}Sesiunea{" "}
-                  {sessionSettings.sessionName.toLocaleUpperCase()}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.title}>
-              Programarea examenului de licență{"\n"}
-              {committee.name}
-            </Text>
-            <View style={{ fontSize: 11 }}>
-              <Row width={rowWidth} borderBottom>
-                <HeaderCell width={numberingColumnWidth} value="Nr. Crt." borderLeft />
-                <HeaderCell width={leftSpace / 2} value="Nume și prenume" />
-                <HeaderCell width={leftSpace / 2} value="Profesor coordonator" />
-                <HeaderCell width={paperTitleColumnWidth} value="Titlul lucrării" />
-                <HeaderCell width={domainColumnWidth} value="Domeniul" />
-                <HeaderCell width={scheduledGradingWidth} value="Programare" />
-              </Row>
-              {committee.papers.sort(sortFn).map((paper, index) => (
-                <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
-                  <Cell width={numberingColumnWidth} value={(index + 1).toString()} borderLeft />
-                  <Cell width={leftSpace / 2} value={getName(paper.student.user)} />
-                  <Cell width={leftSpace / 2} value={getName(paper.teacher.user)} />
-                  <Cell width={paperTitleColumnWidth} value={paper.title} />
-                  <Cell width={domainColumnWidth} value={paper.student.domain.name} />
-                  <Cell 
-                    width={scheduledGradingWidth} 
-                    value={paper.scheduledGrading?.toLocaleDateString('ro-RO', {
-                      timeZone: 'Europe/Bucharest',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  />
+              <Text style={styles.title}>
+                Programarea examenului de {paperTypeString}{"\n"}
+                {committee.name}
+              </Text>
+              <View style={{ fontSize: 11 }}>
+                <Row width={rowWidth} borderBottom>
+                  <HeaderCell width={numberingColumnWidth} value="Nr. Crt." borderLeft />
+                  <HeaderCell width={leftSpace / 2} value="Nume și prenume" />
+                  <HeaderCell width={leftSpace / 2} value="Profesor coordonator" />
+                  <HeaderCell width={paperTitleColumnWidth} value="Titlul lucrării" />
+                  <HeaderCell width={domainColumnWidth} value="Domeniul" />
+                  <HeaderCell width={scheduledGradingWidth} value="Programare" />
                 </Row>
-              ))}
+                {committee.papers.sort(sortFn).map((paper, index) => (
+                  <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
+                    <Cell width={numberingColumnWidth} value={(index + 1).toString()} borderLeft />
+                    <Cell width={leftSpace / 2} value={getName(paper.student.user)} />
+                    <Cell width={leftSpace / 2} value={getName(paper.teacher.user)} />
+                    <Cell width={paperTitleColumnWidth} value={paper.title} />
+                    <Cell width={domainColumnWidth} value={paper.student.domain.name} />
+                    <Cell 
+                      width={scheduledGradingWidth} 
+                      value={paper.scheduledGrading?.toLocaleDateString('ro-RO', {
+                        timeZone: 'Europe/Bucharest',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    />
+                  </Row>
+                ))}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </Page>
     </Document>
   );
