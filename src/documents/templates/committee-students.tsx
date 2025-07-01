@@ -82,7 +82,7 @@ export function CommitteeStudents({ committees, sessionSettings }: CommitteeStud
                 {committee.papers.sort(sortFn).map((paper, index) => (
                   <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
                     <Cell width={numberingColumnWidth} value={(index + 1).toString()} borderLeft />
-                    <Cell width={leftSpace / 2} value={getName(paper.student.user)} />
+                    <Cell width={leftSpace / 2} value={getName(paper.student.user).split('-').join(' ')} />
                     <Cell width={leftSpace / 2} value={getName(paper.teacher.user)} />
                     <Cell width={paperTitleColumnWidth} value={paper.title} />
                     <Cell width={domainColumnWidth} value={paper.student.domain.name} />
