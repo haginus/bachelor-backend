@@ -5,7 +5,9 @@ export class ServerSentEventsHandler {
     this.response.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+      'Content-Encoding': 'identity',
     });
     this.response.on('close', () => {
       this.close();

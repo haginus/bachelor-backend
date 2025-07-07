@@ -51,6 +51,10 @@ export function getReport(token: string): string {
  */
 export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promise<string> => {
     return new Promise(async (resolve, reject) => {
+        if(finalReportGenerationStatus.isGenerating) {
+            console.log("Report generation already in progress. Returning previous report path.");
+            return resolve(finalReportGenerationStatus.lastReportPath);
+        }
         console.log('Report generation started...');
         const progressTracker = new ProgressTracker(sseHandler);
         const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
