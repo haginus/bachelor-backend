@@ -52,26 +52,14 @@ export function getReport(token: string): string {
 export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         console.log('Report generation started...');
-        finalReportGenerationStatus = {
-            isGenerating: true,
-            progress: 0,
-            lastGeneratedOn: Date.now(),
-            lastReportPath: null
-        }
-        sseHandler?.emitMessage(finalReportGenerationStatus);
+        const progressTracker = new ProgressTracker(sseHandler);
         const destination = safePath(os.tmpdir(), `/bachelor-backend/${Date.now()}.zip`);
         console.log("Temporary report location: ", destination);
         let bufferStream = fs.createWriteStream(destination);
 
         bufferStream.on('close', () => {
             console.log("Report generation finished. File available at:", destination);
-            finalReportGenerationStatus = {
-                isGenerating: false,
-                progress: 1,
-                lastGeneratedOn: Date.now(),
-                lastReportPath: destination
-            }
-            sseHandler?.emitMessage(finalReportGenerationStatus);
+            progressTracker.finish(destination);
             resolve(destination);
         });
 
@@ -80,6 +68,7 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
         });
 
         let totalSize: number = 0;
+        let processedEntries = 0;
 
         const { rows: logs } = await LogsController.findAll({ limit: '100000000000' });
         archive.append(JSON.stringify(logs, (k, v) => (v === null ? undefined : v), 2), { name: 'Loguri.json' });
@@ -91,7 +80,7 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
         totalSize += centralizingCatalog.length;
         totalSize += finalCatalog.length;
 
-        const committeeDocs = await getCommitteeDocuments();
+        const committeeDocs = await getCommitteeDocuments(progressTracker);
         archive.append(committeeDocs.committeeCompositions, { name: `Comisii/Componeță comisii.pdf` });
         archive.append(committeeDocs.committeeStudents, { name: `Comisii/Repartizarea studenților pe comisii.pdf` });
         committeeDocs.list.forEach(committee => {
@@ -103,11 +92,12 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
             totalSize += committee.finalCatalog.length;
         });
         const studentLists = await generateStudentList();
+        progressTracker.bumpProgress(0.1);
         studentLists.forEach(domain => {
             archive.append(domain.list, { name: `Studenți/${domain.name}_${domain.type}/Listă.html` });
             totalSize += domain.list.length;
         });
-        const studentDocs = await getStudentDataAndDocs();
+        const studentDocs = await getStudentDataAndDocs(progressTracker);
         const studentDocsTotal = studentDocs.length;
         studentDocs.forEach(({ docs, ...student}, index) => {
             console.log("Preparing data for student %s / %s", index + 1, studentDocsTotal);
@@ -129,9 +119,10 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
             let percent = progress.entries.processed / progress.entries.total;
             let pseudoSize = totalSize * percent;
             let percentStr = (percent * 100).toFixed(2);
-            finalReportGenerationStatus.progress = percent;
-            sseHandler?.emitMessage(finalReportGenerationStatus);
+            /** Archieving gets 50% of the progress */
+            progressTracker.bumpProgress(0.5 * ((progress.entries.processed - processedEntries) / progress.entries.total));
             console.log('%s / %s (%d %) -- %s / %s entries', bytesToSize(pseudoSize), bytesToSize(totalSize), percentStr, progress.entries.processed, progress.entries.total);
+            processedEntries = progress.entries.processed;
         });
 
         archive.pipe(bufferStream);
@@ -140,19 +131,27 @@ export const generateFinalReport = (sseHandler?: ServerSentEventsHandler): Promi
 
 }
 
-const getCommitteeDocuments = async () => {
+const getCommitteeDocuments = async (progressTracker: ProgressTracker) => {
     const committees = await Committee.scope('min').findAll();
+    const progressPerCommittee = 0.3 * 1 / (committees.length + 2); // +2 for committee students and compositions
     let mockUser = { type: 'admin' } as User;
     let committeeStudents = await DocumentController.generateCommitteeStudents();
+    progressTracker.bumpProgress(progressPerCommittee);
     let committeeCompositions = await DocumentController.generateCommitteeCompositions();
-    let list = await Promise.all(
-        committees.map(async (committee) => ({
+    progressTracker.bumpProgress(progressPerCommittee);
+    let list: { name: string, catalog: Buffer, catalog_docx: Buffer, finalCatalog: Buffer }[] = [];
+    for(const committee of committees) {
+        console.log(`Generating documents for committee ${committee.name} (ID: ${committee.id})...`);
+        const listItem = {
             name: committee.name, 
             catalog: await DocumentController.generateCommitteeCatalog(mockUser, committee.id),
             catalog_docx: await DocumentController.generateCommitteeCatalogWord(mockUser, committee.id),
             finalCatalog: await DocumentController.generateCommitteeFinalCatalog(mockUser, committee.id),
-        }))
-    );
+        };
+        list.push(listItem);
+        console.log(`Documents for committee ${committee.name} (ID: ${committee.id}) generated.`);
+        progressTracker.bumpProgress(progressPerCommittee);
+    }
     return { committeeStudents, committeeCompositions, list }
 }
 
@@ -185,7 +184,7 @@ const generateStudentList = async () => {
     }));
 }
 
-const getStudentDataAndDocs = async () => {
+const getStudentDataAndDocs = async (progressTracker: ProgressTracker) => {
     console.log('Getting student data and docs...');
     const students = await Student.findAll({
         include: [
@@ -201,6 +200,7 @@ const getStudentDataAndDocs = async () => {
         ]
     });
     const sessionSettings = await SessionSettings.findOne();
+    const progressPerStudent = 0.1 * 1 / students.length;
     const result = await Promise.all(students.map(async student => {
         const paper = student.paper;
         const requiredDocs = await DocumentController.getPaperRequiredDocuments(paper.id, sessionSettings);
@@ -220,6 +220,7 @@ const getStudentDataAndDocs = async () => {
                 return { title: reqDoc.title, buffer, extension };
             })
             .filter(doc => doc.buffer != null);
+        setTimeout(() => progressTracker.bumpProgress(progressPerStudent), 0);
         return { ...copyObject(student), docs };
     }));
     console.log('Getting student data and docs... OK!');
@@ -232,3 +233,34 @@ function bytesToSize(bytes: number) {
     let i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
 };
+
+class ProgressTracker {
+    finalReportGenerationStatus: typeof finalReportGenerationStatus;
+    constructor(public sseHandler?: ServerSentEventsHandler) {
+        this.finalReportGenerationStatus = finalReportGenerationStatus;
+        Object.assign(this.finalReportGenerationStatus, {
+            isGenerating: true,
+            progress: 0,
+            lastGeneratedOn: Date.now(),
+            lastReportPath: null,
+        });
+        sseHandler?.emitMessage(this.finalReportGenerationStatus);
+    }
+
+    setProgress(progress: number) {
+        this.finalReportGenerationStatus.progress = Math.round(progress * 100) / 100;
+        this.sseHandler?.emitMessage(this.finalReportGenerationStatus);
+    }
+
+    bumpProgress(progress: number) {
+        return this.setProgress(this.finalReportGenerationStatus.progress + progress);
+    }
+
+    finish(reportPath: string) {
+        this.finalReportGenerationStatus.isGenerating = false;
+        this.finalReportGenerationStatus.progress = 1;
+        this.finalReportGenerationStatus.lastGeneratedOn = Date.now();
+        this.finalReportGenerationStatus.lastReportPath = reportPath;
+        this.sseHandler?.emitMessage(this.finalReportGenerationStatus);
+    }
+}
