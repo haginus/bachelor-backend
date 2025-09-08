@@ -362,7 +362,9 @@ export class StudentController {
           }, { transaction });
           await PaperController.generatePaperDocuments(PaperController.mapPaper(studentPaper), data, sessionSettings, transaction);
         }
-        redisHSet('paperRequiredDocs', student.paper?.id, null);
+        if(studentPaper) {
+          redisHSet('paperRequiredDocs', studentPaper.id, null);
+        }
         await transaction.commit();
       } catch (err) {
         console.log(err)

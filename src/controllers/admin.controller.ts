@@ -11,7 +11,7 @@ import { arrayMap, groupBy, makeNameClause, removeDiacritics, ResponseError, Res
 import { autoAssignPapers } from "../util/assign-papers";
 import fs from 'fs';
 import { UploadedFile } from "express-fileupload";
-import { redisDel } from "../util/redis";
+import { redisDel, redisHSet } from "../util/redis";
 import { Request } from "express";
 import { resetPassword } from "./auth.controller";
 import { StudentDocumentGenerationProps } from "../documents/types";
@@ -228,6 +228,7 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
           throw new ResponseError('Studentul nu poate fi editat deoarece lucrarea acestuia a fost validată.', 'PAPER_ALREADY_VALIDATED');
         }
         const sessionSettings = await SessionSettings.findOne();
+        redisHSet('paperRequiredDocs', paper.id, null);
         const generatedDocuments = await generatePaperDocuments(mapPaper(paper), previousStudent.studentExtraDatum, sessionSettings, transaction);
         documentsGenerated = generatedDocuments.length > 0;
       }
