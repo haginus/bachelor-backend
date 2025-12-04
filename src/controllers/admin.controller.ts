@@ -334,15 +334,22 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
     } else {
       throw new ResponseError('Câmpul "formă de finanțare" trebuie să fie buget/taxă.');
     }
-    const email = user.email.trim();
-    const existing = await User.findOne({ where: { email }, include: [Student] });
+    user.email = user.email.trim();
+    user.CNP = user.CNP.trim();
+    user.firstName = user.firstName.trim();
+    user.lastName = user.lastName.trim();
+    user.group = user.group.trim();
+    user.identificationCode = user.identificationCode.trim();
+    user.promotion = user.promotion.trim();
+    user.matriculationYear = user.matriculationYear.trim();
+    const existing = await User.findOne({ where: { email: user.email }, include: [Student] });
     if (existing && !existing.student) {
       throw new ResponseError("E-mailul introdus este luat, însă nu de un student.");
     }
     if (existing && existing.student.specializationId == specializationId) return {
       status: 'edited' as const,
       row: user,
-      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm as any, user.matriculationYear, requestUser)
+      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, requestUser)
     }
     return {
       status: 'added' as const,
