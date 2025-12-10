@@ -993,7 +993,7 @@ User.init({
     type: DataTypes.STRING,
     set(value) {
       const salt = bcrypt.genSaltSync();
-      this.setDataValue('password', bcrypt.hashSync(value, salt));
+      this.setDataValue('password', value !== null ? bcrypt.hashSync(value, salt) : null);
     }
   },
   validated: {

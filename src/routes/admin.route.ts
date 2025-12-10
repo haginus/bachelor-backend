@@ -33,6 +33,13 @@ router.get('/stats', function (req, res, next) {
         .catch(err => next(err));
 });
 
+router.get('/users/check-email', function (req, res, next) {
+    const { email } = req.query;
+    AdminController.checkUserEmail(email as string)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 // STUDENTS
 
 router.get('/students', function (req, res, next) {

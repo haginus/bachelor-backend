@@ -3,7 +3,6 @@ import * as UserController from './user.controller';
 import * as DocumentController from './document.controller';
 import * as Mailer from '../mail/mailer';
 import crypto from 'crypto';
-import bcrypt from "bcrypt";
 import { Op, OrderItem, Sequelize, Transaction, ValidationError, WhereOptions } from "sequelize";
 import csv from 'csv-parser';
 import { PaperRequiredDocument } from "../paper-required-documents";
@@ -135,17 +134,22 @@ export const getStudent = (id: number) => {
   });
 }
 
-async function _checkUserEmail(email: string, existingUserId?: number, transaction?: Transaction) {
+async function _checkUserEmail(email: string, existingUserId?: number, failIfExisting = true, transaction?: Transaction) {
   email = email.trim();
-  const existingUser = await User.findOne({ where: { email }, transaction });
-  if (existingUser && existingUser.id !== existingUserId) {
+  const existingUsers = await User.findAll({ where: { email }, transaction });
+  const existingUser = existingUsers.find(u => u.id === existingUserId);
+  if (failIfExisting && existingUser && existingUser.id !== existingUserId) {
     throw new ResponseError("E-mailul introdus este deja luat.");
   }
-  return email;
+  return existingUsers.find(u => !!u.password) || existingUsers[0];
+}
+
+export async function checkUserEmail(email: string) {
+  return { existingId: (await _checkUserEmail(email, undefined, false))?.id || null };
 }
 
 export const addStudent = async (firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
-  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, t?: Transaction, requestUser?: User) => {
+  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: any, matriculationYear: string, merge = false, t?: Transaction, requestUser?: User) => {
   let specialization = await Specialization.findOne({ where: { id: specializationId } });
   if (!specialization) {
     throw "SPECIALIZATION_NOT_FOUND";
@@ -155,19 +159,20 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
   const userPayload = { firstName, lastName, CNP, email, type: 'student' as const };
   const studentPayload = { group, domainId, identificationCode, promotion, specializationId, studyForm, fundingForm, matriculationYear };
   try {
-    email = await _checkUserEmail(email, null, transaction);
-    let user = await User.create(userPayload, { transaction });
+    email = email.trim();
+    const existingUser = await _checkUserEmail(email, null, merge, transaction);
+    let user = await User.create({ ...userPayload, password: existingUser?.password || null }, { transaction });
     await Student.create({ ...studentPayload, id: user.id, userId: user.id }, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
-    let token = crypto.randomBytes(64).toString('hex'); // generate activation token
-    let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
-    try {
-      await Mailer.sendWelcomeEmail(user, activationToken.token); // send welcome mail
-    } catch (err) {
-      throw new ResponseErrorInternal(
-        'Studentul nu a putut fi creat deoarece serverul de e-mail este indisponibil. Contactați administratorul.',
-        'EMAIL_NOT_SENT'
-      );
+    if(!existingUser) {
+      let token = crypto.randomBytes(64).toString('hex'); // generate activation token
+      let activationToken = await ActivationToken.create({ token, userId: user.id }, { transaction }); // insert in db
+      await Mailer.sendWelcomeEmail(user, activationToken.token).catch(() => {
+        throw new ResponseErrorInternal(
+          'Studentul nu a putut fi creat deoarece serverul de e-mail este indisponibil. Contactați administratorul.',
+          'EMAIL_NOT_SENT'
+        );
+      });
     }
     await Logger.log(requestUser, {
       name: LogName.UserCreated,
@@ -189,7 +194,7 @@ export const addStudent = async (firstName: string, lastName: string, CNP: strin
 }
 
 export const editStudent = async (id: number, firstName: string, lastName: string, CNP: string, email: string, group: string, specializationId: number,
-  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string, requestUser?: User) => {
+  identificationCode: string, promotion: string, studyForm: StudyForm, fundingForm: FundingForm, matriculationYear: string, merge = false, requestUser?: User) => {
   let previousStudent = await Student.findOne({ where: { userId: id }, include: [User, StudentExtraData] });
   if (!previousStudent) {
     throw new ResponseErrorNotFound('Studentul nu a fost găsit.');
@@ -202,13 +207,18 @@ export const editStudent = async (id: number, firstName: string, lastName: strin
   let documentsGenerated = false;
   const transaction = await sequelize.transaction();
   try {
-    email = await _checkUserEmail(email, id, transaction);
+    email = email.trim();
+    const existingUser = await _checkUserEmail(email, id, merge, transaction);
     const userPayload = { firstName, lastName, CNP, email };
     const studentPayload = { group, domainId, identificationCode, promotion, specializationId, studyForm, fundingForm, matriculationYear };
     const [userUpdateCount] = await User.update(userPayload, { where: { id }, transaction });
     const [studentUpdateCount] = await Student.update(studentPayload, { where: { userId: id }, transaction });
     if (previousStudent.user.email != email) {
-      await resetPassword(email, transaction);
+      if(merge && existingUser && existingUser.id !== id) {
+        await User.update({ password: null }, { where: { id }, transaction });
+      } else {
+        await resetPassword(email, transaction);
+      }
     }
     const resultPayload = { ...studentPayload, user: userPayload };
     await Logger.log(requestUser, {
@@ -349,17 +359,20 @@ export const addStudentBulk = async (file: Buffer, specializationId: number, stu
     if (existing && existing.student.specializationId == specializationId) return {
       status: 'edited' as const,
       row: user,
-      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, requestUser)
+      result: await editStudent(existing.id, user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, false, requestUser)
     }
     return {
       status: 'added' as const,
       row: user,
-      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, undefined, requestUser)
+      result: await addStudent(user.firstName, user.lastName, user.CNP, user.email, user.group, specializationId, user.identificationCode, user.promotion, studyForm, user.fundingForm, user.matriculationYear, false, undefined, requestUser)
     }
   });
 
-
-  let results = await Promise.allSettled(promises);
+  let results: PromiseSettledResult<{ status: 'added' | 'edited'; row: any; result: any; }>[] = [];
+  for(const promise of promises) {
+    const [result] = await Promise.allSettled([promise]);
+    results.push(result);
+  }
 
   return {
     stats: {
@@ -486,7 +499,8 @@ export const addTeacher = async (title: string, firstName: string, lastName: str
   const userPayload = { title, firstName, lastName, CNP, email, type: 'teacher' as const };
   const teacherPayload = {};
   try {
-    email = await _checkUserEmail(email, null, transaction);
+    email = email.trim();
+    await _checkUserEmail(email, null, true, transaction);
     let user = await User.create(userPayload, { transaction });
     await Teacher.create({ ...teacherPayload, id: user.id, userId: user.id }, { transaction });
     await Profile.create({ userId: user.id }, { transaction });
@@ -523,7 +537,8 @@ export const editTeacher = async (id: number, title: string, firstName: string, 
   }
   const userPayload = { title, firstName, lastName, CNP, email };
   try {
-    email = await _checkUserEmail(email, id, transaction);
+    email = email.trim();
+    await _checkUserEmail(email, id, true, transaction);
     await User.update(userPayload, { where: { id }, transaction });
     if (previousTeacher.user.email != email) {
       await resetPassword(email, transaction);
@@ -709,7 +724,7 @@ export const acceptSignUpRequest = async (id: number, additionalChanges: SignUpR
   try {
     await request.update({ ...additionalChanges }, { transaction });
     const student = await addStudent(request.firstName, request.lastName, request.CNP, request.email, request.group, request.specializationId,
-      request.identificationCode, request.promotion, request.studyForm, request.fundingForm, request.matriculationYear,
+      request.identificationCode, request.promotion, request.studyForm, request.fundingForm, request.matriculationYear, false,
       transaction, requestUser);
     if (additionalChanges.generalAverage) {
       await Student.update({ generalAverage: additionalChanges.generalAverage }, { where: { id: student.id }, transaction });

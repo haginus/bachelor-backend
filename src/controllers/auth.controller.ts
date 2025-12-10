@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from 'crypto';
 import { User, Student, ActivationToken, SessionSettings, sequelize, SignUpRequestCreationAttributes, SignUpRequest, Specialization } from "../models/models";
 import { config } from "../config/config";
-import { copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
+import { arrayMap, copyObject, ResponseError, ResponseErrorForbidden, ResponseErrorInternal, ResponseErrorUnauthorized } from "../util/util";
 import * as Mailer from '../mail/mailer';
 import { FindOptions, Transaction, WhereOptions } from "sequelize/types";
 
@@ -47,10 +47,12 @@ const createLoginResponse = async (user: User, additionalPayload: AdditionalPayl
     };
     const token = jwt.sign(tokenPayload, config.SECRET_KEY);
     if(!alternativeIdentities) {
-        const users = await getUsers({ email: user.email });
-        alternativeIdentities = users.filter(u => u.id !== user.id);
+        alternativeIdentities = await getUsers({ email: user.email });
     }
     alternativeIdentities?.forEach(u => { delete u.password });
+    const alternativeIdentitiesDict = arrayMap(alternativeIdentities, u => u.id);
+    delete alternativeIdentitiesDict[user.id];
+    alternativeIdentities = Object.values(alternativeIdentitiesDict);
     return { 
         token,
         user: await getCurrentUser(user, !!additionalPayload.impersonatedBy),
@@ -183,7 +185,9 @@ export const getCurrentUser = async (user: User, isImpersonated: boolean = false
 export const getAlternativeIdentities = async (user: User) => {
     const users = await getUsers({ email: user.email });
     users.forEach(u => { delete u.password });
-    return users.filter(u => u.id !== user.id);
+    const usersDict = arrayMap(users, u => u.id);
+    delete usersDict[user.id];
+    return Object.values(usersDict);
 }
 
 export const getSessionSettings = () => {
