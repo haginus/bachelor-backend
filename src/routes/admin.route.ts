@@ -52,18 +52,18 @@ router.get('/student', function (req, res, next) {
 
 router.post('/students/add', function (req, res, next) {
     let { firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
-        studyForm, fundingForm, matriculationYear } = req.body;
+        studyForm, fundingForm, matriculationYear, merge } = req.body;
     AdminController.addStudent(firstName, lastName, CNP, email, group,
-        specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear, undefined, req._user)
+        specializationId, identificationCode, promotion, studyForm, fundingForm, matriculationYear, merge, undefined, req._user)
         .then(student => res.json(student))
         .catch(err => next(err));
 });
 
 router.post('/students/edit', function (req, res, next) {
     let { id, firstName, lastName, CNP, email, group, specializationId, identificationCode, promotion,
-        studyForm, fundingForm, matriculationYear } = req.body;
+        studyForm, fundingForm, matriculationYear, merge } = req.body;
     AdminController.editStudent(id, firstName, lastName, CNP, email, group, specializationId,
-        identificationCode, promotion, studyForm, fundingForm, matriculationYear, req._user)
+        identificationCode, promotion, studyForm, fundingForm, matriculationYear, merge, req._user)
         .then(student => res.json(student))
         .catch(err => next(err));
 });

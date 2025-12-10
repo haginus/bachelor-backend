@@ -30,6 +30,13 @@ router.post('/change-password-token', (req, res, next) => {
         .catch(err => next(err));
 });
 
+router.post('/switch', isLoggedIn(), (req, res, next) => {
+    const { userId } = req.body;
+    AuthController.switchUser(req._user, +userId, req._impersonatedBy)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
 router.post('/impersonate', isLoggedIn(), isType('admin'), sudo(), (req, res, next) => {
     const { userId } = req.body;
     AuthController.impersonateUser(req._user, +userId)
@@ -66,6 +73,12 @@ router.patch('/profile', isLoggedIn(), fileUpload(), (req, res, next) => {
 
 router.get('/user', isLoggedIn(), async (req, res, next) => {
     AuthController.getCurrentUser(req._user, !!req._impersonatedBy)
+        .then(result => res.json(result))
+        .catch(err => next(err));
+});
+
+router.get('/alternative-identities', isLoggedIn(), async (req, res, next) => {
+    AuthController.getAlternativeIdentities(req._user)
         .then(result => res.json(result))
         .catch(err => next(err));
 });

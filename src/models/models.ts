@@ -1014,13 +1014,6 @@ User.init({
   paranoid: true,
   sequelize,
   modelName: 'user',
-  indexes: [
-    {
-      name: 'uniqueEmail',
-      unique: true,
-      fields: ['email', 'deletedAt'],
-    }
-  ]
 });
 
 User.addScope("min", {

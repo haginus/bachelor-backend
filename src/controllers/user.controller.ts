@@ -6,13 +6,10 @@ import fs from "fs";
 import crypto from 'crypto';
 import { config } from "../config/config";
 import * as Mailer from '../mail/mailer';
-import { Transaction, WhereOptions } from "sequelize/types";
+import { FindOptions, Transaction, WhereOptions } from "sequelize/types";
 
-const getUser = async (where: WhereOptions<User>, transaction?: Transaction) => {
-  return User.findOne({
-    transaction,
-    where,
-    attributes: { exclude: ['password'] },
+const userFindOptions: FindOptions<User> = {
+  attributes: { exclude: ['password'] },
     include: [
       {
         association: User.associations.student,
@@ -22,7 +19,24 @@ const getUser = async (where: WhereOptions<User>, transaction?: Transaction) => 
           Student.associations.paper
         ]
       },
-      User.associations.teacher]
+      User.associations.teacher,
+      User.associations.profile,
+    ],
+};
+
+export const getUser = async (where: WhereOptions<User>, transaction?: Transaction) => {
+  return User.findOne({
+    transaction,
+    where,
+    ...userFindOptions,
+  });
+}
+
+export const getUsers = async (where: WhereOptions<User>, transaction?: Transaction) => {
+  return User.findAll({
+    transaction,
+    where,
+    ...userFindOptions,
   });
 }
 
