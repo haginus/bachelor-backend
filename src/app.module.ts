@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SessionModule } from './session/session.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SessionModule } from './session/session.module';
       inject: [ConfigService],
     }),
     SessionModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],
