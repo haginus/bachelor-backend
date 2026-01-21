@@ -1,6 +1,6 @@
 "use strict"
 import { User, Teacher, Offer, Paper, PaperGrade, Document, Domain, Topic, Application, Student, sequelize, SessionSettings, StudentExtraData, Specialization, DocumentType, UploadPerspective, Committee, CommitteeActivityDay } from "../models/models";
-import * as DocumentController from './/document.controller';
+import * as DocumentController from './document.controller';
 import * as PaperController from "./paper.controller";
 import { Op, Sequelize, ValidationError } from "sequelize";
 import * as Mailer from "../mail/mailer";
