@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "../entities/user.entity";
+import { isStudent, User } from "../entities/user.entity";
 import { FindOptionsRelations, Repository } from "typeorm";
+import { ValidateUserDto } from "../dto/validate-user.dto";
+import { TopicsService } from "src/common/services/topics.service";
 
 @Injectable()
 export class UsersService {
   
   constructor(
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    private readonly topicsService: TopicsService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<User> = {
@@ -36,5 +39,20 @@ export class UsersService {
       relations: this.defaultRelations
     });
     return user;
+  }
+
+  async validate(id: number, dto: ValidateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+    if(user.validated) {
+      return user;
+    }
+    user.validated = true;
+    if(isStudent(user)) {
+      user.topics = await this.topicsService.findByIds(dto.topicIds || []);
+      if(user.topics.length === 0) {
+        throw new BadRequestException('Precizați cel puțin o temă.');
+      }
+    }
+    return this.usersRepository.save(user);
   }
 }

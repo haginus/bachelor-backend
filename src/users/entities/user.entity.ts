@@ -1,9 +1,10 @@
 import { Exclude, Expose } from "class-transformer";
 import { FundingForm } from "src/lib/enums/funding-form.enum";
 import { UserType } from "src/lib/enums/user-type.enum";
-import { ChildEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn } from "typeorm";
+import { ChildEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn } from "typeorm";
 import { Specialization } from "./specialization.entity";
 import { Profile } from "./profile.entity";
+import { Topic } from "src/common/entities/topic.entity";
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: "type" } })
@@ -92,9 +93,17 @@ export class Student extends User {
   @Column()
   generalAverage: number;
 
+  @ManyToMany(() => Topic)
+  @JoinTable({ name: 'student_topics' })
+  topics: Topic[];
+
 }
 
 @ChildEntity(UserType.Teacher)
 export class Teacher extends User {
   override type = UserType.Teacher;
+}
+
+export function isStudent(user: User): user is Student {
+  return user.type === UserType.Student;
 }

@@ -10,5 +10,6 @@ import { Topic } from './entities/topic.entity';
   ],
   controllers: [TopicsController],
   providers: [TopicsService],
+  exports: [TopicsService],
 })
 export class CommonModule {}

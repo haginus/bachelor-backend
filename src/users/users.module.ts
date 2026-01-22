@@ -11,9 +11,11 @@ import { DomainsController } from './controllers/domains.controller';
 import { DomainsService } from './services/domains.service';
 import { ProfilesService } from './services/profiles.service';
 import { UsersController } from './controllers/users.controller';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     TypeOrmModule.forFeature([
       Domain,
       Specialization,
