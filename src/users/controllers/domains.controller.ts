@@ -12,7 +12,7 @@ export class DomainsController {
   
   @Get()
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
-  findAll(@Query('detailed', ParseBoolPipe) detailed: boolean) {
+  findAll(@Query('detailed', new ParseBoolPipe({ optional: true })) detailed: boolean = false) {
     return this.domainsService.findAll(detailed);
   }
 
