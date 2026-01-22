@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { SessionSettings } from "./session-settings.entity";
 import { Repository } from "typeorm";
 import { stripTime } from "src/lib/utils";
+import { SessionSettingsDto } from "./session-settings.dto";
 
 @Injectable()
 export class SessionSettingsService {
@@ -20,6 +21,26 @@ export class SessionSettingsService {
     const settings = await this.getSettingsFromDb() ?? await this.createDefaultSettings();
     this.settingsCache = settings;
     return settings;
+  }
+
+  async updateSettings(dto: SessionSettingsDto) {
+    if(dto.applyEndDate < dto.applyStartDate) {
+      throw new BadRequestException('Data încheierii sesiunii de cereri nu poate fi mai devreme de cea a începerii!');
+    }
+    if(dto.fileSubmissionStartDate < dto.applyStartDate) {
+      throw new BadRequestException('Data începerii depunerilor de documente nu poate fi mai devreme de cea a începerii sesiunii de cereri!');
+    }
+    if(dto.fileSubmissionEndDate < dto.fileSubmissionStartDate) {
+      throw new BadRequestException('Data încheierii depunerilor de documente nu poate fi mai devreme de cea a începerii depunerilor!');
+    }
+    if(dto.paperSubmissionEndDate < dto.fileSubmissionStartDate) {
+      throw new BadRequestException('Data încheierii depunerilor lucrărilor nu poate fi mai devreme de cea a începerii depunerilor!');
+    }
+    const currentSettings = await this.getSettings();
+    const updatedSettings = this.sessionSettingsRepository.merge(currentSettings, dto);
+    const savedSettings = await this.sessionSettingsRepository.save(updatedSettings);
+    this.settingsCache = savedSettings;
+    return savedSettings;
   }
 
   private async getSettingsFromDb(): Promise<SessionSettings | null> {

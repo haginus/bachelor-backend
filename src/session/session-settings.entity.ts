@@ -1,8 +1,10 @@
+import { Exclude } from "class-transformer";
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
 export class SessionSettings {
 
+  @Exclude()
   @PrimaryColumn({ default: 1 })
   id: number;
 
@@ -26,4 +28,7 @@ export class SessionSettings {
 
   @Column()
   paperSubmissionEndDate: Date;
+
+  @Column()
+  allowGrading: boolean;
 }
