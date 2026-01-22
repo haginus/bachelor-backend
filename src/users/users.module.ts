@@ -12,6 +12,7 @@ import { DomainsService } from './services/domains.service';
 import { ProfilesService } from './services/profiles.service';
 import { UsersController } from './controllers/users.controller';
 import { CommonModule } from 'src/common/common.module';
+import { SpecializationsService } from './services/specializations.service';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CommonModule } from 'src/common/common.module';
   ],
   providers: [
     DomainsService,
+    SpecializationsService,
     ProfilesService,
     UsersService,
     StudentsService,

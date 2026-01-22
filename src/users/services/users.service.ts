@@ -41,6 +41,13 @@ export class UsersService {
     return user;
   }
 
+  async checkEmailExists(email: string, userId?: number): Promise<void> {
+    const user = await this.findOneByEmailNullable(email);
+    if(user && user.id !== userId) {
+      throw new BadRequestException('Emailul există deja.');
+    }
+  }
+
   async validate(id: number, dto: ValidateUserDto): Promise<User> {
     const user = await this.findOne(id);
     if(user.validated) {

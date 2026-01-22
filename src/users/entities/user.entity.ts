@@ -85,7 +85,7 @@ export class Student extends User {
   identificationCode: string;
 
   @Column()
-  matriculationYear: number;
+  matriculationYear: string;
 
   @Column({ type: 'enum', enum: FundingForm })
   fundingForm: FundingForm;
