@@ -8,6 +8,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from './auth/guards/user-types.guard';
 import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.interceptor';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.int
     SessionModule,
     UsersModule,
     AuthModule,
+    CommonModule,
   ],
   controllers: [],
   providers: [
