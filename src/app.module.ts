@@ -9,9 +9,15 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from './auth/guards/user-types.guard';
 import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.interceptor';
 import { CommonModule } from './common/common.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { safePath } from './lib/utils';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: safePath(process.cwd(), 'static'),
+      serveRoot: '/static/',
+    }),
     ConfigModule.forRoot({ 
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],

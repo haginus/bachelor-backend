@@ -9,6 +9,8 @@ import { StudentsService } from './services/students.service';
 import { StudentsController } from './controllers/students.controller';
 import { DomainsController } from './controllers/domains.controller';
 import { DomainsService } from './services/domains.service';
+import { ProfilesService } from './services/profiles.service';
+import { UsersController } from './controllers/users.controller';
 
 @Module({
   imports: [
@@ -25,10 +27,12 @@ import { DomainsService } from './services/domains.service';
   ],
   controllers: [
     DomainsController,
+    UsersController,
     StudentsController,
   ],
   providers: [
     DomainsService,
+    ProfilesService,
     UsersService,
     StudentsService,
   ],
