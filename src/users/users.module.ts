@@ -5,6 +5,10 @@ import { Specialization } from './entities/specialization.entity';
 import { Admin, Secretary, Student, Teacher, User } from './entities/user.entity';
 import { Profile } from './entities/profile.entity';
 import { UsersService } from './services/users.service';
+import { StudentsService } from './services/students.service';
+import { StudentsController } from './controllers/students.controller';
+import { DomainsController } from './controllers/domains.controller';
+import { DomainsService } from './services/domains.service';
 
 @Module({
   imports: [
@@ -19,11 +23,19 @@ import { UsersService } from './services/users.service';
       Teacher,
     ]),
   ],
+  controllers: [
+    DomainsController,
+    StudentsController,
+  ],
   providers: [
+    DomainsService,
     UsersService,
+    StudentsService,
   ],
   exports: [
+    DomainsService,
     UsersService,
+    StudentsService,
   ],
 })
 export class UsersModule {}
