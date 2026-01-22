@@ -1,8 +1,13 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SessionModule } from './session/session.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { UserTypesGuard } from './auth/guards/user-types.guard';
+import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.interceptor';
 
 @Module({
   imports: [
@@ -26,8 +31,14 @@ import { UsersModule } from './users/users.module';
     }),
     SessionModule,
     UsersModule,
+    AuthModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: UserTypesGuard },
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: UserHydrationInterceptor },
+  ],
 })
 export class AppModule {}

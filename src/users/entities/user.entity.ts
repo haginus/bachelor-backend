@@ -42,8 +42,12 @@ export class User {
   @Column({ default: false })
   validated: boolean;
 
-  @OneToOne(() => Profile, { cascade: true, eager: true, nullable: true })
+  @OneToOne(() => Profile, (profile) => profile.user, { cascade: true, eager: true, nullable: true })
   profile: Profile;
+
+  // For students
+  @ManyToOne(() => Specialization, { nullable: true })
+  specialization: Specialization;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -88,8 +92,6 @@ export class Student extends User {
   @Column()
   generalAverage: number;
 
-  @ManyToOne(() => Specialization, { eager: true })
-  specialization: Specialization;
 }
 
 @ChildEntity(UserType.Teacher)
