@@ -2,6 +2,7 @@ import { DomainType } from "src/lib/enums/domain-type.enum";
 import { PaperType } from "src/lib/enums/paper-type.enum";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
 import { Specialization } from "./specialization.entity";
+import { Offer } from "src/offers/entities/offer.entity";
 
 @Entity()
 export class Domain {
@@ -20,6 +21,9 @@ export class Domain {
   @OneToMany(() => Specialization, (specialization) => specialization.domain, { cascade: true })
   specializations: Specialization[];
 
+  @OneToMany(() => Offer, (offer) => offer.domain)
+  offers: Offer[];
+
   @VirtualColumn({
     query: (alias) => `
       SELECT COUNT(student.id)
@@ -29,4 +33,14 @@ export class Domain {
     select: false,
   })
   studentCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(offer.id)
+      FROM offer
+      WHERE offer.domainId = ${alias}.id
+    `,
+    select: false,
+  })
+  offerCount: number;
 }

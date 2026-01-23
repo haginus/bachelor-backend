@@ -20,6 +20,7 @@ export class DomainsService {
         type: true,
         paperType: true,
         studentCount: detailed,
+        offerCount: detailed,
         specializations: {
           id: true,
           name: true,

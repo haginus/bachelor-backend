@@ -12,6 +12,7 @@ import { CommonModule } from './common/common.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { safePath } from './lib/utils';
 import { SudoGuard } from './auth/guards/sudo.guard';
+import { OffersModule } from './offers/offers.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SudoGuard } from './auth/guards/sudo.guard';
     UsersModule,
     AuthModule,
     CommonModule,
+    OffersModule,
   ],
   controllers: [],
   providers: [
