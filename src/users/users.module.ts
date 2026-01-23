@@ -13,6 +13,8 @@ import { ProfilesService } from './services/profiles.service';
 import { UsersController } from './controllers/users.controller';
 import { CommonModule } from 'src/common/common.module';
 import { SpecializationsService } from './services/specializations.service';
+import { TeachersService } from './services/teachers.service';
+import { TeachersController } from './controllers/teachers.controller';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { SpecializationsService } from './services/specializations.service';
     DomainsController,
     UsersController,
     StudentsController,
+    TeachersController,
   ],
   providers: [
     DomainsService,
@@ -39,11 +42,14 @@ import { SpecializationsService } from './services/specializations.service';
     ProfilesService,
     UsersService,
     StudentsService,
+    TeachersService,
   ],
   exports: [
     DomainsService,
+    SpecializationsService,
     UsersService,
     StudentsService,
+    TeachersService,
   ],
 })
 export class UsersModule {}
