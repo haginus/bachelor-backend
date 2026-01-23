@@ -13,6 +13,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { safePath } from './lib/utils';
 import { SudoGuard } from './auth/guards/sudo.guard';
 import { OffersModule } from './offers/offers.module';
+import { ApplicationSubscriber } from './offers/subscribers/application.subscriber';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { OffersModule } from './offers/offers.module';
         username: configService.get('DATABASE_USERNAME'),
         password: configService.get('DATABASE_PASSWORD'),
         autoLoadEntities: true,
+        subscribers: [ApplicationSubscriber],
         synchronize: true,
       }),
       inject: [ConfigService],

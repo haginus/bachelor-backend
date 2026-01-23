@@ -6,6 +6,8 @@ import { OffersController } from './controllers/offers.controller';
 import { OffersService } from './services/offers.service';
 import { CommonModule } from 'src/common/common.module';
 import { UsersModule } from 'src/users/users.module';
+import { TeacherOffersService } from './services/teacher-offers.service';
+import { TeacherOffersController } from './controllers/teacher-offers.controller';
 
 @Module({
   imports: [
@@ -18,9 +20,11 @@ import { UsersModule } from 'src/users/users.module';
   ],
   controllers: [
     OffersController,
+    TeacherOffersController,
   ],
   providers: [
     OffersService,
+    TeacherOffersService,
   ]
 })
 export class OffersModule {}

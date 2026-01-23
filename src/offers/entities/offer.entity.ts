@@ -16,6 +16,9 @@ export class Offer {
   @Column('int')
   limit: number;
 
+  @Column({ type: 'int', default: 0 })
+  takenSeats: number;
+
   @ManyToOne(() => Teacher, (teacher) => teacher.offers)
   teacher: Teacher;
 
@@ -39,13 +42,4 @@ export class Offer {
   })
   pendingApplicationCount: number;
 
-  @VirtualColumn({
-    query: (alias) => `
-      SELECT COUNT(application.id)
-      FROM application
-      WHERE application.offerId = ${alias}.id AND application.accepted = 1
-    `,
-    select: false,
-  })
-  takenSeats: number;
 }

@@ -20,6 +20,9 @@ export class Application {
   @Column({ nullable: true })
   accepted: boolean;
 
+  @Column('int')
+  offerId: number;
+
   @ManyToOne(() => Offer, (offer) => offer.applications, { onDelete: 'CASCADE' })
   offer: Offer;
 
