@@ -33,8 +33,28 @@ export class AuthService {
     return this.createAuthResponse(user);
   }
 
-  private async createAuthResponse(user: User): Promise<AuthResponse> {
-    let payload: JwtPayload = { id: user.id, email: user.email, type: user.type };
+  async validateSudoPassword(sudoPassword: string, user: JwtPayload): Promise<boolean> {
+    return this.validateUser(user.email, sudoPassword).then(() => true).catch(() => false);
+  }
+
+  async impersonate(userId: number, impersonator: JwtPayload) {
+    const user = await this.usersService.findOne(userId);
+    return this.createAuthResponse(user, impersonator.id);
+  }
+
+  async releaseImpersonation(user: JwtPayload) {
+    if(!user.impersonatedBy) {
+      throw new UnauthorizedException();
+    }
+    const impersonator = await this.usersService.findOne(user.impersonatedBy);
+    return this.createAuthResponse(impersonator);
+  }
+
+  private async createAuthResponse(user: User, impersonatedBy?: number): Promise<AuthResponse> {
+    let payload: JwtPayload = { id: user.id, email: user.email, type: user.type, impersonatedBy };
+    if(impersonatedBy) {
+      user.isImpersonated = true;
+    }
     return {
       accessToken: this.jwtService.sign(payload),
       refreshToken: '',

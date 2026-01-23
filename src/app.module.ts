@@ -11,6 +11,7 @@ import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.int
 import { CommonModule } from './common/common.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { safePath } from './lib/utils';
+import { SudoGuard } from './auth/guards/sudo.guard';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { safePath } from './lib/utils';
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: UserTypesGuard },
+    { provide: APP_GUARD, useClass: SudoGuard },
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: UserHydrationInterceptor },
   ],

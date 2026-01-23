@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Public } from "./decorators/public.decorator";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { HydrateUser } from "./decorators/hydrate-user.decorator";
+import { Sudo } from "./decorators/sudo.decorator";
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +26,31 @@ export class AuthController {
   @HydrateUser()
   async user(@CurrentUser() user: User) {
     return user;
+  }
+
+  @Post('sudo')
+  async sudo(
+    @Body('password') password: string,
+    @CurrentUser() user: any,
+  ) {
+    const success = await this.authService.validateSudoPassword(password, user);
+    return { success };
+  }
+
+  @Sudo()
+  @Post('impersonate/:userId')
+  async impersonate(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.authService.impersonate(userId, user);
+  }
+
+  @Post('release')
+  async release(
+    @CurrentUser() user: any,
+  ) {
+    return this.authService.releaseImpersonation(user);
   }
 
 
