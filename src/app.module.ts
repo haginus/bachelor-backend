@@ -14,6 +14,7 @@ import { SudoGuard } from './auth/guards/sudo.guard';
 import { OffersModule } from './offers/offers.module';
 import { ApplicationSubscriber } from './offers/subscribers/application.subscriber';
 import { MailModule } from './mail/mail.module';
+import { PapersModule } from './papers/papers.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { MailModule } from './mail/mail.module';
     UsersModule,
     AuthModule,
     OffersModule,
+    PapersModule,
   ],
   controllers: [],
   providers: [

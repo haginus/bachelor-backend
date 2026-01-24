@@ -7,6 +7,8 @@ import { Profile } from "./profile.entity";
 import { Topic } from "src/common/entities/topic.entity";
 import { Offer } from "src/offers/entities/offer.entity";
 import { Application } from "src/offers/entities/application.entity";
+import { Paper } from "src/papers/entities/paper.entity";
+import { UserExtraData } from "./user-extra-data.entity";
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: "type" } })
@@ -53,6 +55,9 @@ export class User {
   // For students
   @ManyToOne(() => Specialization, { nullable: true })
   specialization: Specialization;
+
+  @OneToOne(() => UserExtraData, (extraData) => extraData.user, { cascade: true, nullable: true })
+  extraData: UserExtraData;
 
   @Expose({ groups: ['full'] })
   @CreateDateColumn()
@@ -113,6 +118,9 @@ export class Student extends User {
   @OneToMany(() => Application, (application) => application.student)
   applications: Application[];
 
+  @OneToOne(() => Paper, (paper) => paper.student, { nullable: true })
+  paper: Paper;
+
 }
 
 @ChildEntity(UserType.Teacher)
@@ -121,6 +129,9 @@ export class Teacher extends User {
 
   @OneToMany(() => Offer, (offer) => offer.teacher)
   offers: Offer[];
+
+  @OneToMany(() => Paper, (paper) => paper.teacher)
+  papers: Paper[];
 }
 
 export function isStudent(user: User): user is Student {

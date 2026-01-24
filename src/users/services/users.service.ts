@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { isStudent, User } from "../entities/user.entity";
+import { isStudent, Student, User } from "../entities/user.entity";
 import { FindOptionsRelations, Repository } from "typeorm";
 import { ValidateUserDto } from "../dto/validate-user.dto";
 import { TopicsService } from "src/common/services/topics.service";
@@ -13,9 +13,10 @@ export class UsersService {
     private readonly topicsService: TopicsService,
   ) {}
 
-  private defaultRelations: FindOptionsRelations<User> = {
+  private defaultRelations: FindOptionsRelations<User & Student> = {
     profile: true,
     specialization: { domain: true },
+    paper: true,
   };
 
   async findAll(): Promise<User[]> {

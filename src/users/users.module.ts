@@ -15,6 +15,8 @@ import { CommonModule } from 'src/common/common.module';
 import { SpecializationsService } from './services/specializations.service';
 import { TeachersService } from './services/teachers.service';
 import { TeachersController } from './controllers/teachers.controller';
+import { UserExtraData } from './entities/user-extra-data.entity';
+import { Address } from './entities/address.entity';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { TeachersController } from './controllers/teachers.controller';
       Secretary,
       Student,
       Teacher,
+      UserExtraData,
+      Address,
     ]),
   ],
   controllers: [
