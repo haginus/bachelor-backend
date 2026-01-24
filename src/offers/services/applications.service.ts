@@ -9,6 +9,7 @@ import { UserType } from "src/lib/enums/user-type.enum";
 import { ApplicationDto } from "../dto/application.dto";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { OffersService } from "./offers.service";
+import { MailService } from "src/mail/mail.service";
 
 @Injectable()
 export class ApplicationsService {
@@ -17,6 +18,7 @@ export class ApplicationsService {
     @InjectRepository(Application) private readonly applicationsRepository: Repository<Application>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly offersService: OffersService,
+    private readonly mailService: MailService,
   ) {}
 
   defaultRelations: FindOptionsRelations<Application> = {
@@ -114,7 +116,9 @@ export class ApplicationsService {
       offer,
       student,
     });
-    return this.applicationsRepository.save(application);
+    const savedApplication = await this.applicationsRepository.save(application);
+    await this.mailService.sendNewApplicationEmail(student, savedApplication.offer.teacher, savedApplication);
+    return savedApplication;
   }
 
   private async findApplicationForTeacher(id: number, user: User): Promise<Application> {
@@ -135,15 +139,17 @@ export class ApplicationsService {
     }
     application.accepted = true;
     // TODO: create paper & remove other applications of student
-    // TODO: notify student
-    return this.applicationsRepository.save(application);
+    const savedApplication = await this.applicationsRepository.save(application);
+    await this.mailService.sendAcceptedApplicationEmail(savedApplication.student, savedApplication.offer.teacher, savedApplication);
+    return savedApplication;
   }
 
   async decline(id: number, user: User): Promise<Application> {
     const application = await this.findApplicationForTeacher(id, user);
     application.accepted = false;
-    // TODO: notify student
-    return this.applicationsRepository.save(application);
+    const savedApplication = await this.applicationsRepository.save(application);
+    await this.mailService.sendRejectedApplicationEmail(savedApplication.student, savedApplication.offer.teacher, savedApplication);
+    return savedApplication;
   }
 
   async withdraw(id: number, user: User): Promise<void> {

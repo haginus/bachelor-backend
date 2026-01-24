@@ -13,6 +13,7 @@ import { safePath } from './lib/utils';
 import { SudoGuard } from './auth/guards/sudo.guard';
 import { OffersModule } from './offers/offers.module';
 import { ApplicationSubscriber } from './offers/subscribers/application.subscriber';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ApplicationSubscriber } from './offers/subscribers/application.subscrib
       inject: [ConfigService],
     }),
     CommonModule,
+    MailModule,
     UsersModule,
     AuthModule,
     OffersModule,
