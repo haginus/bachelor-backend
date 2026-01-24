@@ -32,9 +32,6 @@ export class User {
     return `${this.firstName} ${this.lastName}`;
   }
 
-  @Column({ nullable: true })
-  CNP: string;
-
   @Column()
   email: string;
 
@@ -42,6 +39,11 @@ export class User {
   @Column({ nullable: true })
   password: string;
 
+  @Expose({ groups: ['full'] })
+  @Column({ nullable: true })
+  CNP: string;
+
+  @Expose({ groups: ['full'] })
   @Column({ default: false })
   validated: boolean;
 
@@ -52,12 +54,15 @@ export class User {
   @ManyToOne(() => Specialization, { nullable: true })
   specialization: Specialization;
 
+  @Expose({ groups: ['full'] })
   @CreateDateColumn()
   createdAt: Date;
 
+  @Expose({ groups: ['full'] })
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @Expose({ groups: ['full'] })
   @DeleteDateColumn()
   deletedAt!: Date | null;
 
@@ -85,15 +90,19 @@ export class Student extends User {
   @Column()
   promotion: string;
 
+  @Expose({ groups: ['full'] })
   @Column()
   identificationCode: string;
 
+  @Expose({ groups: ['full'] })
   @Column()
   matriculationYear: string;
 
+  @Expose({ groups: ['full'] })
   @Column({ type: 'enum', enum: FundingForm })
   fundingForm: FundingForm;
 
+  @Expose({ groups: ['full'] })
   @Column()
   generalAverage: number;
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, SerializeOptions } from "@nestjs/common";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { TeachersService } from "../services/teachers.service";
@@ -7,6 +7,7 @@ import { UserDto } from "../dto/user.dto";
 
 @Controller('teachers')
 @UserTypes([UserType.Admin])
+@SerializeOptions({ groups: ['full'] })
 export class TeachersController {
 
   constructor(private readonly teachersService: TeachersService) {}

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, SerializeOptions, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Public } from "./decorators/public.decorator";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
@@ -24,6 +24,7 @@ export class AuthController {
 
   @Get("user")
   @HydrateUser()
+  @SerializeOptions({ groups: ['full'] })
   async user(@CurrentUser() user: User) {
     return user;
   }
