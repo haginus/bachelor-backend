@@ -1,7 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SessionModule } from './session/session.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -40,10 +39,9 @@ import { ApplicationSubscriber } from './offers/subscribers/application.subscrib
       }),
       inject: [ConfigService],
     }),
-    SessionModule,
+    CommonModule,
     UsersModule,
     AuthModule,
-    CommonModule,
     OffersModule,
   ],
   controllers: [],

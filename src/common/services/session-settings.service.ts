@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { SessionSettings } from "./session-settings.entity";
+import { SessionSettings } from "../entities/session-settings.entity";
 import { Repository } from "typeorm";
 import { stripTime } from "src/lib/utils";
-import { SessionSettingsDto } from "./session-settings.dto";
+import { SessionSettingsDto } from "../dto/session-settings.dto";
 
 @Injectable()
 export class SessionSettingsService {

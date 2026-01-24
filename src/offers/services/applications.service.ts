@@ -7,7 +7,7 @@ import { merge } from "lodash";
 import { Student, User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { ApplicationDto } from "../dto/application.dto";
-import { SessionSettingsService } from "src/session/session-settings.service";
+import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { OffersService } from "./offers.service";
 
 @Injectable()
