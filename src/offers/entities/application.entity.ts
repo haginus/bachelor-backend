@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Offer } from "./offer.entity";
 import { Student } from "src/users/entities/user.entity";
 
@@ -28,4 +28,10 @@ export class Application {
 
   @ManyToOne(() => Student, (student) => student.applications)
   student: Student;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

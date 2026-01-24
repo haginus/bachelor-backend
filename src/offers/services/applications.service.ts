@@ -1,0 +1,160 @@
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Application } from "../entities/application.entity";
+import { FindOptionsRelations, FindOptionsWhere, IsNull, Repository } from "typeorm";
+import { ApplicationQueryDto } from "../dto/application-query.dto";
+import { merge } from "lodash";
+import { Student, User } from "src/users/entities/user.entity";
+import { UserType } from "src/lib/enums/user-type.enum";
+import { ApplicationDto } from "../dto/application.dto";
+import { SessionSettingsService } from "src/session/session-settings.service";
+import { OffersService } from "./offers.service";
+
+@Injectable()
+export class ApplicationsService {
+  
+  constructor(
+    @InjectRepository(Application) private readonly applicationsRepository: Repository<Application>,
+    private readonly sessionSettingsService: SessionSettingsService,
+    private readonly offersService: OffersService,
+  ) {}
+
+  defaultRelations: FindOptionsRelations<Application> = {
+    offer: {
+      topics: true,
+      domain: true,
+    }
+  };
+
+  private mergeRelations(relations: FindOptionsRelations<Application>): FindOptionsRelations<Application> {
+    return merge({}, this.defaultRelations, relations);
+  }
+
+  getWhereClause(query: ApplicationQueryDto) {
+    const where: FindOptionsWhere<Application> = {};
+    if(query.state) {
+      where.accepted = query.state === 'pending' ? IsNull() : query.state === 'accepted' ? true : false;
+    }
+    if(query.offerId) {
+      where.offerId = query.offerId;
+    }
+    return where;
+  }
+
+  findAllByStudent(studentId: number, query: ApplicationQueryDto): Promise<Application[]> {
+    return this.applicationsRepository.find({
+      where: { 
+        ...this.getWhereClause(query),
+        student: { id: studentId }
+      },
+      relations: this.mergeRelations({ 
+        offer: { teacher: true } 
+      }),
+    });
+  }
+
+  findAllByTeacher(teacherId: number, query: ApplicationQueryDto): Promise<Application[]> {
+    return this.applicationsRepository.find({
+      where: { 
+        ...this.getWhereClause(query),
+        offer: { teacher: { id: teacherId } }
+      },
+      relations: this.mergeRelations({
+        student: true,
+      }),
+    });
+  }
+
+  async findOne(id: number, user?: User): Promise<Application> {
+    const application = await this.applicationsRepository.findOne({
+      where: { id },
+      relations: this.mergeRelations({
+        student: true,
+        offer: { teacher: true },
+      }),
+    });
+    if(!application) {
+      throw new NotFoundException();
+    }
+    if(
+      user && (
+        (user.type === UserType.Student && application.student.id !== user.id) ||
+        (user.type === UserType.Teacher && application.offer.teacher.id !== user.id) ||
+        user.type === UserType.Secretary
+      )
+    ) {
+      throw new ForbiddenException();
+    }
+    return application;
+  }
+
+  async create(dto: ApplicationDto, student: Student): Promise<Application> {
+    if(!await this.sessionSettingsService.canApply()) {
+      throw new BadRequestException('Nu puteți trimite cereri în afara perioadei de aplicare.');
+    }
+    const offer = await this.offersService.findOne(dto.offerId);
+    // TODO: check if student has paper
+    if(offer.domain.id !== student.specialization.domain.id) {
+      throw new BadRequestException('Oferta nu vă este adresată.');
+    }
+    if(offer.availableSeats <= 0) {
+      throw new BadRequestException('Limita de locuri ofertei a fost deja atinsă.');
+    }
+    const existingApplication = await this.applicationsRepository.findOne({
+      where: {
+        offer: { id: dto.offerId },
+        student: { id: student.id },
+      },
+    });
+    if(existingApplication) {
+      throw new BadRequestException('Ați aplicat deja la această ofertă.');
+    }
+    const application = this.applicationsRepository.create({
+      ...dto,
+      offer,
+      student,
+    });
+    return this.applicationsRepository.save(application);
+  }
+
+  private async findApplicationForTeacher(id: number, user: User): Promise<Application> {
+    const application = await this.findOne(id);
+    if(application.accepted !== null) {
+      throw new BadRequestException('Cererea a primit deja un răspuns.');
+    }
+    if(application.offer.teacher.id !== user.id) {
+      throw new ForbiddenException();
+    }
+    return application;
+  }
+
+  async accept(id: number, user: User): Promise<Application> {
+    const application = await this.findApplicationForTeacher(id, user);
+    if(application.offer.availableSeats <= 0) {
+      throw new BadRequestException('Limita ofertei a fost deja atinsă. Creșteți limita și reîncercați.');
+    }
+    application.accepted = true;
+    // TODO: create paper & remove other applications of student
+    // TODO: notify student
+    return this.applicationsRepository.save(application);
+  }
+
+  async decline(id: number, user: User): Promise<Application> {
+    const application = await this.findApplicationForTeacher(id, user);
+    application.accepted = false;
+    // TODO: notify student
+    return this.applicationsRepository.save(application);
+  }
+
+  async withdraw(id: number, user: User): Promise<void> {
+    const application = await this.findOne(id);
+    if(application.accepted !== null) {
+      throw new BadRequestException('Cererea a primit deja un răspuns.');
+    }
+    if(application.student.id !== user.id) {
+      throw new ForbiddenException();
+    }
+    await this.applicationsRepository.delete(id);
+  }
+
+}

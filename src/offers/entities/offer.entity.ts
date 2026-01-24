@@ -19,6 +19,10 @@ export class Offer {
   @Column({ type: 'int', default: 0 })
   takenSeats: number;
 
+  get availableSeats(): number {
+    return this.limit - this.takenSeats;
+  }
+
   @ManyToOne(() => Teacher, (teacher) => teacher.offers)
   teacher: Teacher;
 

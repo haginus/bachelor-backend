@@ -23,6 +23,21 @@ export class SessionSettingsService {
     return settings;
   }
 
+  async canApply(): Promise<boolean> {
+    const settings = await this.getSettings();
+    return settings.canApply();
+  }
+
+  async canUploadSecretaryFiles(): Promise<boolean> {
+    const settings = await this.getSettings();
+    return settings.canUploadSecretaryFiles();
+  }
+
+  async canUploadPaperFiles(): Promise<boolean> {
+    const settings = await this.getSettings();
+    return settings.canUploadPaperFiles();
+  }
+
   async updateSettings(dto: SessionSettingsDto) {
     if(dto.applyEndDate < dto.applyStartDate) {
       throw new BadRequestException('Data încheierii sesiunii de cereri nu poate fi mai devreme de cea a începerii!');

@@ -1,4 +1,5 @@
 import { Exclude } from "class-transformer";
+import { isDateInInclusiveRange } from "src/lib/utils";
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
@@ -31,4 +32,16 @@ export class SessionSettings {
 
   @Column()
   allowGrading: boolean;
+
+  canApply() {
+    return isDateInInclusiveRange(new Date(), this.applyStartDate, this.applyEndDate);
+  }
+
+  canUploadSecretaryFiles() {
+    return isDateInInclusiveRange(new Date(), this.fileSubmissionStartDate, this.fileSubmissionEndDate);
+  }
+
+  canUploadPaperFiles() {
+    return isDateInInclusiveRange(new Date(), this.fileSubmissionStartDate, this.paperSubmissionEndDate);
+  }
 }
