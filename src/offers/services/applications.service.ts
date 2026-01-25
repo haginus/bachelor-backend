@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Application } from "../entities/application.entity";
-import { FindOptionsRelations, FindOptionsWhere, IsNull, Repository } from "typeorm";
+import { FindOptionsRelations, FindOptionsWhere, IsNull, Not, Repository, DataSource } from "typeorm";
 import { ApplicationQueryDto } from "../dto/application-query.dto";
 import { merge } from "lodash";
 import { Student, User } from "src/users/entities/user.entity";
@@ -10,14 +10,19 @@ import { ApplicationDto } from "../dto/application.dto";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { OffersService } from "./offers.service";
 import { MailService } from "src/mail/mail.service";
+import { Paper } from "src/papers/entities/paper.entity";
+import { plainToInstance } from "class-transformer";
+import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
 
 @Injectable()
 export class ApplicationsService {
   
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(Application) private readonly applicationsRepository: Repository<Application>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly offersService: OffersService,
+    private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly mailService: MailService,
   ) {}
 
@@ -138,10 +143,29 @@ export class ApplicationsService {
       throw new BadRequestException('Limita ofertei a fost deja atinsă. Creșteți limita și reîncercați.');
     }
     application.accepted = true;
-    // TODO: create paper & remove other applications of student
-    const savedApplication = await this.applicationsRepository.save(application);
-    await this.mailService.sendAcceptedApplicationEmail(savedApplication.student, savedApplication.offer.teacher, savedApplication);
-    return savedApplication;
+    const paper = this.dataSource.getRepository(Paper).create({
+      title: application.title,
+      description: application.description,
+      type: application.offer.domain.paperType,
+      studentId: application.student.id,
+      teacherId: application.offer.teacher.id,
+      topics: application.offer.topics,
+      student: application.student,
+      teacher: application.offer.teacher,
+      requiredDocuments: [],
+    });
+    paper.requiredDocuments = await this.requiredDocumentsService.getRequiredDocumentsForPaper(paper);
+    await this.dataSource.transaction(async manager => {
+      await manager.save(application);
+      // Remove other applications of the student
+      await manager.delete(Application, {
+        id: Not(application.id),
+        student: { id: application.student.id },
+      });
+      await manager.save(paper);
+      await this.mailService.sendAcceptedApplicationEmail(application.student, application.offer.teacher, application);
+    });
+    return application;
   }
 
   async decline(id: number, user: User): Promise<Application> {

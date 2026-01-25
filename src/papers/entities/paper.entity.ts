@@ -4,7 +4,7 @@ import { Student, Teacher } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Document } from "./document.entity";
 import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
-import { Type } from "class-transformer";
+import { instanceToPlain, plainToInstance, Transform, Type } from "class-transformer";
 
 @Entity()
 export class Paper {
@@ -21,8 +21,8 @@ export class Paper {
   @Column({ type: 'enum', enum: PaperType })
   type: PaperType;
 
-  @Column({ nullable: true })
-  isValid: boolean;
+  @Column({ type: 'boolean', nullable: true })
+  isValid: boolean | null;
 
   // @Column({ nullable: true })
   // submitted: boolean;
@@ -51,8 +51,13 @@ export class Paper {
   @OneToMany(() => Document, (document) => document.paper)
   documents: Document[];
 
-  @Column({ type: 'simple-json' })
-  @Type(() => RequiredDocumentDto)
+  @Column({ 
+    type: 'simple-json', 
+    transformer: {
+      to: (value: RequiredDocumentDto[]) => value,
+      from: (value: any) => plainToInstance(RequiredDocumentDto, value, { excludeExtraneousValues: true }),
+    },
+  })
   requiredDocuments: RequiredDocumentDto[];
 
   @CreateDateColumn()

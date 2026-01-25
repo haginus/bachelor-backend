@@ -15,8 +15,7 @@ export class RequiredDocumentsService {
     private readonly sessionSettingsService: SessionSettingsService,
   ) {}
 
-  async getRequiredDocumentsForPaper(paperId: number) {
-    const sessionSettings = await this.sessionSettingsService.getSettings();
+  async getRequiredDocumentsByPaperId(paperId: number) {
     const paper = await this.papersRepository.findOne({
       where: { id: paperId },
       relations: {
@@ -28,6 +27,11 @@ export class RequiredDocumentsService {
     if(!paper) {
       throw new NotFoundException('Lucrearea nu există.');
     }
+    return this.getRequiredDocumentsForPaper(paper);
+  }
+
+  async getRequiredDocumentsForPaper(paper: Paper) {
+    const sessionSettings = await this.sessionSettingsService.getSettings();
     const specs = requiredDocumentSpecs.filter(spec => {
       if(!spec.onlyFor) {
         return true;

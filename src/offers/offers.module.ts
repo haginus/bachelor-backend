@@ -11,12 +11,14 @@ import { TeacherOffersController } from './controllers/teacher-offers.controller
 import { ApplicationsService } from './services/applications.service';
 import { ApplicationsController } from './controllers/applications.controller';
 import { MailModule } from 'src/mail/mail.module';
+import { PapersModule } from 'src/papers/papers.module';
 
 @Module({
   imports: [
     CommonModule,
     MailModule,
     UsersModule,
+    PapersModule,
     TypeOrmModule.forFeature([
       Offer,
       Application,
