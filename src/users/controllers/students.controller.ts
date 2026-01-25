@@ -17,6 +17,11 @@ export class StudentsController {
     return this.studentsService.findAll(dto);
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: number) {
+    return this.studentsService.findOne(id);
+  }
+
   @Post()
   async create(@Body() dto: StudentDto) {
     return this.studentsService.create(dto);
