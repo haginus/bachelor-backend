@@ -3,6 +3,8 @@ import { PaperType } from "src/lib/enums/paper-type.enum";
 import { Student, Teacher } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Document } from "./document.entity";
+import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
+import { Type } from "class-transformer";
 
 @Entity()
 export class Paper {
@@ -48,6 +50,10 @@ export class Paper {
 
   @OneToMany(() => Document, (document) => document.paper)
   documents: Document[];
+
+  @Column({ type: 'simple-json' })
+  @Type(() => RequiredDocumentDto)
+  requiredDocuments: RequiredDocumentDto[];
 
   @CreateDateColumn()
   createdAt: Date;
