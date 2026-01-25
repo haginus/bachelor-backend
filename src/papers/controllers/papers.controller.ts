@@ -1,9 +1,11 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, Query } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
+import { PaperQueryDto } from "../dto/paper-query.dto";
+import { Paginated } from "src/lib/interfaces/paginated.interface";
 
 @Controller('papers')
 export class PapersController {
@@ -20,4 +22,9 @@ export class PapersController {
       : this.papersService.findAllByTeacher(user.id);
   }
 
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  @Get()
+  async findAll(@Query() query: PaperQueryDto): Promise<Paginated<Paper>> {
+    return this.papersService.findAll(query);
+  }
 }
