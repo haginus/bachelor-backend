@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Paper } from "../entities/paper.entity";
-import { FindOptionsRelations, Repository } from "typeorm";
+import { FindOptionsRelations, Repository, DataSource } from "typeorm";
 import { merge } from "lodash";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
@@ -19,6 +19,7 @@ export class PapersService {
     @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly topicsService: TopicsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   defaultRelations: FindOptionsRelations<Paper> = {
@@ -26,6 +27,7 @@ export class PapersService {
     teacher: true,
     documents: true,
     topics: true,
+    committee: true,
   };
 
   private mergeRelations(relations: FindOptionsRelations<Paper>): FindOptionsRelations<Paper> {
@@ -70,11 +72,20 @@ export class PapersService {
     const qb = this.papersRepository.createQueryBuilder('paper')
       .leftJoinAndSelect('paper.student', 'student')
       .leftJoinAndSelect('paper.teacher', 'teacher')
-      .leftJoinAndSelect('paper.documents', 'documents')
-      .leftJoinAndSelect('paper.topics', 'topics');
+      .leftJoinAndSelect('paper.topics', 'topics')
+      .leftJoinAndSelect('paper.committee', 'committee');
+    
+    if(query.minified !== true) {
+      qb.leftJoinAndSelect('paper.documents', 'documents')
+        .leftJoinAndSelect('paper.grades', 'grades')
+        .leftJoinAndSelect('grades.committeeMember', 'committeeMember')
+        .leftJoinAndSelect('committeeMember.teacher', 'committeeMemberTeacher');
+    }
     
     if(query.validity) {
-      if(query.validity === 'not_validated') {
+      if(query.validity === 'not_invalid') {
+        qb.andWhere('(paper.isValid IS NULL OR paper.isValid = TRUE)');
+      } else if(query.validity === 'not_validated') {
         qb.andWhere('paper.isValid IS NULL');
       } else {
         qb.andWhere('paper.isValid = :isValid', { isValid: query.validity === 'valid' });
@@ -92,19 +103,26 @@ export class PapersService {
     if(query.assignedTo) {
       qb.andWhere('paper.committeeId = :committeeId', { committeeId: query.assignedTo });
     }
-    if(query.forCommittee) {
-      // TODO: get domains for committee
+    if(query.specializationId || query.domainId || query.forCommittee) {
+      qb.leftJoin('student.specialization', 'specialization');
     }
-    if(query.domainId && !query.specializationId) {
-      qb
-        .leftJoin('student.specialization', 'specialization')
-        .leftJoin('specialization.domain', 'domain')
-        .andWhere('domain.id = :domainId', { domainId: query.domainId });
+    if(query.domainId || query.forCommittee) {
+      qb.leftJoin('specialization.domain', 'domain');
+    }
+    if(query.forCommittee) {
+      const domainIds = await this.dataSource.createQueryBuilder()
+        .select('cd.domainId', 'domainId')
+        .from('committee_domains', 'cd')
+        .where('cd.committeeId = :committeeId', { committeeId: query.forCommittee })
+        .getRawMany<{ domainId: number }>();
+      
+      qb.andWhere('domain.id IN (:...domainIds)', { domainIds: domainIds.map(d => d.domainId) });
+    }
+    if(query.domainId && !query.specializationId && !query.forCommittee) {
+      qb.andWhere('domain.id = :domainId', { domainId: query.domainId });
     }
     if(query.specializationId) {
-      qb
-        .leftJoin('student.specialization', 'specialization')
-        .andWhere('specialization.id = :specializationId', { specializationId: query.specializationId });
+      qb.andWhere('specialization.id = :specializationId', { specializationId: query.specializationId });
     }
     if(query.studentName) {
       qb.andWhere(
@@ -115,7 +133,7 @@ export class PapersService {
     const count = await qb.getCount();
     if(query.sortBy) {
       if(query.sortBy === 'committee') {
-        // TODO
+        qb.orderBy('committee.name', query.sortDirection.toUpperCase() as 'ASC' | 'DESC');
       } else {
         qb.orderBy(`paper.${query.sortBy}`, query.sortDirection.toUpperCase() as 'ASC' | 'DESC');
       }

@@ -25,15 +25,17 @@ export class PaperQueryDto extends PaginatedQueryDto {
 
   @IsOptional()
   @IsInt()
+  @Transform(({ value }) => parseInt(value, 10))
   assignedTo?: number;
 
   @IsOptional()
   @IsInt()
+  @Transform(({ value }) => parseInt(value, 10))
   forCommittee?: number;
 
   @IsOptional()
-  @IsEnum(['valid', 'invalid', 'not_validated'])
-  validity?: 'valid' | 'invalid' | 'not_validated';
+  @IsEnum(['valid', 'invalid', 'not_validated', 'not_invalid'])
+  validity?: 'valid' | 'invalid' | 'not_validated' | 'not_invalid';
 
   @IsOptional()
   @IsString()
@@ -57,4 +59,8 @@ export class PaperQueryDto extends PaginatedQueryDto {
   @IsString()
   @TrimString()
   studentName?: string;
+
+  @IsOptional()
+  @Bool()
+  minified?: boolean;
 }

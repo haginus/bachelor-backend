@@ -29,8 +29,8 @@ export class Paper {
   // @Column({ nullable: true })
   // submitted: boolean;
 
-  @Column({ nullable: true })
-  scheduledGrading: Date;
+  @Column({ type: 'datetime', nullable: true })
+  scheduledGrading: Date | null;
 
   @Column('int')
   studentId: number;
@@ -55,7 +55,7 @@ export class Paper {
 
   @ManyToOne(() => Committee, committee => committee.papers, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'committeeId' })
-  committee: Committee;
+  committee: Committee | null;
 
   @OneToMany(() => Document, (document) => document.paper)
   documents: Document[];

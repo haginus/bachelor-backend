@@ -32,6 +32,6 @@ export class Committee {
   @OneToMany(() => CommitteeActivityDay, activityDay => activityDay.committee, { cascade: true })
   activityDays: CommitteeActivityDay[];
 
-  @OneToMany(() => Paper, paper => paper.committee)
+  @OneToMany(() => Paper, paper => paper.committee, { cascade: true })
   papers: Paper[];
 }

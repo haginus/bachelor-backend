@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put } from "@nestjs/common";
 import { CommitteesService } from "../services/committees.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -39,6 +39,14 @@ export class CommitteesController {
     @Body('finalGrades', new ParseBoolPipe({ optional: true })) finalGrades: boolean = true,
   ) {
     return this.committeesService.markGradesFinal(id, finalGrades);
+  }
+
+  @Put(':id/papers')
+  async setPapers(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('paperIds', new ParseArrayPipe({ items: Number })) paperIds: number[]
+  ) {
+    return this.committeesService.setPapers(id, paperIds);
   }
 
   @Delete(':id')

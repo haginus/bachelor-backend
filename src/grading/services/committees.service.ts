@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { FindOptionsRelations, Repository } from "typeorm";
+import { FindOptionsRelations, In, Repository, DataSource } from "typeorm";
 import { Committee } from "../entities/committee.entity";
 import { CommitteeDto } from "../dto/committee.dto";
 import { DomainsService } from "src/users/services/domains.service";
@@ -8,6 +8,8 @@ import { CommitteeMemberRole } from "src/lib/enums/committee-member-role.enum";
 import { TeachersService } from "src/users/services/teachers.service";
 import { CommitteeMember } from "../entities/committee-member.entity";
 import { indexArray } from "src/lib/utils";
+import { Paper } from "src/papers/entities/paper.entity";
+import { PaperGrade } from "../entities/paper-grade.entity";
 
 @Injectable()
 export class CommitteesService {
@@ -17,6 +19,7 @@ export class CommitteesService {
     @InjectRepository(CommitteeMember) private readonly committeeMembersRepository: Repository<CommitteeMember>,
     private readonly domainsService: DomainsService,
     private readonly teachersService: TeachersService,
+    private readonly dataSource: DataSource,
   ) {}
 
   private readonly defaultRelations: FindOptionsRelations<Committee> = {
@@ -37,7 +40,12 @@ export class CommitteesService {
   async findOne(id: number): Promise<Committee> {
     const committee = await this.committeesRepository.findOne({
       where: { id },
-      relations: this.defaultRelations,
+      relations: {
+        ...this.defaultRelations,
+        domains: {
+          specializations: true,
+        },
+      },
     });
     if(!committee) {
       throw new NotFoundException();
@@ -103,6 +111,38 @@ export class CommitteesService {
     const committee = await this.findOne(id);
     committee.finalGrades = finalGrades;
     return this.committeesRepository.save(committee);
+  }
+
+  async setPapers(id: number, paperIds: number[]): Promise<Committee> {
+    const committee = await this.findOne(id);
+    const domainSet = new Set(committee.domains.map(d => d.id));
+    const papersSet = new Set(paperIds);
+    const papers = await this.dataSource.getRepository(Paper).find({
+      where: { id: In(paperIds) },
+      relations: { 
+        committee: true,
+        student: { specialization: { domain: true } },
+      }
+    });
+    if(papers.length !== paperIds.length) {
+      throw new NotFoundException('Unele lucrări specificate nu există.');
+    }
+    if(papers.some(paper => !domainSet.has(paper.student.specialization.domain.id))) {
+      throw new BadRequestException('Toate lucrările trebuie să aparțină domeniilor comisiei.');
+    }
+    if(papers.some(paper => paper.isValid === false)) {
+      throw new BadRequestException('Nu se pot adăuga lucrări invalide în comisie.');
+    }
+    const newPapers = papers.filter(paper => !paper.committee);
+    const movedPapers = papers.filter(paper => paper.committee && paper.committee.id !== committee.id);
+    const removedPapers = committee.papers.filter(paper => !papersSet.has(paper.id));
+    const committeePapers = [...newPapers, ...movedPapers];
+    await this.dataSource.transaction(async manager => {
+      await manager.delete(PaperGrade, { paperId: In([...movedPapers, ...removedPapers].map(p => p.id)) });
+      await manager.update(Paper, { id: In(committeePapers.map(p => p.id)) }, { committee, scheduledGrading: null, updatedAt: new Date() });
+      await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
+    });
+    return this.findOne(id);
   }
 
   async delete(id: number): Promise<void> {
