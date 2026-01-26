@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher } from "../entities/user.entity";
-import { FindOptionsRelations, FindOptionsWhere, ILike, Repository } from "typeorm";
+import { FindOptionsRelations, FindOptionsWhere, ILike, In, Repository } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
@@ -32,6 +32,14 @@ export class TeachersService {
       skip: dto.offset,
     });
     return { rows, count };
+  }
+
+  async findAllByIds(ids: number[]): Promise<Teacher[]> {
+    const teachers = await this.teachersRepository.findBy({ id: In(ids) });
+    if(teachers.length !== ids.length) {
+      throw new NotFoundException('Unul sau mai mulți profesori nu au fost găsiți.');
+    }
+    return teachers;
   }
 
   async findOne(id: number): Promise<Teacher> {

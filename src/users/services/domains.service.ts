@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { FindManyOptions, Repository } from "typeorm";
+import { FindManyOptions, In, Repository } from "typeorm";
 import { Domain } from "../entities/domain.entity";
 import { DomainDto } from "../dto/domain.dto";
 
@@ -34,6 +34,14 @@ export class DomainsService {
 
   async findAll(detailed = false): Promise<Domain[]> {
     return this.domainsRepository.find(this.getFindOptions(detailed));
+  }
+
+  async findAllByIds(ids: number[]): Promise<Domain[]> {
+    const domains = await this.domainsRepository.findBy({ id: In(ids) });
+    if(domains.length !== ids.length) {
+      throw new NotFoundException('Unul sau mai multe domenii nu au fost găsite.');
+    }
+    return domains;
   }
 
   async findOne(id: number): Promise<Domain> {

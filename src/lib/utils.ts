@@ -22,3 +22,21 @@ export function safePath(...args: string[]): string {
   fs.mkdirSync(path.dirname(resultedPath), { recursive: true });
   return resultedPath;
 }
+
+export function indexArray<T, K extends number | string>(array: T[], getKey: (item: T) => K) {
+  return array.reduce((acc, item) => {
+    acc[getKey(item)] = item;
+    return acc;
+  }, {} as Record<K, T>);
+}
+
+export function groupBy<T, K extends string | number>(array: T[], getKey: (item: T) => K) {
+  return array.reduce((acc, item) => {
+    const key = getKey(item);
+    if(!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(item);
+    return acc;
+  }, {} as Record<K, T[]>);
+}

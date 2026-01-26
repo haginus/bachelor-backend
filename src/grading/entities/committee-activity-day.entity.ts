@@ -13,6 +13,6 @@ export class CommitteeActivityDay {
   @Column()
   startTime: Date;
 
-  @ManyToOne(() => Committee, (committee) => committee.activityDays, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Committee, (committee) => committee.activityDays, { onDelete: 'CASCADE', orphanedRowAction: 'delete' })
   committee: Committee;
 }

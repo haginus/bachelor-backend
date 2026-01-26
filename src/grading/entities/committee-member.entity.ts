@@ -16,7 +16,7 @@ export class CommitteeMember {
   @Column({ type: 'enum', enum: CommitteeMemberRole })
   role: CommitteeMemberRole;
 
-  @ManyToOne(() => Committee, committee => committee.members, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Committee, committee => committee.members, { onDelete: 'CASCADE', orphanedRowAction: 'delete' })
   committee: Committee;
 
   @ManyToOne(() => Teacher, teacher => teacher.committeeMemberships)

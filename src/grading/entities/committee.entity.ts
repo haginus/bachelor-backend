@@ -1,7 +1,8 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { CommitteeMember } from "./committee-member.entity";
 import { CommitteeActivityDay } from "./committee-activity-day.entity";
 import { Paper } from "src/papers/entities/paper.entity";
+import { Domain } from "src/users/entities/domain.entity";
 
 @Entity()
 export class Committee {
@@ -21,10 +22,14 @@ export class Committee {
   @Column({ default: false })
   finalGrades: boolean;
 
-  @OneToMany(() => CommitteeMember, member => member.committee, { cascade: true, orphanedRowAction: 'delete' })
+  @ManyToMany(() => Domain, { cascade: true })
+  @JoinTable({ name: 'committee_domains' })
+  domains: Domain[];
+
+  @OneToMany(() => CommitteeMember, member => member.committee, { cascade: true })
   members: CommitteeMember[];
 
-  @OneToMany(() => CommitteeActivityDay, activityDay => activityDay.committee, { cascade: true, orphanedRowAction: 'delete' })
+  @OneToMany(() => CommitteeActivityDay, activityDay => activityDay.committee, { cascade: true })
   activityDays: CommitteeActivityDay[];
 
   @OneToMany(() => Paper, paper => paper.committee)
