@@ -5,6 +5,8 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTab
 import { Document } from "./document.entity";
 import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
 import { instanceToPlain, plainToInstance, Transform, Type } from "class-transformer";
+import { PaperGrade } from "src/grading/entities/paper-grade.entity";
+import { Committee } from "src/grading/entities/committee.entity";
 
 @Entity()
 export class Paper {
@@ -36,6 +38,9 @@ export class Paper {
   @Column('int', { nullable: true })
   teacherId: number;
 
+  @Column('int', { nullable: true })
+  committeeId: number;
+
   @ManyToMany(() => Topic, { cascade: true, onDelete: 'CASCADE' })
   @JoinTable({ name: 'paper_topics' })
   topics: Topic[];
@@ -48,8 +53,15 @@ export class Paper {
   @JoinColumn({ name: 'teacherId' })
   teacher: Teacher;
 
+  @ManyToOne(() => Committee, committee => committee.papers, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'committeeId' })
+  committee: Committee;
+
   @OneToMany(() => Document, (document) => document.paper)
   documents: Document[];
+
+  @OneToMany(() => PaperGrade, paperGrade => paperGrade.paper)
+  grades: PaperGrade[];
 
   @Column({ 
     type: 'simple-json', 

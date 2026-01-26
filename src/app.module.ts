@@ -15,6 +15,7 @@ import { OffersModule } from './offers/offers.module';
 import { ApplicationSubscriber } from './offers/subscribers/application.subscriber';
 import { MailModule } from './mail/mail.module';
 import { PapersModule } from './papers/papers.module';
+import { GradingModule } from './grading/grading.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { PapersModule } from './papers/papers.module';
     AuthModule,
     OffersModule,
     PapersModule,
+    GradingModule,
   ],
   controllers: [],
   providers: [

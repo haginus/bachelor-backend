@@ -86,6 +86,15 @@ export class PapersService {
     if(query.type) {
       qb.andWhere('paper.type = :type', { type: query.type });
     }
+    if(query.assigned !== undefined && !query.assignedTo) {
+      qb.andWhere(`paper.committeeId IS ${query.assigned ? 'NOT' : ''} NULL`);
+    }
+    if(query.assignedTo) {
+      qb.andWhere('paper.committeeId = :committeeId', { committeeId: query.assignedTo });
+    }
+    if(query.forCommittee) {
+      // TODO: get domains for committee
+    }
     if(query.domainId && !query.specializationId) {
       qb
         .leftJoin('student.specialization', 'specialization')

@@ -9,6 +9,7 @@ import { Offer } from "src/offers/entities/offer.entity";
 import { Application } from "src/offers/entities/application.entity";
 import { Paper } from "src/papers/entities/paper.entity";
 import { UserExtraData } from "./user-extra-data.entity";
+import { CommitteeMember } from "src/grading/entities/committee-member.entity";
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: "type" } })
@@ -132,6 +133,9 @@ export class Teacher extends User {
 
   @OneToMany(() => Paper, (paper) => paper.teacher)
   papers: Paper[];
+
+  @OneToMany(() => CommitteeMember, member => member.teacher)
+  committeeMemberships: CommitteeMember[];
 }
 
 export function isStudent(user: User): user is Student {

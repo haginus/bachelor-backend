@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { IsEnum, IsInt, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsIn, IsInt, IsOptional, IsString } from "class-validator";
 import { Bool } from "src/lib/decorators/bool.decorator";
 import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
 import { PaperType } from "src/lib/enums/paper-type.enum";
@@ -22,6 +22,14 @@ export class PaperQueryDto extends PaginatedQueryDto {
   @IsOptional()
   @Bool()
   assigned?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  assignedTo?: number;
+
+  @IsOptional()
+  @IsInt()
+  forCommittee?: number;
 
   @IsOptional()
   @IsEnum(['valid', 'invalid', 'not_validated'])
