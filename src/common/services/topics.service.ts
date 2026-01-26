@@ -21,7 +21,11 @@ export class TopicsService {
   }
 
   async findByIds(ids: number[]): Promise<Topic[]> {
-    return this.topicsRepository.findBy({ id: In(ids) });
+    const topics = await this.topicsRepository.findBy({ id: In(ids) });
+    if(topics.length !== ids.length) {
+      throw new NotFoundException('Una sau mai multe teme nu au fost găsite.');
+    }
+    return topics;
   }
 
   async findOne(id: number): Promise<Topic> {

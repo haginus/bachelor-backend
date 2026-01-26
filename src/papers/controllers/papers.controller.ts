@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Put, Query } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -7,6 +7,7 @@ import { UserType } from "src/lib/enums/user-type.enum";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { DocumentCategory } from "src/lib/enums/document-category.enum";
+import { PaperDto } from "../dto/paper.dto";
 
 @Controller('papers')
 export class PapersController {
@@ -29,9 +30,26 @@ export class PapersController {
       ));
   }
 
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ): Promise<Paper> {
+    return this.papersService.findOne(id, user);
+  }
+
   @UserTypes([UserType.Admin, UserType.Secretary])
   @Get()
   async findAll(@Query() query: PaperQueryDto): Promise<Paginated<Paper>> {
     return this.papersService.findAll(query);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PaperDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.papersService.update(id, dto, user);
   }
 }

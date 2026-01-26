@@ -25,7 +25,7 @@ export class PaperQueryDto extends PaginatedQueryDto {
 
   @IsOptional()
   @IsEnum(['valid', 'invalid', 'not_validated'])
-  validState?: 'valid' | 'invalid' | 'not_validated';
+  validity?: 'valid' | 'invalid' | 'not_validated';
 
   @IsOptional()
   @IsString()

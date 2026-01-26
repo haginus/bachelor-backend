@@ -47,15 +47,11 @@ export class OffersService {
   }
 
   private async getDtoRelations(dto: OfferDto) {
-    const relations = {
+    return {
       domain: await this.domainsService.findOne(dto.domainId),
       teacher: await this.teachersService.findOne(dto.teacherId),
       topics: await this.topicsService.findByIds(dto.topicIds),
     };
-    if(relations.topics.length !== dto.topicIds.length) {
-      throw new NotFoundException('Una sau mai multe categorii nu au fost găsite.');
-    }
-    return relations;
   }
 
   async create(dto: OfferDto): Promise<Offer> {
