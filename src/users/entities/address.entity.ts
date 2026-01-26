@@ -5,6 +5,9 @@ export class Address {
 
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column()
+  country: string;
   
   @Column()
   county: string;

@@ -38,7 +38,7 @@ export class PapersService {
   async findAllByTeacher(teacherId: number): Promise<Paper[]> {
     return this.papersRepository.find({
       where: { teacher: { id: teacherId } },
-      relations: this.mergeRelations({ teacher: false }),
+      relations: this.mergeRelations({ teacher: false, student: { specialization: true } }),
     });
   }
 

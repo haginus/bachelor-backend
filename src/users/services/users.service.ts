@@ -4,12 +4,15 @@ import { isStudent, Student, User } from "../entities/user.entity";
 import { FindOptionsRelations, Repository } from "typeorm";
 import { ValidateUserDto } from "../dto/validate-user.dto";
 import { TopicsService } from "src/common/services/topics.service";
+import { UserExtraData } from "../entities/user-extra-data.entity";
+import { UserExtraDataDto } from "../dto/user-extra-data.dto";
 
 @Injectable()
 export class UsersService {
   
   constructor(
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    @InjectRepository(UserExtraData) private readonly userExtraDataRepository: Repository<UserExtraData>,
     private readonly topicsService: TopicsService,
   ) {}
 
@@ -62,5 +65,20 @@ export class UsersService {
       }
     }
     return this.usersRepository.save(user);
+  }
+
+  async findExtraDataByUserId(userId: number): Promise<UserExtraData | null> {
+    const extraData = await this.userExtraDataRepository.findOne({ where: { userId } });
+    return extraData;
+  }
+
+  async updateExtraData(userId: number, dto: UserExtraDataDto): Promise<{ result: UserExtraData; }> {
+    const user = await this.findOne(userId);
+    if(!isStudent(user)) {
+      throw new BadRequestException('Utilizatorul nu este student.');
+    }
+    const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
+    await this.userExtraDataRepository.save(extraData);
+    return { result: extraData };
   }
 }
