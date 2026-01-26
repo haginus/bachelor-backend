@@ -2,6 +2,7 @@ import { Expose } from "class-transformer";
 import { DocumentCategory } from "../enums/document-category.enum";
 import { DocumentUploadPerspective } from "../enums/document-upload-perspective.enum";
 import { RequiredDocumentTypes } from "../interfaces/required-document-spec";
+import { mimeTypeExtensions } from "../mimes";
 
 export class RequiredDocumentDto {
   @Expose()
@@ -22,8 +23,7 @@ export class RequiredDocumentDto {
 
   @Expose()
   get acceptedExtensions(): string[] {
-    // TODO: use mime to calculate extensions from acceptedMimeTypes
-    return [];
+    return this.acceptedMimeTypes.split(',').map(mimeType => mimeTypeExtensions[mimeType]).filter(ext => !!ext);
   }
 
   @Expose()
