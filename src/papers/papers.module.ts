@@ -6,6 +6,8 @@ import { PapersController } from './controllers/papers.controller';
 import { PapersService } from './services/papers.service';
 import { CommonModule } from 'src/common/common.module';
 import { RequiredDocumentsService } from './services/required-documents.service';
+import { DocumentsService } from './services/documents.service';
+import { DocumentsController } from './controllers/documents.controller';
 
 @Module({
   imports: [
@@ -17,10 +19,12 @@ import { RequiredDocumentsService } from './services/required-documents.service'
   ],
   controllers: [
     PapersController,
+    DocumentsController,
   ],
   providers: [
     PapersService,
     RequiredDocumentsService,
+    DocumentsService,
   ],
   exports: [
     PapersService,

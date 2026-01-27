@@ -5,6 +5,7 @@
 
 # Stored files
 /static
+/storage
 
 # Logs
 logs

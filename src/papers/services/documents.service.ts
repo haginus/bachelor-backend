@@ -1,0 +1,228 @@
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Document } from "../entities/document.entity";
+import { IsNull, Repository, DataSource } from "typeorm";
+import { User } from "src/users/entities/user.entity";
+import { UploadDocumentDto } from "../dto/upload-document.dto";
+import { UserType } from "src/lib/enums/user-type.enum";
+import { Paper } from "../entities/paper.entity";
+import { CommitteeMember } from "src/grading/entities/committee-member.entity";
+import { DocumentCategory } from "src/lib/enums/document-category.enum";
+import { DocumentType } from "src/lib/enums/document-type.enum";
+import { DocumentUploadPerspective } from "src/lib/enums/document-upload-perspective.enum";
+import { SessionSettingsService } from "src/common/services/session-settings.service";
+import { CreateDocumentDto } from "../dto/create-document.dto";
+import { safePath } from "src/lib/utils";
+import { mimeTypeExtensions } from "src/lib/mimes";
+import { writeFile, readFile } from "fs/promises";
+
+@Injectable()
+export class DocumentsService {
+  
+  constructor(
+    @InjectRepository(Document) private readonly documentsRepository: Repository<Document>,
+    @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
+    private readonly sessionSettingsService: SessionSettingsService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  async findOne(id: number, user?: User): Promise<Document> {
+    const document = await this.documentsRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!document) {
+      throw new NotFoundException();
+    }
+    if(document.deletedAt && user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+      throw new NotFoundException();
+    }
+    await this.checkDocumentReadAccess(document, user);
+    return document;
+  }
+
+  async getDocumentContent(id: number, user?: User): Promise<Buffer> {
+    const document = await this.findOne(id, user);
+    const fileExtension = mimeTypeExtensions[document.mimeType];
+    const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
+    return readFile(storagePath);
+  }
+
+  async findUploadHistory(paperId: number, name: string): Promise<Document[]> {
+    return this.documentsRepository.find({
+      where: { paperId, name },
+      order: { createdAt: 'DESC' },
+      relations: { uploadedBy: true },
+      withDeleted: true,
+    });
+  }
+
+  async upload({ name, type, paperId, file }: UploadDocumentDto, user: User) {
+    if(type === DocumentType.Signed) {
+      throw new BadRequestException('Nu puteți încărca un document semnat.');
+    }
+    const { requiredDocument } = await this.checkDocumentWriteAccess({ name, type, paperId, file }, user);
+    return this.create(
+      {
+        name,
+        type,
+        mimeType: file.mimetype,
+        paperId,
+        category: requiredDocument.category,
+        uploadedById: user.id,
+        meta: {},
+      },
+      file.buffer,
+      user.type === UserType.Admin || user.type === UserType.Secretary,
+    );
+  }
+
+  async create(dto: CreateDocumentDto, fileContent: Buffer, isReupload: boolean = false): Promise<Document> {
+    const document = this.documentsRepository.create(dto);
+    const fileExtension = mimeTypeExtensions[dto.mimeType];
+    await this.dataSource.transaction(async manager => {
+      if(isReupload) {
+        await manager.softDelete(Document, { paperId: dto.paperId, name: dto.name, type: dto.type, deletedAt: IsNull() });
+      }
+      await manager.save(document);
+      const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
+      await writeFile(storagePath, fileContent);
+    });
+    return document;
+  }
+
+  private async _userIsInCommittee(committeeId: number, userId: number): Promise<boolean> {
+    const count = await this.dataSource.createQueryBuilder()
+      .select()
+      .from(CommitteeMember, 'committeeMember')
+      .where('committeeMember.committeeId = :committeeId', { committeeId })
+      .andWhere('committeeMember.memberId = :memberId', { memberId: userId })
+      .getCount();
+    return count > 0;
+  }
+
+  private async _studentCanUpload(category: DocumentCategory): Promise<boolean> {
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    if(!sessionSettings) {
+      return false;
+    }
+    if(category === DocumentCategory.PaperFiles) {
+      return sessionSettings.canUploadPaperFiles();
+    } else if(category === DocumentCategory.SecretaryFiles) {
+      return sessionSettings.canUploadSecretaryFiles();
+    } else {
+      return false;
+    }
+  }
+
+  private async checkDocumentReadAccess(document: { paperId: number; category: DocumentCategory; uploadedById?: number | null; }, user?: User) {
+    if(!user || user.type === UserType.Admin || user.type === UserType.Secretary || document.uploadedById === user.id) {
+      return;
+    }
+    const getDocumentPaper = () => this.papersRepository.findOneOrFail({
+      where: { id: document.paperId },
+      select: { id: true, studentId: true, teacherId: true, committeeId: true },
+    });
+    if(user.type === UserType.Student) {
+      const paper = await getDocumentPaper();
+      if(paper.studentId !== user.id) {
+        throw new ForbiddenException();
+      }
+    } else if(user.type === UserType.Teacher) {
+      if(document.category !== DocumentCategory.PaperFiles) {
+        throw new ForbiddenException();
+      }
+      const paper = await getDocumentPaper();
+      if(paper.teacherId !== user.id) {
+        // As a last resort, check if the teacher is in committee
+        if(!await this._userIsInCommittee(paper.committeeId, user.id)) {
+          throw new ForbiddenException();
+        }
+      }
+    }
+  }
+
+  private async checkDocumentWriteAccess({ name, type, paperId, file }: { name: string; type: DocumentType; paperId: number; file?: Express.Multer.File }, user?: User) {
+    if(type == DocumentType.Generated) {
+      throw new BadRequestException('Nu puteți încărca un document de tip generat.');
+    }
+    const paper = await this.papersRepository.findOne({ where: { id: paperId } });
+    if(!paper) {
+      throw new NotFoundException('Lucrarea nu a fost găsită.');
+    }
+    if(paper.isValid === false) {
+      throw new BadRequestException('Nu puteți încărca documente pentru o lucrare invalidă.');
+    }
+    const requiredDocument = paper.requiredDocuments.find(doc => doc.name === name);
+    if(!requiredDocument) {
+      throw new BadRequestException('Document invalid.');
+    }
+    if(!requiredDocument.types[type]) {
+      throw new BadRequestException('Tip de document invalid.');
+    }
+    const mimeTypes = requiredDocument.acceptedMimeTypes.split(',');
+    if(type === DocumentType.Copy) {
+      if(!file) {
+        throw new BadRequestException('Fișierul este obligatoriu pentru acest tip de document.');
+      }
+      if(!mimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException(`MIME Type-ul fișierului este invalid. Tipuri acceptate: ${mimeTypes.join(', ')}`);
+      }
+    }
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+      switch(requiredDocument.uploadBy) {
+        case DocumentUploadPerspective.Student:
+          if(user.type !== UserType.Student || paper.studentId !== user.id) {
+            throw new ForbiddenException();
+          }
+          if(!await this._studentCanUpload(requiredDocument.category)) {
+            throw new BadRequestException("Nu suntem în termenul în care puteți încărca acest document.");
+          }
+          break;
+        case DocumentUploadPerspective.Teacher:
+          if(user.type !== UserType.Teacher || paper.teacherId !== user.id) {
+            throw new ForbiddenException();
+          }
+          break;
+        case DocumentUploadPerspective.Committee:
+          if(user.type !== UserType.Teacher || !await this._userIsInCommittee(paper.committeeId, user.id)) {
+            throw new ForbiddenException();
+          }
+          break;
+        default:
+          throw new ForbiddenException();
+      }
+      const existingDocuments = await this.documentsRepository.find({
+        where: { paperId, name },
+      });
+      if(type === DocumentType.Signed) {
+        const generatedDocument = existingDocuments.find(doc => doc.type === DocumentType.Generated);
+        if(!generatedDocument) {
+          throw new BadRequestException('Documentul generat nu există.');
+        }
+        if(existingDocuments.some(doc => doc.type === DocumentType.Signed)) {
+          throw new BadRequestException('Documentul este deja semnat.');
+        }
+      } else if(type === DocumentType.Copy) {
+        if(existingDocuments.some(doc => doc.type === DocumentType.Copy)) {
+          throw new BadRequestException('Documentul este deja încărcat.');
+        }
+      }
+    }
+    // If the paper is validated, the only allowed perspectives are 'teacher' (while grading hasn't started yet) and 'committee'
+    if(
+      paper.isValid && 
+      (
+        (requiredDocument.uploadBy !== DocumentUploadPerspective.Teacher && requiredDocument.uploadBy !== DocumentUploadPerspective.Committee) ||
+        (requiredDocument.uploadBy === DocumentUploadPerspective.Teacher && (await this.sessionSettingsService.getSettings()).allowGrading && user?.type !== UserType.Admin && user?.type !== UserType.Secretary)
+      )
+    ) {
+      throw new BadRequestException('Perioada de încărcare a documentelor a expirat.');
+    }
+    return { requiredDocument, paper };
+  }
+
+  private _getStoragePath(fileName: string): string {
+    return safePath(process.cwd(), 'storage', 'documents', fileName);
+  }
+}

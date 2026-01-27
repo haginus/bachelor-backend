@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToO
 import { Paper } from "./paper.entity";
 import { User } from "src/users/entities/user.entity";
 import { DocumentType } from "src/lib/enums/document-type.enum";
+import { DocumentCategory } from "src/lib/enums/document-category.enum";
 
 @Entity()
 export class Document {
@@ -13,7 +14,7 @@ export class Document {
   name: string;
 
   @Column('varchar')
-  category: string;
+  category: DocumentCategory;
 
   @Column({ type: 'enum', enum: DocumentType })
   type: DocumentType;
