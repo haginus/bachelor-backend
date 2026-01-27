@@ -5,6 +5,7 @@ import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { StreamableFile } from '@nestjs/common';
+import { SignDocumentDto } from "../dto/sign-document.dto";
 
 @Controller('documents')
 export class DocumentsController {
@@ -20,6 +21,14 @@ export class DocumentsController {
   ) {
     body.file = file;
     return this.documentsService.upload(body, user);
+  }
+
+  @Post('sign')
+  async signDocument(
+    @Body() body: SignDocumentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.documentsService.sign(body, user);
   }
 
   @Get('history')

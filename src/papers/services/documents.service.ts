@@ -15,8 +15,10 @@ import { CreateDocumentDto } from "../dto/create-document.dto";
 import { indexArray, safePath } from "src/lib/utils";
 import { mimeTypeExtensions } from "src/lib/mimes";
 import { writeFile, readFile } from "fs/promises";
-import { DocumentGenerationService } from "src/document-generation/document-generation.service";
+import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 import { isEqual } from "lodash";
+import { SignDocumentDto } from "../dto/sign-document.dto";
+import { SignaturesService } from "src/document-generation/services/signatures.service";
 
 @Injectable()
 export class DocumentsService {
@@ -27,6 +29,7 @@ export class DocumentsService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
     private readonly documentGenerationService: DocumentGenerationService,
+    private readonly signaturesService: SignaturesService,
   ) {}
 
   async findOne(id: number, user?: User): Promise<Document> {
@@ -76,7 +79,36 @@ export class DocumentsService {
         meta: {},
       },
       file.buffer,
+      user,
       user.type === UserType.Admin || user.type === UserType.Secretary,
+    );
+  }
+
+  async sign({ name, paperId }: SignDocumentDto, user?: User) {
+    const { requiredDocument, paper } = await this.checkDocumentWriteAccess({ name, type: 'signed', paperId }, user);
+    const signature = await this.signaturesService.findOneByUserId(paper.studentId, user);
+    if(!signature) {
+      throw new BadRequestException('Înregistrați o semnătură înainte de a semna documente.');
+    }
+    const signatureSample = await this.signaturesService.getSignatureSampleBase64URI(signature.id, user);
+    const generationProps = {
+      ...(await this.documentGenerationService.getStudentDocumentGenerationProps(paperId)),
+      signatureSample,
+    };
+    const documentContent = await this.documentGenerationService.generatePaperDocument(name, generationProps);
+    return this.create(
+      {
+        name,
+        type: DocumentType.Signed,
+        mimeType: 'application/pdf',
+        paperId,
+        category: requiredDocument.category,
+        uploadedById: user ? user.id : null,
+        meta: {},
+      },
+      documentContent,
+      user,
+      user?.type === UserType.Admin || user?.type === UserType.Secretary,
     );
   }
 
@@ -139,7 +171,7 @@ export class DocumentsService {
     }
   }
 
-  async create(dto: CreateDocumentDto, fileContent: Buffer, isReupload: boolean = false): Promise<Document> {
+  async create(dto: CreateDocumentDto, fileContent: Buffer, user?: User, isReupload: boolean = false): Promise<Document> {
     const document = this.documentsRepository.create(dto);
     const fileExtension = mimeTypeExtensions[dto.mimeType];
     await this.dataSource.transaction(async manager => {
