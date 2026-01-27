@@ -6,6 +6,7 @@ import { ValidateUserDto } from "../dto/validate-user.dto";
 import { TopicsService } from "src/common/services/topics.service";
 import { UserExtraData } from "../entities/user-extra-data.entity";
 import { UserExtraDataDto } from "../dto/user-extra-data.dto";
+import { DocumentsService } from "src/papers/services/documents.service";
 
 @Injectable()
 export class UsersService {
@@ -14,6 +15,7 @@ export class UsersService {
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
     @InjectRepository(UserExtraData) private readonly userExtraDataRepository: Repository<UserExtraData>,
     private readonly topicsService: TopicsService,
+    private readonly documentsService: DocumentsService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<User & Student> = {
@@ -72,13 +74,17 @@ export class UsersService {
     return extraData;
   }
 
-  async updateExtraData(userId: number, dto: UserExtraDataDto): Promise<{ result: UserExtraData; }> {
+  async updateExtraData(userId: number, dto: UserExtraDataDto): Promise<{ result: UserExtraData; documentsGenerated: boolean; }> {
     const user = await this.findOne(userId);
     if(!isStudent(user)) {
       throw new BadRequestException('Utilizatorul nu este student.');
     }
+    if(user.paper?.isValid !== null) {
+      throw new BadRequestException('Datele suplimentare nu pot fi modificate după validarea lucrării.');
+    }
     const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
     await this.userExtraDataRepository.save(extraData);
-    return { result: extraData };
+    const documentsGenerated = user.paper && (await this.documentsService.generatePaperDocuments(user.paper.id)).length > 0;
+    return { result: extraData, documentsGenerated };
   }
 }

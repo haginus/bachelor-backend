@@ -5,5 +5,6 @@ import { DocumentGenerationService } from './document-generation.service';
 @Module({
   imports: [CommonModule],
   providers: [DocumentGenerationService],
+  exports: [DocumentGenerationService],
 })
 export class DocumentGenerationModule {}

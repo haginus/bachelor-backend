@@ -1,5 +1,5 @@
 import React from "react";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { Paper } from "src/papers/entities/paper.entity";
 import { Student } from "src/users/entities/user.entity";
@@ -56,6 +56,19 @@ export class DocumentGenerationService {
       student: paper.student,
       paper,
       sessionSettings: await this.sessionSettingsService.getSettings(),
+    }
+  }
+
+  generatePaperDocument(name: string, props: StudentDocumentGenerationProps) {
+    switch(name) {
+      case 'sign_up_form':
+        return this.generateSignUpForm(props);
+      case 'liquidation_form':
+        return this.generateLiquidationForm(props);
+      case 'statutory_declaration':
+        return this.generateStatutoryDeclaration(props);
+      default:
+        throw new InternalServerErrorException(`No document generation template found for document name: ${name}`);
     }
   }
 

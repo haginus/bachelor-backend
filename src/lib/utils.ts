@@ -23,7 +23,7 @@ export function safePath(...args: string[]): string {
   return resultedPath;
 }
 
-export function indexArray<T, K extends number | string>(array: T[], getKey: (item: T) => K) {
+export function indexArray<T, K extends string | number>(array: T[], getKey: (item: T) => K) {
   return array.reduce((acc, item) => {
     acc[getKey(item)] = item;
     return acc;
@@ -39,4 +39,9 @@ export function groupBy<T, K extends string | number>(array: T[], getKey: (item:
     acc[key].push(item);
     return acc;
   }, {} as Record<K, T[]>);
+}
+
+export function uniqueArray<T, K extends string | number>(array: T[], getKey: (item: T) => K): T[] {
+  const index = indexArray(array, getKey);
+  return Object.values(index);
 }

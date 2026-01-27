@@ -17,10 +17,12 @@ import { TeachersService } from './services/teachers.service';
 import { TeachersController } from './controllers/teachers.controller';
 import { UserExtraData } from './entities/user-extra-data.entity';
 import { Address } from './entities/address.entity';
+import { PapersModule } from 'src/papers/papers.module';
 
 @Module({
   imports: [
     CommonModule,
+    PapersModule,
     TypeOrmModule.forFeature([
       Domain,
       Specialization,

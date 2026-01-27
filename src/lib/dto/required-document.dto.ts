@@ -3,6 +3,7 @@ import { DocumentCategory } from "../enums/document-category.enum";
 import { DocumentUploadPerspective } from "../enums/document-upload-perspective.enum";
 import { RequiredDocumentTypes } from "../interfaces/required-document-spec";
 import { mimeTypeExtensions } from "../mimes";
+import { requiredDocumentSpecs } from "../required-document-specs";
 
 export class RequiredDocumentDto {
   @Expose()
@@ -31,4 +32,8 @@ export class RequiredDocumentDto {
 
   @Expose()
   uploadInstructions?: string;
+
+  getGenerationMetadata(generationProps?: Record<string, any>): Record<string, any> | undefined {
+    return requiredDocumentSpecs.find(spec => spec.name === this.name)?.getGenerationMetadata?.(generationProps);
+  }
 }

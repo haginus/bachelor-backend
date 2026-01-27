@@ -2,6 +2,7 @@ import { DocumentCategory } from "./enums/document-category.enum";
 import { DocumentUploadPerspective } from "./enums/document-upload-perspective.enum";
 import { PaperType } from "./enums/paper-type.enum";
 import { RequiredDocumentSpec } from "./interfaces/required-document-spec";
+import { StudentDocumentGenerationProps } from "./interfaces/student-document-generation-props.interface";
 
 const liquidationForm: RequiredDocumentSpec = {
   title: 'Formular de lichidare',
@@ -10,47 +11,45 @@ const liquidationForm: RequiredDocumentSpec = {
   types: { generated: true, signed: true },
   acceptedMimeTypes: 'application/pdf',
   uploadBy: DocumentUploadPerspective.Student,
-  // getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
-  //   student: {
-  //     user: {
-  //       lastName: generationProps.student.user.lastName,
-  //       firstName: generationProps.student.user.firstName,
-  //       email: generationProps.student.user.email,
-  //       CNP: generationProps.student.user.CNP,
-  //     },
-  //     domain: {
-  //       name: generationProps.student.domain.name,
-  //       type: generationProps.student.domain.type,
-  //     },
-  //     specialization: {
-  //       name: generationProps.student.specialization.name,
-  //     },
-  //     promotion: generationProps.student.promotion,
-  //     fundingForm: generationProps.student.fundingForm,
-  //     studyForm: generationProps.student.studyForm,
-  //   },
-  //   extraData: {
-  //     dateOfBirth: generationProps.extraData.dateOfBirth,
-  //     placeOfBirthCountry: generationProps.extraData.placeOfBirthCountry,
-  //     placeOfBirthCounty: generationProps.extraData.placeOfBirthCounty,
-  //     placeOfBirthLocality: generationProps.extraData.placeOfBirthLocality,
-  //     address: {
-  //       locality: generationProps.extraData.address.locality,
-  //       county: generationProps.extraData.address.county,
-  //       street: generationProps.extraData.address.street,
-  //       streetNumber: generationProps.extraData.address.streetNumber,
-  //       building: generationProps.extraData.address.building,
-  //       stair: generationProps.extraData.address.stair,
-  //       floor: generationProps.extraData.address.floor,
-  //       apartment: generationProps.extraData.address.apartment,
-  //     },
-  //     mobilePhone: generationProps.extraData.mobilePhone,
-  //     personalEmail: generationProps.extraData.personalEmail,
-  //   },
-  //   paper: {
-  //     type: generationProps.paper.type,
-  //   },
-  // }),
+  getGenerationMetadata: ({ student, paper }: StudentDocumentGenerationProps) => ({
+    student: {
+      lastName: student.lastName,
+      firstName: student.firstName,
+      email: student.email,
+      CNP: student.CNP,
+      specialization: {
+        name: student.specialization.name,
+        studyForm: student.specialization.studyForm,
+        domain: {
+          name: student.specialization.domain.name,
+          type: student.specialization.domain.type,
+        }
+      },
+      promotion: student.promotion,
+      fundingForm: student.fundingForm,
+      extraData: {
+        dateOfBirth: student.extraData.dateOfBirth,
+        placeOfBirthCountry: student.extraData.placeOfBirthCountry,
+        placeOfBirthCounty: student.extraData.placeOfBirthCounty,
+        placeOfBirthLocality: student.extraData.placeOfBirthLocality,
+        address: {
+          locality: student.extraData.address.locality,
+          county: student.extraData.address.county,
+          street: student.extraData.address.street,
+          streetNumber: student.extraData.address.streetNumber,
+          building: student.extraData.address.building,
+          stair: student.extraData.address.stair,
+          floor: student.extraData.address.floor,
+          apartment: student.extraData.address.apartment,
+        },
+        mobilePhone: student.extraData.mobilePhone,
+        personalEmail: student.extraData.personalEmail,
+      },
+    },
+    paper: {
+      type: paper.type,
+    },
+  }),
 };
 
 export const requiredDocumentSpecs: RequiredDocumentSpec[] = [
@@ -61,51 +60,49 @@ export const requiredDocumentSpecs: RequiredDocumentSpec[] = [
     types: { generated: true, signed: true },
     acceptedMimeTypes: 'application/pdf',
     uploadBy: DocumentUploadPerspective.Student,
-    // getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
-    //   student: {
-    //     user: {
-    //       lastName: generationProps.student.user.lastName,
-    //       firstName: generationProps.student.user.firstName,
-    //       email: generationProps.student.user.email,
-    //       CNP: generationProps.student.user.CNP,
-    //     },
-    //     domain: {
-    //       name: generationProps.student.domain.name,
-    //     },
-    //     specialization: {
-    //       name: generationProps.student.specialization.name,
-    //     },
-    //     promotion: generationProps.student.promotion,
-    //     fundingForm: generationProps.student.fundingForm,
-    //     studyForm: generationProps.student.studyForm,
-    //     identificationCode: generationProps.student.identificationCode,
-    //     group: generationProps.student.group,
-    //     generalAverage: generationProps.student.generalAverage,
-    //   },
-    //   extraData: {
-    //     birthLastName: generationProps.extraData.birthLastName,
-    //     parentInitial: generationProps.extraData.parentInitial,
-    //     fatherName: generationProps.extraData.fatherName,
-    //     motherName: generationProps.extraData.motherName,
-    //     dateOfBirth: generationProps.extraData.dateOfBirth,
-    //     civilState: generationProps.extraData.civilState,
-    //     citizenship: generationProps.extraData.citizenship,
-    //     ethnicity: generationProps.extraData.ethnicity,
-    //     placeOfBirthCountry: generationProps.extraData.placeOfBirthCountry,
-    //     placeOfBirthCounty: generationProps.extraData.placeOfBirthCounty,
-    //     placeOfBirthLocality: generationProps.extraData.placeOfBirthLocality,
-    //     landline: generationProps.extraData.landline,
-    //     mobilePhone: generationProps.extraData.mobilePhone,
-    //   },
-    //   paper: {
-    //     type: generationProps.paper.type,
-    //     title: generationProps.paper.title,
-    //     teacher: {
-    //       lastName: generationProps.paper.teacher.lastName,
-    //       firstName: generationProps.paper.teacher.firstName,
-    //     }
-    //   }
-    // })
+    getGenerationMetadata: ({ student, paper }: StudentDocumentGenerationProps) => ({
+      student: {
+        lastName: student.lastName,
+        firstName: student.firstName,
+        email: student.email,
+        CNP: student.CNP,
+        specialization: {
+          name: student.specialization.name,
+          studyForm: student.specialization.studyForm,
+          domain: {
+            name: student.specialization.domain.name,
+          }
+        },
+        promotion: student.promotion,
+        fundingForm: student.fundingForm,
+        identificationCode: student.identificationCode,
+        group: student.group,
+        generalAverage: student.generalAverage,
+        extraData: {
+          birthLastName: student.extraData.birthLastName,
+          parentInitial: student.extraData.parentInitial,
+          fatherName: student.extraData.fatherName,
+          motherName: student.extraData.motherName,
+          dateOfBirth: student.extraData.dateOfBirth,
+          civilState: student.extraData.civilState,
+          citizenship: student.extraData.citizenship,
+          ethnicity: student.extraData.ethnicity,
+          placeOfBirthCountry: student.extraData.placeOfBirthCountry,
+          placeOfBirthCounty: student.extraData.placeOfBirthCounty,
+          placeOfBirthLocality: student.extraData.placeOfBirthLocality,
+          landline: student.extraData.landline,
+          mobilePhone: student.extraData.mobilePhone,
+        }
+      },
+      paper: {
+        type: paper.type,
+        title: paper.title,
+        teacher: {
+          lastName: paper.teacher.lastName,
+          firstName: paper.teacher.firstName,
+        }
+      }
+    })
   },
   {
     title: 'Declarație pe proprie răspundere',
@@ -114,21 +111,19 @@ export const requiredDocumentSpecs: RequiredDocumentSpec[] = [
     types: { generated: true, signed: true },
     acceptedMimeTypes: 'application/pdf',
     uploadBy: DocumentUploadPerspective.Student,
-    // getGenerationMetadata: (generationProps: StudentDocumentGenerationProps) => ({
-    //   student: {
-    //     user: {
-    //       lastName: generationProps.student.user.lastName,
-    //       firstName: generationProps.student.user.firstName,
-    //       email: generationProps.student.user.email,
-    //     },
-    //     specialization: {
-    //       name: generationProps.student.specialization.name,
-    //     },
-    //   },
-    //   paper: {
-    //     type: generationProps.paper.type,
-    //   },
-    // }),
+    getGenerationMetadata: ({ student, paper }: StudentDocumentGenerationProps) => ({
+      student: {
+        lastName: student.lastName,
+        firstName: student.firstName,
+        email: student.email,
+        specialization: {
+          name: student.specialization.name,
+        },
+      },
+      paper: {
+        type: paper.type,
+      },
+    }),
   },
   {
     ...liquidationForm,

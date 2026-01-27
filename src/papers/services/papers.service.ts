@@ -11,6 +11,7 @@ import { UserType } from "src/lib/enums/user-type.enum";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { inclusiveDate } from "src/lib/utils";
 import { TopicsService } from "src/common/services/topics.service";
+import { DocumentsService } from "./documents.service";
 
 @Injectable()
 export class PapersService {
@@ -19,6 +20,7 @@ export class PapersService {
     @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly topicsService: TopicsService,
+    private readonly documentsService: DocumentsService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -168,7 +170,7 @@ export class PapersService {
     this.papersRepository.merge(paper, { ...dto, topics });
     return {
       result: await this.papersRepository.save(paper),
-      documentsGenerated: false,
+      documentsGenerated: (await this.documentsService.generatePaperDocuments(paper.id)).length > 0,
     };
   }
 

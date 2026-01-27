@@ -8,10 +8,12 @@ import { CommonModule } from 'src/common/common.module';
 import { RequiredDocumentsService } from './services/required-documents.service';
 import { DocumentsService } from './services/documents.service';
 import { DocumentsController } from './controllers/documents.controller';
+import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
 
 @Module({
   imports: [
     CommonModule,
+    DocumentGenerationModule,
     TypeOrmModule.forFeature([
       Paper,
       Document,
@@ -29,6 +31,7 @@ import { DocumentsController } from './controllers/documents.controller';
   exports: [
     PapersService,
     RequiredDocumentsService,
+    DocumentsService,
   ],
 })
 export class PapersModule {}

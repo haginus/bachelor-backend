@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Document } from "../entities/document.entity";
-import { IsNull, Repository, DataSource } from "typeorm";
+import { IsNull, Repository, DataSource, In } from "typeorm";
 import { User } from "src/users/entities/user.entity";
 import { UploadDocumentDto } from "../dto/upload-document.dto";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -12,9 +12,11 @@ import { DocumentType } from "src/lib/enums/document-type.enum";
 import { DocumentUploadPerspective } from "src/lib/enums/document-upload-perspective.enum";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { CreateDocumentDto } from "../dto/create-document.dto";
-import { safePath } from "src/lib/utils";
+import { indexArray, safePath } from "src/lib/utils";
 import { mimeTypeExtensions } from "src/lib/mimes";
 import { writeFile, readFile } from "fs/promises";
+import { DocumentGenerationService } from "src/document-generation/document-generation.service";
+import { isEqual } from "lodash";
 
 @Injectable()
 export class DocumentsService {
@@ -24,6 +26,7 @@ export class DocumentsService {
     @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
+    private readonly documentGenerationService: DocumentGenerationService,
   ) {}
 
   async findOne(id: number, user?: User): Promise<Document> {
@@ -75,6 +78,65 @@ export class DocumentsService {
       file.buffer,
       user.type === UserType.Admin || user.type === UserType.Secretary,
     );
+  }
+
+  async generatePaperDocuments(paperId: number): Promise<Document[]> {
+    const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paperId);
+    const requiredDocuments = generationProps.paper.requiredDocuments.filter(doc => doc.types[DocumentType.Generated]);
+    const existingDocuments = await this.documentsRepository.find({
+      where: {
+        paperId,
+        name: In(requiredDocuments.map(doc => doc.name)),
+        type: DocumentType.Generated,
+      },
+    });
+    const existingDocumentsByName = indexArray(existingDocuments, document => document.name);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const generatedDocuments: Document[] = [];
+      for(const requiredDocument of requiredDocuments) {
+        const generationMetadata = requiredDocument.getGenerationMetadata?.(generationProps);
+        const existingGenerationMetadata = existingDocumentsByName[requiredDocument.name]?.meta?.['generationMetadata'];
+        if(generationMetadata && existingGenerationMetadata && isEqual(generationMetadata, existingGenerationMetadata)) {
+          continue;
+        }
+        const documentsToRemove = await queryRunner.manager.find(Document, {
+          where: {
+            paperId,
+            name: requiredDocument.name,
+          },
+        });
+        for(const document of documentsToRemove) {
+          await queryRunner.manager.softRemove(document);
+          // TODO: Log document deletion
+        }
+        const fileContent = await this.documentGenerationService.generatePaperDocument(requiredDocument.name, generationProps);
+        const newDocument = this.documentsRepository.create({
+          name: requiredDocument.name,
+          category: requiredDocument.category,
+          type: DocumentType.Generated,
+          paperId,
+          mimeType: 'application/pdf',
+          uploadedById: null,
+          meta: {
+            generationMetadata,
+          },
+        });
+        await queryRunner.manager.save(newDocument);
+        const storagePath = this._getStoragePath(`${newDocument.id}.pdf`);
+        await writeFile(storagePath, fileContent);
+        generatedDocuments.push(newDocument);
+      }
+      await queryRunner.commitTransaction();
+      return generatedDocuments;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async create(dto: CreateDocumentDto, fileContent: Buffer, isReupload: boolean = false): Promise<Document> {
