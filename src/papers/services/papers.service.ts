@@ -53,7 +53,12 @@ export class PapersService {
   async findOneByStudent(studentId: number): Promise<Paper> {
     const paper = await this.papersRepository.findOne({
       where: { student: { id: studentId } },
-      relations: this.defaultRelations,
+      relations: this.mergeRelations({ 
+        committee: { 
+          members: { teacher: true }, 
+          activityDays: true 
+        } 
+      }),
     });
     if(!paper) {
       throw new NotFoundException();
