@@ -41,4 +41,10 @@ export class RequiredDocumentsService {
     return plainToInstance(RequiredDocumentDto, specs, { excludeExtraneousValues: true });
   }
 
+  async updateRequiredDocumentsForPaper(paperId: number) {
+    const requiredDocuments = await this.getRequiredDocumentsByPaperId(paperId);
+    await this.papersRepository.update(paperId, { requiredDocuments });
+    return requiredDocuments;
+  }
+
 }

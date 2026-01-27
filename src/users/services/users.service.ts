@@ -7,6 +7,7 @@ import { TopicsService } from "src/common/services/topics.service";
 import { UserExtraData } from "../entities/user-extra-data.entity";
 import { UserExtraDataDto } from "../dto/user-extra-data.dto";
 import { DocumentsService } from "src/papers/services/documents.service";
+import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,7 @@ export class UsersService {
     @InjectRepository(UserExtraData) private readonly userExtraDataRepository: Repository<UserExtraData>,
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
+    private readonly requiredDocumentsService: RequiredDocumentsService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<User & Student> = {
@@ -84,7 +86,11 @@ export class UsersService {
     }
     const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
     await this.userExtraDataRepository.save(extraData);
-    const documentsGenerated = user.paper && (await this.documentsService.generatePaperDocuments(user.paper.id)).length > 0;
+    let documentsGenerated = false;
+    if(user.paper) {
+      await this.requiredDocumentsService.updateRequiredDocumentsForPaper(user.paper.id);
+      documentsGenerated = (await this.documentsService.generatePaperDocuments(user.paper.id)).length > 0;
+    }
     return { result: extraData, documentsGenerated };
   }
 }

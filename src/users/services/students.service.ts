@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Student } from "../entities/user.entity";
 import { FindOptionsOrder, FindOptionsRelations, FindOptionsWhere, ILike, Repository } from "typeorm";
@@ -7,6 +7,8 @@ import { StudentFilterDto } from "../dto/student-filter.dto";
 import { StudentDto } from "../dto/student.dto";
 import { UsersService } from "./users.service";
 import { SpecializationsService } from "./specializations.service";
+import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
+import { DocumentsService } from "src/papers/services/documents.service";
 
 @Injectable()
 export class StudentsService {
@@ -15,6 +17,8 @@ export class StudentsService {
     @InjectRepository(Student) private studentsRepository: Repository<Student>,
     private readonly usersService: UsersService,
     private readonly specializationsService: SpecializationsService,
+    private readonly documentsService: DocumentsService,
+    private readonly requiredDocumentsService: RequiredDocumentsService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<Student> = {
@@ -60,7 +64,7 @@ export class StudentsService {
   async findOne(id: number): Promise<Student> {
     const student = await this.studentsRepository.findOne({
       where: { id },
-      relations: this.defaultRelations,
+      relations: { ...this.defaultRelations, paper: true },
     });
     if(!student) {
       throw new NotFoundException();
@@ -85,12 +89,21 @@ export class StudentsService {
     // TODO: implement bulk create
   }
 
-  async update(id: number, dto: StudentDto): Promise<Student> {
+  async update(id: number, dto: StudentDto): Promise<{ result: Student; documentsGenerated: boolean; }> {
     await this.usersService.checkEmailExists(dto.email, id);
     const student = await this.findOne(id);
+    if(student.paper?.isValid !== null) {
+      throw new BadRequestException('Studentul nu poate fi modificat după validarea lucrării acestuia.');
+    }
     const relations = await this.getRelations(dto);
     const updatedStudent = this.studentsRepository.merge(student, dto, relations);
-    return this.studentsRepository.save(updatedStudent);
+    const result = await this.studentsRepository.save(updatedStudent);
+    let documentsGenerated = false;
+    if(result.paper) {
+      await this.requiredDocumentsService.updateRequiredDocumentsForPaper(result.paper.id);
+      documentsGenerated = (await this.documentsService.generatePaperDocuments(result.paper.id)).length > 0;
+    }
+    return { result, documentsGenerated };
   }
 
   async remove(id: number): Promise<void> {
