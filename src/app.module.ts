@@ -16,6 +16,7 @@ import { ApplicationSubscriber } from './offers/subscribers/application.subscrib
 import { MailModule } from './mail/mail.module';
 import { PapersModule } from './papers/papers.module';
 import { GradingModule } from './grading/grading.module';
+import { DocumentGenerationModule } from './document-generation/document-generation.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { GradingModule } from './grading/grading.module';
     OffersModule,
     PapersModule,
     GradingModule,
+    DocumentGenerationModule,
   ],
   controllers: [],
   providers: [
