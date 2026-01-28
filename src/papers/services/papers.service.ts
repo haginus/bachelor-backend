@@ -12,12 +12,14 @@ import { SessionSettingsService } from "src/common/services/session-settings.ser
 import { inclusiveDate } from "src/lib/utils";
 import { TopicsService } from "src/common/services/topics.service";
 import { DocumentsService } from "./documents.service";
+import { Submission } from "../entities/submission.entity";
 
 @Injectable()
 export class PapersService {
   
   constructor(
     @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
+    @InjectRepository(Submission) private readonly submissionsRepository: Repository<Submission>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
@@ -30,6 +32,7 @@ export class PapersService {
     documents: true,
     topics: true,
     committee: true,
+    submission: true,
   };
 
   private mergeRelations(relations: FindOptionsRelations<Paper>): FindOptionsRelations<Paper> {
@@ -80,7 +83,8 @@ export class PapersService {
       .leftJoinAndSelect('paper.student', 'student')
       .leftJoinAndSelect('paper.teacher', 'teacher')
       .leftJoinAndSelect('paper.topics', 'topics')
-      .leftJoinAndSelect('paper.committee', 'committee');
+      .leftJoinAndSelect('paper.committee', 'committee')
+      .leftJoinAndSelect('paper.submission', 'submission');
     
     if(query.minified !== true) {
       qb.leftJoinAndSelect('paper.documents', 'documents')
@@ -103,6 +107,9 @@ export class PapersService {
     }
     if(query.type) {
       qb.andWhere('paper.type = :type', { type: query.type });
+    }
+    if(query.submitted !== undefined) {
+      qb.andWhere(`paper.submissionId IS ${query.submitted ? 'NOT' : ''} NULL`);
     }
     if(query.assigned !== undefined && !query.assignedTo) {
       qb.andWhere(`paper.committeeId IS ${query.assigned ? 'NOT' : ''} NULL`);
@@ -172,6 +179,22 @@ export class PapersService {
       result: await this.papersRepository.save(paper),
       documentsGenerated: (await this.documentsService.generatePaperDocuments(paper.id)).length > 0,
     };
+  }
+
+  async submit(paperId: number, user?: User): Promise<Paper> {
+    const paper = await this.findOne(paperId, user);
+    paper.submission = this.submissionsRepository.create({ submittedAt: new Date() });
+    return this.papersRepository.save(paper);
+  }
+
+  async unsubmit(paperId: number, user?: User): Promise<Paper> {
+    const paper = await this.findOne(paperId, user);
+    if(!paper.submission) {
+      throw new BadRequestException('Lucrarea nu a fost depusă.');
+    }
+    paper.submission = null;
+    paper.committee = null;
+    return this.papersRepository.save(paper);
   }
 
 }

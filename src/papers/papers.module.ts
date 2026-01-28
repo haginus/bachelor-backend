@@ -9,6 +9,7 @@ import { RequiredDocumentsService } from './services/required-documents.service'
 import { DocumentsService } from './services/documents.service';
 import { DocumentsController } from './controllers/documents.controller';
 import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
+import { Submission } from './entities/submission.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DocumentGenerationModule } from 'src/document-generation/document-gener
     TypeOrmModule.forFeature([
       Paper,
       Document,
+      Submission,
     ]),
   ],
   controllers: [

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Put, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -51,5 +51,21 @@ export class PapersController {
     @CurrentUser() user: any,
   ) {
     return this.papersService.update(id, dto, user);
+  }
+
+  @Post(':id/submit')
+  async submit(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.papersService.submit(id, user);
+  }
+
+  @Post(':id/unsubmit')
+  async unsubmit(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.papersService.unsubmit(id, user);
   }
 }

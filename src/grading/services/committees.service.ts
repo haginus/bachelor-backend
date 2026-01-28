@@ -119,13 +119,17 @@ export class CommitteesService {
     const papersSet = new Set(paperIds);
     const papers = await this.dataSource.getRepository(Paper).find({
       where: { id: In(paperIds) },
-      relations: { 
+      relations: {
+        submission: true,
         committee: true,
         student: { specialization: { domain: true } },
       }
     });
     if(papers.length !== paperIds.length) {
       throw new NotFoundException('Unele lucrări specificate nu există.');
+    }
+    if(papers.some(paper => !paper.submission)) {
+      throw new BadRequestException('Una sau mai multe lucrări nu sunt înscrise.');
     }
     if(papers.some(paper => !domainSet.has(paper.student.specialization.domain.id))) {
       throw new BadRequestException('Toate lucrările trebuie să aparțină domeniilor comisiei.');

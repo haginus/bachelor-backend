@@ -7,6 +7,7 @@ import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
 import { instanceToPlain, plainToInstance, Transform, Type } from "class-transformer";
 import { PaperGrade } from "src/grading/entities/paper-grade.entity";
 import { Committee } from "src/grading/entities/committee.entity";
+import { Submission } from "./submission.entity";
 
 @Entity()
 export class Paper {
@@ -26,9 +27,6 @@ export class Paper {
   @Column({ type: 'boolean', nullable: true })
   isValid: boolean | null;
 
-  // @Column({ nullable: true })
-  // submitted: boolean;
-
   @Column({ type: 'datetime', nullable: true })
   scheduledGrading: Date | null;
 
@@ -40,6 +38,13 @@ export class Paper {
 
   @Column('int', { nullable: true })
   committeeId: number;
+
+  @Column('int', { nullable: true })
+  submissionId: number;
+
+  @OneToOne(() => Submission, (submission) => submission.paper, { cascade: true, nullable: true })
+  @JoinColumn({ name: 'submissionId' })
+  submission: Submission | null;
 
   @ManyToMany(() => Topic, { cascade: true, onDelete: 'CASCADE' })
   @JoinTable({ name: 'paper_topics' })
