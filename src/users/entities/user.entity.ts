@@ -109,8 +109,8 @@ export class Student extends User {
   fundingForm: FundingForm;
 
   @Expose({ groups: ['full'] })
-  @Column()
-  generalAverage: number;
+  @Column({ type: 'float', nullable: true })
+  generalAverage: number | null;
 
   @ManyToMany(() => Topic)
   @JoinTable({ name: 'student_topics' })

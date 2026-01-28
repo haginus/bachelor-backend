@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -8,6 +8,7 @@ import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { DocumentCategory } from "src/lib/enums/document-category.enum";
 import { PaperDto } from "../dto/paper.dto";
+import { ValidatePaperDto } from "../dto/validate-paper.dto";
 
 @Controller('papers')
 export class PapersController {
@@ -38,6 +39,7 @@ export class PapersController {
     return this.papersService.findOne(id, user);
   }
 
+  @SerializeOptions({ groups: ['full'] })
   @UserTypes([UserType.Admin, UserType.Secretary])
   @Get()
   async findAll(@Query() query: PaperQueryDto): Promise<Paginated<Paper>> {
@@ -53,6 +55,7 @@ export class PapersController {
     return this.papersService.update(id, dto, user);
   }
 
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])
   @Post(':id/submit')
   async submit(
     @Param('id', ParseIntPipe) id: number,
@@ -67,5 +70,23 @@ export class PapersController {
     @CurrentUser() user: any,
   ) {
     return this.papersService.unsubmit(id, user);
+  }
+
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  @Post(':id/validate')
+  async validate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ValidatePaperDto,
+  ) {
+    dto.paperId = id;
+    return this.papersService.validate(dto);
+  }
+
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  @Post(':id/undo-validation')
+  async undoValidation(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.papersService.undoValidation(id);
   }
 }

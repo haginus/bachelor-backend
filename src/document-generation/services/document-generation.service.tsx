@@ -1,14 +1,16 @@
 import React from "react";
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { Paper } from "src/papers/entities/paper.entity";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, EntityManager } from "typeorm";
 import { Font, renderToBuffer } from "@react-pdf/renderer";
 import { SignUpForm } from "../templates/sign-up-form";
 import path from "path";
 import { LiquidationForm } from "../templates/liquidation-form";
 import { StatutoryDeclaration } from "../templates/statutory_declaration";
 import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-document-generation-props.interface";
+import { Signature } from "../entities/signature.entity";
+import { SignaturesService } from "./signatures.service";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -26,14 +28,25 @@ export class DocumentGenerationService {
       ],
     });
     Font.registerHyphenationCallback(word => [word]);
-
-    this.papersRepository = this.dataSource.getRepository(Paper);
+    this.signaturesService = new SignaturesService(
+      this.dataSource.getRepository(Signature),
+      this.dataSource,
+    );
   }
 
-  private papersRepository: Repository<Paper>;
+  private signaturesService: SignaturesService;
 
-  async getStudentDocumentGenerationProps(paperId: number): Promise<StudentDocumentGenerationProps> {
-    const paper = await this.papersRepository.findOne({
+  async getStudentDocumentGenerationProps(paperId: number, signatureUserId?: number, manager?: EntityManager): Promise<StudentDocumentGenerationProps> {
+    manager = manager || this.dataSource.manager;
+    let signatureSample: string | undefined = undefined;
+    if(signatureUserId) {
+      const signature = await this.signaturesService.findOneByUserId(signatureUserId);
+      if(!signature) {
+        throw new BadRequestException('Înregistrați o semnătură înainte de a semna documente.');
+      }
+      signatureSample = await this.signaturesService.getSignatureSampleBase64URI(signature.id);
+    }
+    const paper = await manager.getRepository(Paper).findOne({
       where: { id: paperId },
       relations: {
         teacher: { profile: false },
@@ -53,6 +66,7 @@ export class DocumentGenerationService {
       student: paper.student,
       paper,
       sessionSettings: await this.sessionSettingsService.getSettings(),
+      signatureSample,
     }
   }
 

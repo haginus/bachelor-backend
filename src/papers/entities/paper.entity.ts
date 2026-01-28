@@ -8,6 +8,7 @@ import { instanceToPlain, plainToInstance, Transform, Type } from "class-transfo
 import { PaperGrade } from "src/grading/entities/paper-grade.entity";
 import { Committee } from "src/grading/entities/committee.entity";
 import { Submission } from "./submission.entity";
+import { groupBy } from "src/lib/utils";
 
 @Entity()
 export class Paper {
@@ -85,4 +86,23 @@ export class Paper {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  getMissingRequiredDocuments(): RequiredDocumentDto[] {
+    const documentsByName = groupBy(this.documents, document => document.name);
+    const requiredDocuments = this.requiredDocuments.map(requiredDocument => {
+      const documents = documentsByName[requiredDocument.name] || [];
+      const actualTypes = Object.fromEntries(Object.keys(requiredDocument.types).map(type => (
+        [type, documents.some(doc => doc.type == type)]
+      )));
+      return {
+        ...requiredDocument,
+        actualTypes,
+      };
+    });
+    return requiredDocuments
+      .filter(requiredDocument => {
+        return !Object.keys(requiredDocument.types).every(key => requiredDocument.actualTypes[key] == true);
+      })
+      .map(requiredDocument => plainToInstance(RequiredDocumentDto, requiredDocument, { excludeExtraneousValues: true }));
+  }
 }

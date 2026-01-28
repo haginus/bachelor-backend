@@ -13,6 +13,8 @@ import { inclusiveDate } from "src/lib/utils";
 import { TopicsService } from "src/common/services/topics.service";
 import { DocumentsService } from "./documents.service";
 import { Submission } from "../entities/submission.entity";
+import { ValidatePaperDto } from "../dto/validate-paper.dto";
+import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 
 @Injectable()
 export class PapersService {
@@ -23,6 +25,7 @@ export class PapersService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
+    private readonly documentGenerationService: DocumentGenerationService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -183,6 +186,9 @@ export class PapersService {
 
   async submit(paperId: number, user?: User): Promise<Paper> {
     const paper = await this.findOne(paperId, user);
+    if(paper.submission) {
+      throw new BadRequestException('Înscrierea există deja.');
+    }
     paper.submission = this.submissionsRepository.create({ submittedAt: new Date() });
     return this.papersRepository.save(paper);
   }
@@ -190,11 +196,61 @@ export class PapersService {
   async unsubmit(paperId: number, user?: User): Promise<Paper> {
     const paper = await this.findOne(paperId, user);
     if(!paper.submission) {
-      throw new BadRequestException('Lucrarea nu a fost depusă.');
+      throw new BadRequestException('Înscrierea nu există.');
     }
     paper.submission = null;
     paper.committee = null;
     return this.papersRepository.save(paper);
   }
 
+  async validate(dto: ValidatePaperDto): Promise<Paper> {
+    const paper = await this.findOne(dto.paperId);
+    if(!paper.submission) {
+      throw new BadRequestException('Lucrarea nu a fost înscrisă.');
+    }
+    if(paper.isValid !== null) {
+      throw new BadRequestException('Lucrarea a fost deja validată.');
+    }
+    if(dto.isValid) {
+      const generalAverage = dto.generalAverage || paper.student.generalAverage;
+      if(!generalAverage || generalAverage < 5) {
+        throw new BadRequestException('Media generală trebuie să fie cel puțin 5 pentru ca lucrarea să fie validată.');
+      }
+      if(!dto.ignoreRequiredDocuments) {
+        const missingDocuments = paper.getMissingRequiredDocuments().filter(document => document.uploadBy === 'student');
+        if(missingDocuments.length > 0) {
+          throw new BadRequestException(`Lucrarea nu conține toate documentele necesare. Validarea poate fi făcută prin ignorarea expresă a acestui fapt. Lipsesc: ${missingDocuments.map(d => d.title).join(', ')}.`);
+        }
+      }
+      paper.isValid = true;
+      const signUpForm = paper.documents.find(document => document.name === 'sign_up_form' && document.type === 'signed');
+      return this.dataSource.transaction(async manager => {
+        await manager.save(paper);
+        if(dto.generalAverage && dto.generalAverage !== paper.student.generalAverage) {
+          paper.student.generalAverage = generalAverage;
+          await manager.save(paper.student);
+        }
+        if(signUpForm) {
+          const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paper.id, paper.studentId, manager);
+          const documentContent = await this.documentGenerationService.generatePaperDocument('sign_up_form', generationProps);
+          await this.documentsService.updateDocumentContent(signUpForm, documentContent);
+        }
+        return paper;
+      });
+    } else {
+      paper.isValid = false;
+      paper.committee = null;
+      paper.scheduledGrading = null;
+      return this.papersRepository.save(paper);
+    }
+  }
+
+  async undoValidation(paperId: number): Promise<Paper> {
+    const paper = await this.findOne(paperId);
+    if(paper.isValid === null) {
+      throw new BadRequestException('Lucrarea nu a fost validată.');
+    }
+    paper.isValid = null;
+    return this.papersRepository.save(paper);
+  }
 }

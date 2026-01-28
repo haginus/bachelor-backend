@@ -18,7 +18,6 @@ import { writeFile, readFile } from "fs/promises";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 import { isEqual } from "lodash";
 import { SignDocumentDto } from "../dto/sign-document.dto";
-import { SignaturesService } from "src/document-generation/services/signatures.service";
 
 @Injectable()
 export class DocumentsService {
@@ -29,7 +28,6 @@ export class DocumentsService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
     private readonly documentGenerationService: DocumentGenerationService,
-    private readonly signaturesService: SignaturesService,
   ) {}
 
   async findOne(id: number, user?: User): Promise<Document> {
@@ -86,15 +84,7 @@ export class DocumentsService {
 
   async sign({ name, paperId }: SignDocumentDto, user?: User) {
     const { requiredDocument, paper } = await this.checkDocumentWriteAccess({ name, type: 'signed', paperId }, user);
-    const signature = await this.signaturesService.findOneByUserId(paper.studentId, user);
-    if(!signature) {
-      throw new BadRequestException('Înregistrați o semnătură înainte de a semna documente.');
-    }
-    const signatureSample = await this.signaturesService.getSignatureSampleBase64URI(signature.id, user);
-    const generationProps = {
-      ...(await this.documentGenerationService.getStudentDocumentGenerationProps(paperId)),
-      signatureSample,
-    };
+    const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paperId, paper.studentId);
     const documentContent = await this.documentGenerationService.generatePaperDocument(name, generationProps);
     return this.create(
       {
@@ -182,6 +172,13 @@ export class DocumentsService {
       const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
       await writeFile(storagePath, fileContent);
     });
+    return document;
+  }
+
+  async updateDocumentContent(document: Document, newContent: Buffer): Promise<Document> {
+    const fileExtension = mimeTypeExtensions[document.mimeType];
+    const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
+    await writeFile(storagePath, newContent);
     return document;
   }
 
