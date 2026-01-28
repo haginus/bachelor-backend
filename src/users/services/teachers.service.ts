@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher } from "../entities/user.entity";
-import { FindOptionsRelations, FindOptionsWhere, ILike, In, Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
@@ -15,22 +15,45 @@ export class TeachersService {
     private readonly usersService: UsersService,
   ) {}
 
-  private defaultRelations: FindOptionsRelations<Teacher> = {};
+  private getQueryBuilder(detailed = false) {
+    const qb = this.teachersRepository.createQueryBuilder('teacher');
+    if(detailed) {
+      qb.addSelect(['teacher.offerCount', 'teacher.paperCount', 'teacher.submittedPaperCount', 'teacher.plagiarismReportCount']);
+    }
+    return qb;
+  }
 
   async findAll(dto: TeacherFilterDto): Promise<Paginated<Teacher>> {
-    const where: FindOptionsWhere<Teacher> = {};
+    const qb = this.getQueryBuilder(dto.detailed);
     ['lastName', 'firstName', 'email'].forEach(field => {
       if(dto[field]) {
-        where[field] = ILike(`%${dto[field]}%`);
+        qb.andWhere(`teacher.${field} LIKE :${field}`, { [field]: `%${dto[field]}%` });
       }
     });
-    const [rows, count] = await this.teachersRepository.findAndCount({
-      relations: this.defaultRelations,
-      where,
-      order: { [dto.sortBy]: dto.sortDirection },
-      take: dto.limit,
-      skip: dto.offset,
-    });
+    if(dto.onlyMissingPlagiarismReports) {
+      qb.andWhere(`
+        (
+          SELECT COUNT(paper.id)
+          FROM paper
+          WHERE paper.teacherId = teacher.id AND paper.submissionId IS NOT NULL AND paper.deletedAt IS NULL
+        ) >
+        (
+          SELECT COUNT(document.id)
+          FROM document, paper
+          WHERE 
+            paper.teacherId = teacher.id AND 
+            document.paperId = paper.id AND 
+            document.name = 'plagiarism_report' AND
+            paper.submissionId IS NOT NULL AND
+            paper.deletedAt IS NULL AND
+            document.deletedAt IS NULL
+        )
+      `);
+    }
+    const count = await qb.getCount();
+    qb.take(dto.limit).skip(dto.offset);
+    qb.orderBy(`teacher.${dto.sortBy}`, dto.sortDirection.toLocaleUpperCase() as 'ASC' | 'DESC');
+    const rows = await qb.getMany();
     return { rows, count };
   }
 
@@ -43,10 +66,9 @@ export class TeachersService {
   }
 
   async findOne(id: number): Promise<Teacher> {
-    const teacher = await this.teachersRepository.findOne({
-      where: { id },
-      relations: this.defaultRelations,
-    });
+    const qb = this.getQueryBuilder(true)
+      .where('teacher.id = :id', { id });
+    const teacher = await qb.getOne();
     if(!teacher) {
       throw new NotFoundException();
     }

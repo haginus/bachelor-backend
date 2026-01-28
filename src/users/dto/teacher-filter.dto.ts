@@ -1,4 +1,5 @@
 import { IsEnum, IsOptional, IsString } from "class-validator";
+import { Bool } from "src/lib/decorators/bool.decorator";
 import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
 import { TrimString } from "src/lib/transformers/trim-string.transformer";
 
@@ -26,5 +27,13 @@ export class TeacherFilterDto extends PaginatedQueryDto {
   @IsString()
   @TrimString()
   email: string;
+
+  @IsOptional()
+  @Bool()
+  onlyMissingPlagiarismReports: boolean = false;
+
+  @IsOptional()
+  @Bool()
+  detailed: boolean = false;
 
 }

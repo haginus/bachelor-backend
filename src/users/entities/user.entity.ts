@@ -1,7 +1,7 @@
 import { Exclude, Expose } from "class-transformer";
 import { FundingForm } from "src/lib/enums/funding-form.enum";
 import { UserType } from "src/lib/enums/user-type.enum";
-import { ChildEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn } from "typeorm";
+import { ChildEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VirtualColumn } from "typeorm";
 import { Specialization } from "./specialization.entity";
 import { Profile } from "./profile.entity";
 import { Topic } from "src/common/entities/topic.entity";
@@ -136,6 +136,52 @@ export class Teacher extends User {
 
   @OneToMany(() => CommitteeMember, member => member.teacher)
   committeeMemberships: CommitteeMember[];
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(offer.id)
+      FROM offer
+      WHERE offer.teacherId = ${alias}.id
+    `,
+    select: false,
+  })
+  offerCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(paper.id)
+      FROM paper
+      WHERE paper.teacherId = ${alias}.id AND paper.deletedAt IS NULL
+    `,
+    select: false,
+  })
+  paperCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(paper.id)
+      FROM paper
+      WHERE paper.teacherId = ${alias}.id AND paper.submissionId IS NOT NULL AND paper.deletedAt IS NULL
+    `,
+    select: false,
+  })
+  submittedPaperCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(document.id)
+      FROM document, paper
+      WHERE 
+        paper.teacherId = ${alias}.id AND 
+        document.paperId = paper.id AND 
+        document.name = 'plagiarism_report' AND
+        paper.submissionId IS NOT NULL AND
+        paper.deletedAt IS NULL AND
+        document.deletedAt IS NULL
+    `,
+    select: false,
+  })
+  plagiarismReportCount: number;
 }
 
 export function isStudent(user: User): user is Student {
