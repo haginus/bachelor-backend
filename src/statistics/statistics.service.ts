@@ -3,6 +3,7 @@ import { console } from 'inspector';
 import { Committee } from 'src/grading/entities/committee.entity';
 import { Statistic } from 'src/lib/interfaces/statistic.interface';
 import { Paper } from 'src/papers/entities/paper.entity';
+import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
 import { User } from 'src/users/entities/user.entity';
 import { DataSource, IsNull, Not } from 'typeorm';
 
@@ -17,6 +18,7 @@ export class StatisticsService {
 
   async find() {
     const usersRepo = this.dataSource.getRepository(User);
+    const signUpRequestsRepo = this.dataSource.getRepository(SignUpRequest);
     const papersRepo = this.dataSource.getRepository(Paper);
     const committeesRepo = this.dataSource.getRepository(Committee);
 
@@ -34,7 +36,7 @@ export class StatisticsService {
       usersRepo.countBy({ type: 'student', validated: true }),
       usersRepo.countBy({ type: 'teacher' }),
       usersRepo.countBy({ type: 'teacher', validated: true }),
-      Promise.resolve(0),
+      signUpRequestsRepo.count(),
       papersRepo.countBy({ submissionId: Not(IsNull()) }),
       papersRepo.countBy({ submissionId: Not(IsNull()), committeeId: Not(IsNull()) }),
       committeesRepo.count(),
