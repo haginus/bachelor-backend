@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, StreamableFile } from "@nestjs/common";
 import { SignUpRequestsService } from "../services/sign-up-requests.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -6,18 +6,26 @@ import { Public } from "src/auth/decorators/public.decorator";
 import { Recaptcha } from "@nestlab/google-recaptcha";
 import { SignUpRequestDto } from "../dto/sign-up-request.dto";
 import { SignUpRequestPartialDto } from "../dto/sign-up-request-partial.dto";
+import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 
 @Controller('sign-up-requests')
 export class SignUpRequestsController {
 
   constructor(
     private readonly signUpRequestsService: SignUpRequestsService,
+    private readonly documentGenerationService: DocumentGenerationService,
   ) {}
 
   @Get()
   @UserTypes([UserType.Admin, UserType.Secretary])
   async findAll() {
     return this.signUpRequestsService.findAll();
+  }
+
+  @Get('export/excel')
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  async exportExcel() {
+    return new StreamableFile(await this.documentGenerationService.generateSignUpRequestsExcel());
   }
 
   @Get(':id')

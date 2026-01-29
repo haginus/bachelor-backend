@@ -11,6 +11,10 @@ import { StatutoryDeclaration } from "../templates/statutory_declaration";
 import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-document-generation-props.interface";
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
+import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
+import { sortArray } from "src/lib/utils";
+import ExcelJS from 'exceljs';
+import { DOMAIN_TYPES, FUNDING_FORMS, STUDY_FORMS } from "../constants";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -93,6 +97,71 @@ export class DocumentGenerationService {
 
   generateStatutoryDeclaration(props: StudentDocumentGenerationProps) {
     return renderToBuffer(<StatutoryDeclaration {...props} />);
+  }
+
+  async generateSignUpRequestsExcel(): Promise<Buffer> {
+    const requests = await this.dataSource.manager.getRepository(SignUpRequest).find({
+      relations: {
+        specialization: { domain: true },
+      }
+    });
+    sortArray(requests, [
+      request => request.specialization?.domain.name || '',
+      request => request.specialization?.name || '',
+      request => request.group,
+      request => request.lastName,
+      request => request.firstName,
+    ]);
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Cereri');
+    sheet.addTable({
+      name: 'Table1',
+      ref: 'A1',
+      headerRow: true,
+      columns: [
+        { name: 'ID' },
+        { name: 'Nume și prenume' },
+        { name: 'CNP' },
+        { name: 'Număr matricol' },
+        { name: 'An înmatriculare', filterButton: true },
+        { name: 'Promoție', filterButton: true },
+        { name: 'Domeniu', filterButton: true },
+        { name: 'Specializare', filterButton: true },
+        { name: 'Grupă', filterButton: true },
+        { name: 'Formă de finanțare', filterButton: true },
+        { name: 'E-mail' },
+      ],
+      rows: requests.map(request => {
+        const domain = request.specialization?.domain;
+        return [
+          request.id,
+          request.lastName + ' ' + request.firstName,
+          request.CNP,
+          request.identificationCode,
+          request.matriculationYear,
+          request.promotion,
+          domain ? `${domain.name} - ${DOMAIN_TYPES[domain.type]}` : '',
+          request.specialization ? `${request.specialization.name} - ${STUDY_FORMS[request.specialization.studyForm]}` : '',
+          request.group,
+          FUNDING_FORMS[request.fundingForm],
+          request.email,
+        ];
+      })
+    });
+    this._autoSizeColumns(sheet);
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  private _autoSizeColumns(worksheet: ExcelJS.Worksheet) {
+    worksheet.columns.forEach(column => {
+      let maxLength = 10;
+      column?.eachCell?.({ includeEmpty: true }, cell => {
+        const cellValue = cell.value ? cell.value.toString() : '';
+        maxLength = Math.max(maxLength, cellValue.length);
+      });
+      column.width = maxLength + 2;
+    });
   }
   
 }

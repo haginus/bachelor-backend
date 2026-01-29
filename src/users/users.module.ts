@@ -24,12 +24,14 @@ import { ActivationToken } from './entities/activation-token.entity';
 import { SignUpRequest } from './entities/sign-up-request.entity';
 import { SignUpRequestsController } from './controllers/sign-up-requests.controller';
 import { SignUpRequestsService } from './services/sign-up-requests.service';
+import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
 
 @Module({
   imports: [
     CommonModule,
     MailModule,
     CsvModule,
+    DocumentGenerationModule,
     PapersModule,
     TypeOrmModule.forFeature([
       Domain,
