@@ -18,6 +18,7 @@ import { PapersModule } from './papers/papers.module';
 import { GradingModule } from './grading/grading.module';
 import { DocumentGenerationModule } from './document-generation/document-generation.module';
 import { CsvModule } from './csv/csv.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { CsvModule } from './csv/csv.module';
     GradingModule,
     DocumentGenerationModule,
     CsvModule,
+    StatisticsModule,
   ],
   controllers: [],
   providers: [
