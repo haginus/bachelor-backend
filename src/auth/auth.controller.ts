@@ -6,6 +6,7 @@ import { CurrentUser } from "./decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { HydrateUser } from "./decorators/hydrate-user.decorator";
 import { Sudo } from "./decorators/sudo.decorator";
+import { ChangePasswordWithActivationTokenDto } from "./dto/change-password-with-activation-token.dto";
 
 @Controller('auth')
 export class AuthController {
@@ -13,6 +14,22 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
   ) {}
+
+  @Public()
+  @Post('check-activation-token')
+  async checkActivationToken(
+    @Body('token') token: string,
+  ) {
+    return this.authService.checkActivationToken(token);
+  }
+
+  @Public()
+  @Post('sign-in/token')
+  async changePasswordWithActivationToken(
+    @Body() dto: ChangePasswordWithActivationTokenDto,
+  ) {
+    return this.authService.changePasswordWithActivationToken(dto);
+  }
 
   @Public()
   @UseGuards(LocalAuthGuard)

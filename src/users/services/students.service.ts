@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Student, User } from "../entities/user.entity";
-import { FindOptionsOrder, FindOptionsRelations, FindOptionsWhere, ILike, In, Repository } from "typeorm";
+import { DataSource, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere, ILike, In, Repository } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { StudentFilterDto } from "../dto/student-filter.dto";
 import { StudentDto } from "../dto/student.dto";
@@ -22,6 +22,7 @@ export class StudentsService {
     @InjectRepository(User) private usersRepository: Repository<User>,
     @InjectRepository(Student) private studentsRepository: Repository<Student>,
     private readonly usersService: UsersService,
+    private readonly dataSource: DataSource,
     private readonly specializationsService: SpecializationsService,
     private readonly documentsService: DocumentsService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
@@ -93,9 +94,11 @@ export class StudentsService {
   }
 
   private async _create(student: Student): Promise<Student> {
-    const result = await this.studentsRepository.save(student);
-    // TODO: Send welcome email
-    return result;
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(student);
+      await this.usersService.sendActivationEmail(result, manager);
+      return result;
+    });
   }
 
   async update(id: number, dto: StudentDto): Promise<{ result: Student; documentsGenerated: boolean; }> {

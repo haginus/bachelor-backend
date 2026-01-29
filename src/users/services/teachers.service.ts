@@ -8,6 +8,7 @@ import { UserDto } from "../dto/user.dto";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
 import { CsvParserService } from "src/csv/csv-parser.service";
 import { ImportResult } from "src/lib/interfaces/import-result.interface";
+import { DataSource } from "typeorm/browser";
 
 @Injectable()
 export class TeachersService {
@@ -15,6 +16,7 @@ export class TeachersService {
   constructor(
     @InjectRepository(Teacher) private teachersRepository: Repository<Teacher>,
     private readonly usersService: UsersService,
+    private readonly dataSource: DataSource,
     private readonly csvParserService: CsvParserService,
   ) {}
 
@@ -81,7 +83,11 @@ export class TeachersService {
   async create(dto: UserDto): Promise<Teacher> {
     await this.usersService.checkEmailExists(dto.email);
     const teacher = this.teachersRepository.create(dto);
-    return this.teachersRepository.save(teacher);
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(teacher);
+      await this.usersService.sendActivationEmail(result, manager);
+      return result;
+    });
   }
 
   async update(id: number, dto: UserDto): Promise<Teacher> {

@@ -79,4 +79,13 @@ export class UsersController {
     return this.usersService.updateExtraData(id, dto);
   }
 
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  @Post(':id/resend-activation-email')
+  async resendActivationEmail(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const user = await this.usersService.findOne(id);
+    return this.usersService.sendActivationEmail(user);
+  }
+
 }
