@@ -61,7 +61,7 @@ export function SignUpForm({ student, paper, sessionSettings, signatureSample }:
           <Cell width={115} value="Etnie" borderLeft={true} />
           <Cell width={145} value={student.extraData.ethnicity} />
           <Cell width={95} value="CNP" />
-          <Cell width={155} value={student.CNP} />
+          <Cell width={155} value={student.CNP || ''} />
         </Row>
         <Text style={styles.tableLabel}>Locul nașterii</Text>
         <Row>

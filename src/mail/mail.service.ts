@@ -6,14 +6,17 @@ import { ReactEmailAdapter } from './adapters/react-email.adapter';
 import { mailContexts } from './mock';
 import { User } from 'src/users/entities/user.entity';
 import { Application } from 'src/offers/entities/application.entity';
+import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
 
 @Injectable()
 export class MailService {
   constructor(private mailerService: MailerService, private configService: ConfigService) {
     this.frontendUrl = this.configService.get<string>('FRONTEND_URL')!;
+    this.secretaryEmail = this.configService.get<string>('SECRETARY_EMAIL')!;
   }
 
   private readonly frontendUrl: string;
+  private readonly secretaryEmail: string;
 
   async sendWelcomeEmail(user: User, token: string) {
     return this.mailerService.sendMail({
@@ -21,6 +24,16 @@ export class MailService {
       subject: 'Activați contul dvs.',
       template: './welcome',
       context: { user, token },
+    });
+  }
+
+  async sendSignUpRequestNoticeEmail(signUpRequest: SignUpRequest) {
+    const url = `${this.frontendUrl}/admin/sign-up-requests?id=${signUpRequest.id}`;
+    return this.mailerService.sendMail({
+      to: this.secretaryEmail,
+      subject: `[Finalizare studii] Cerere nouă de înregistrare de la ${signUpRequest.firstName} ${signUpRequest.lastName}`,
+      template: './sign-up-request-notice',
+      context: { signUpRequest, url },
     });
   }
 

@@ -21,6 +21,9 @@ import { PapersModule } from 'src/papers/papers.module';
 import { CsvModule } from 'src/csv/csv.module';
 import { MailModule } from 'src/mail/mail.module';
 import { ActivationToken } from './entities/activation-token.entity';
+import { SignUpRequest } from './entities/sign-up-request.entity';
+import { SignUpRequestsController } from './controllers/sign-up-requests.controller';
+import { SignUpRequestsService } from './services/sign-up-requests.service';
 
 @Module({
   imports: [
@@ -31,6 +34,7 @@ import { ActivationToken } from './entities/activation-token.entity';
     TypeOrmModule.forFeature([
       Domain,
       Specialization,
+      SignUpRequest,
       ActivationToken,
       Profile,
       User,
@@ -44,6 +48,7 @@ import { ActivationToken } from './entities/activation-token.entity';
   ],
   controllers: [
     DomainsController,
+    SignUpRequestsController,
     UsersController,
     StudentsController,
     TeachersController,
@@ -55,6 +60,7 @@ import { ActivationToken } from './entities/activation-token.entity';
     UsersService,
     StudentsService,
     TeachersService,
+    SignUpRequestsService,
   ],
   exports: [
     DomainsService,

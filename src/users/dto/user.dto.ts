@@ -21,7 +21,7 @@ export class UserDto {
   @IsOptional()
   @IsString()
   @TrimString()
-  CNP: string;
+  CNP?: string | null;
 
   @IsEmail()
   @IsNotEmpty()

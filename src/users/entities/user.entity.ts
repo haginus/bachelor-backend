@@ -43,8 +43,8 @@ export class User {
   password: string;
 
   @Expose({ groups: ['full'] })
-  @Column({ nullable: true })
-  CNP: string;
+  @Column({ type: 'varchar', nullable: true })
+  CNP: string | null;
 
   @Expose({ groups: ['full'] })
   @Column({ default: false })

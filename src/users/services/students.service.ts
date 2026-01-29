@@ -90,7 +90,7 @@ export class StudentsService {
     await this.usersService.checkEmailExists(dto.email);
     const relations = await this.getRelations(dto);
     const student = this.studentsRepository.create({ ...dto, ...relations });
-    return this.studentsRepository.save(student);
+    return this._create(student);
   }
 
   private async _create(student: Student): Promise<Student> {
