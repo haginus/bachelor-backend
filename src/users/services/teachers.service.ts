@@ -6,6 +6,8 @@ import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
+import { CsvParserService } from "src/csv/csv-parser.service";
+import { ImportResult } from "src/lib/interfaces/import-result.interface";
 
 @Injectable()
 export class TeachersService {
@@ -13,6 +15,7 @@ export class TeachersService {
   constructor(
     @InjectRepository(Teacher) private teachersRepository: Repository<Teacher>,
     private readonly usersService: UsersService,
+    private readonly csvParserService: CsvParserService,
   ) {}
 
   private getQueryBuilder(detailed = false) {
@@ -81,10 +84,6 @@ export class TeachersService {
     return this.teachersRepository.save(teacher);
   }
 
-  async bulkCreate(): Promise<void> {
-    // TODO: implement bulk create
-  }
-
   async update(id: number, dto: UserDto): Promise<Teacher> {
     await this.usersService.checkEmailExists(dto.email, id);
     const teacher = await this.findOne(id);
@@ -95,6 +94,50 @@ export class TeachersService {
   async remove(id: number): Promise<void> {
     const teacher = await this.findOne(id);
     await this.teachersRepository.softRemove(teacher);
+  }
+
+  async import(file: Buffer): Promise<ImportResult<UserDto, Teacher>> {
+    const dtos = await this.csvParserService.parse(file, {
+      headers: [
+        ['TITLU', 'title'],
+        ['NUME', 'lastName'],
+        ['PRENUME', 'firstName'],
+        ['CNP', 'CNP'],
+        ['EMAIL', 'email'],
+      ],
+      dto: UserDto,
+    });
+    const promises = dtos.map(dto => this.create(dto));
+    const results = await Promise.allSettled(promises);
+    const bulkResult: ImportResult<UserDto, Teacher> = {
+      summary: {
+        proccessed: results.length,
+        created: 0,
+        failed: 0,
+      },
+      rows: [],
+    };
+    results.forEach((result, index) => {
+      if(result.status === 'fulfilled') {
+        bulkResult.summary.created++;
+        bulkResult.rows.push({
+          rowIndex: index + 1,
+          result: 'created',
+          row: dtos[index],
+          data: result.value,
+        });
+      } else {
+        bulkResult.summary.failed++;
+        bulkResult.rows.push({
+          rowIndex: index + 1,
+          result: 'failed',
+          row: dtos[index],
+          data: null,
+          error: result.reason?.message || 'Unknown error',
+        });
+      }
+    });
+    return bulkResult;
   }
 
 }

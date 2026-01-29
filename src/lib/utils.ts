@@ -45,3 +45,7 @@ export function uniqueArray<T, K extends string | number>(array: T[], getKey: (i
   const index = indexArray(array, getKey);
   return Object.values(index);
 }
+
+export function unaccent(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}

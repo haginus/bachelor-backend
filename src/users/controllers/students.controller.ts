@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, SerializeOptions } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { StudentsService } from "../services/students.service";
 import { StudentFilterDto } from "../dto/student-filter.dto";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { StudentDto } from "../dto/student.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller('students')
 @SerializeOptions({ groups: ['full'] })
@@ -18,7 +19,7 @@ export class StudentsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.studentsService.findOne(id);
   }
 
@@ -27,13 +28,22 @@ export class StudentsController {
     return this.studentsService.create(dto);
   }
 
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async import(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('specializationId', ParseIntPipe) specializationId: number,
+  ) {
+    return this.studentsService.import(file.buffer, specializationId);
+  }
+
   @Put(':id')
-  async update(@Param('id') id: number, @Body() dto: StudentDto) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: StudentDto) {
     return this.studentsService.update(id, dto);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number) {
     return this.studentsService.remove(id);
   }
 }

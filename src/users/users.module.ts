@@ -18,10 +18,12 @@ import { TeachersController } from './controllers/teachers.controller';
 import { UserExtraData } from './entities/user-extra-data.entity';
 import { Address } from './entities/address.entity';
 import { PapersModule } from 'src/papers/papers.module';
+import { CsvModule } from 'src/csv/csv.module';
 
 @Module({
   imports: [
     CommonModule,
+    CsvModule,
     PapersModule,
     TypeOrmModule.forFeature([
       Domain,

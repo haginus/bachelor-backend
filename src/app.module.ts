@@ -17,6 +17,7 @@ import { MailModule } from './mail/mail.module';
 import { PapersModule } from './papers/papers.module';
 import { GradingModule } from './grading/grading.module';
 import { DocumentGenerationModule } from './document-generation/document-generation.module';
+import { CsvModule } from './csv/csv.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { DocumentGenerationModule } from './document-generation/document-generat
     PapersModule,
     GradingModule,
     DocumentGenerationModule,
+    CsvModule,
   ],
   controllers: [],
   providers: [
