@@ -1,13 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { isStudent, Student, User } from "../entities/user.entity";
-import { FindOptionsRelations, Repository } from "typeorm";
+import { EntityManager, FindOptionsRelations, Repository, DataSource } from "typeorm";
 import { ValidateUserDto } from "../dto/validate-user.dto";
 import { TopicsService } from "src/common/services/topics.service";
 import { UserExtraData } from "../entities/user-extra-data.entity";
 import { UserExtraDataDto } from "../dto/user-extra-data.dto";
 import { DocumentsService } from "src/papers/services/documents.service";
 import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
+import { ActivationToken } from "../entities/activation-token.entity";
+import { randomBytes } from "crypto";
+import { MailService } from "src/mail/mail.service";
 
 @Injectable()
 export class UsersService {
@@ -18,6 +21,8 @@ export class UsersService {
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
+    private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<User & Student> = {
@@ -54,6 +59,19 @@ export class UsersService {
     if(user && user.id !== userId) {
       throw new BadRequestException('Email-ul există deja.');
     }
+  }
+
+  async sendActivationEmail(user: User, manager?: EntityManager): Promise<void> {
+    manager = manager || this.dataSource.manager;
+    const activationTokenRepository = manager.getRepository(ActivationToken);
+    const activationToken = activationTokenRepository.create({
+      token: randomBytes(64).toString('hex'),
+      user,
+    });
+    await activationTokenRepository.save(activationToken);
+    await this.mailService.sendWelcomeEmail(user, activationToken.token).catch(err => {
+      throw new InternalServerErrorException('Eroare la trimiterea email-ului de activare.');
+    });
   }
 
   async validate(id: number, dto: ValidateUserDto): Promise<User> {

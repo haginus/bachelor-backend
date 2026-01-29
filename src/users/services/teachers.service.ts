@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher } from "../entities/user.entity";
-import { In, Repository } from "typeorm";
+import { In, Repository, DataSource } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
@@ -15,6 +15,7 @@ export class TeachersService {
   constructor(
     @InjectRepository(Teacher) private teachersRepository: Repository<Teacher>,
     private readonly usersService: UsersService,
+    private readonly dataSource: DataSource,
     private readonly csvParserService: CsvParserService,
   ) {}
 
@@ -81,7 +82,11 @@ export class TeachersService {
   async create(dto: UserDto): Promise<Teacher> {
     await this.usersService.checkEmailExists(dto.email);
     const teacher = this.teachersRepository.create(dto);
-    return this.teachersRepository.save(teacher);
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(teacher);
+      await this.usersService.sendActivationEmail(result, manager);
+      return result;
+    });
   }
 
   async update(id: number, dto: UserDto): Promise<Teacher> {

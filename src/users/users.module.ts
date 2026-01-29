@@ -19,15 +19,19 @@ import { UserExtraData } from './entities/user-extra-data.entity';
 import { Address } from './entities/address.entity';
 import { PapersModule } from 'src/papers/papers.module';
 import { CsvModule } from 'src/csv/csv.module';
+import { MailModule } from 'src/mail/mail.module';
+import { ActivationToken } from './entities/activation-token.entity';
 
 @Module({
   imports: [
     CommonModule,
+    MailModule,
     CsvModule,
     PapersModule,
     TypeOrmModule.forFeature([
       Domain,
       Specialization,
+      ActivationToken,
       Profile,
       User,
       Admin,
