@@ -7,6 +7,7 @@ import { User } from "src/users/entities/user.entity";
 import { HydrateUser } from "./decorators/hydrate-user.decorator";
 import { Sudo } from "./decorators/sudo.decorator";
 import { ChangePasswordWithActivationTokenDto } from "./dto/change-password-with-activation-token.dto";
+import { Recaptcha } from '@nestlab/google-recaptcha';
 
 @Controller('auth')
 export class AuthController {
@@ -33,7 +34,7 @@ export class AuthController {
 
   @Public()
   @UseGuards(LocalAuthGuard)
-  // TODO: Add Captcha guard
+  @Recaptcha()
   @Post('sign-in')
   async signIn(@Req() req: any) {
     return this.authService.signIn(req.localUser);

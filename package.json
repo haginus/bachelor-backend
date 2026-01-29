@@ -30,6 +30,7 @@
     "@nestjs/serve-static": "^5.0.4",
     "@nestjs/swagger": "^11.2.5",
     "@nestjs/typeorm": "^11.0.0",
+    "@nestlab/google-recaptcha": "^3.11.0",
     "@react-email/components": "^1.0.6",
     "@react-email/render": "^2.0.4",
     "@react-pdf/renderer": "^4.3.2",

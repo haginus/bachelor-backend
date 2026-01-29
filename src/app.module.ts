@@ -19,6 +19,7 @@ import { GradingModule } from './grading/grading.module';
 import { DocumentGenerationModule } from './document-generation/document-generation.module';
 import { CsvModule } from './csv/csv.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { GoogleRecaptchaModule, GoogleRecaptchaNetwork } from '@nestlab/google-recaptcha';
 
 @Module({
   imports: [
@@ -29,6 +30,19 @@ import { StatisticsModule } from './statistics/statistics.module';
     ConfigModule.forRoot({ 
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
+    }),
+    GoogleRecaptchaModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const secretKey = configService.get('RECAPTCHA_SECRET_KEY');
+        return {
+          secretKey,
+          response: req => req.headers['recaptcha'],
+          network: GoogleRecaptchaNetwork.Recaptcha,
+          skipIf: () => process.env.NODE_ENV !== 'production' || !secretKey,
+        }
+      },
+      inject: [ConfigService],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
