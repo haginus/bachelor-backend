@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -9,11 +9,17 @@ import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { DocumentCategory } from "src/lib/enums/document-category.enum";
 import { PaperDto } from "../dto/paper.dto";
 import { ValidatePaperDto } from "../dto/validate-paper.dto";
+import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
+import { User } from "src/users/entities/user.entity";
+import { PaperExportQueryDto } from "../dto/paper-export-query.dto";
 
 @Controller('papers')
 export class PapersController {
 
-  constructor(private readonly papersService: PapersService) {}
+  constructor(
+    private readonly papersService: PapersService,
+    private readonly documentGenerationService: DocumentGenerationService,
+  ) {}
 
   @UserTypes([UserType.Student, UserType.Teacher])
   @Get('me')
@@ -29,6 +35,23 @@ export class PapersController {
           documents: paper.documents.filter(document => document.category === DocumentCategory.PaperFiles)
         }))
       ));
+  }
+
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
+  @Get('export/excel')
+  async exportExcel(
+    @Query() query: PaperExportQueryDto,
+    @CurrentUser() user: User,
+  ) {
+    if(user.type === UserType.Teacher && (!query.teacherId || query.teacherId !== user.id)) {
+      throw new ForbiddenException();
+    }
+    const buffer = await this.documentGenerationService.generatePapersExcel({ 
+      onlySubmitted: query.onlySubmitted,
+      teacherId: query.teacherId,
+      fullStudent: user.type !== UserType.Teacher,
+    });
+    return new StreamableFile(buffer, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   }
 
   @Get(':id')

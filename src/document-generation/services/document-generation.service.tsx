@@ -2,7 +2,7 @@ import React from "react";
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { Paper } from "src/papers/entities/paper.entity";
-import { DataSource, EntityManager } from "typeorm";
+import { DataSource, EntityManager, FindOptionsWhere, IsNull, Not } from "typeorm";
 import { Font, renderToBuffer } from "@react-pdf/renderer";
 import { SignUpForm } from "../templates/sign-up-form";
 import path from "path";
@@ -12,9 +12,9 @@ import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-docum
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
-import { sortArray } from "src/lib/utils";
+import { filterFalsy, sortArray } from "src/lib/utils";
 import ExcelJS from 'exceljs';
-import { DOMAIN_TYPES, FUNDING_FORMS, STUDY_FORMS } from "../constants";
+import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -148,6 +148,88 @@ export class DocumentGenerationService {
         ];
       })
     });
+    this._autoSizeColumns(sheet);
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  async generatePapersExcel({ onlySubmitted = false, teacherId, fullStudent = false }: { onlySubmitted?: boolean; teacherId?: number; fullStudent?: boolean; }): Promise<Buffer> {
+    const where: FindOptionsWhere<Paper> = {};
+    if(teacherId) {
+      where.teacher = { id: teacherId };
+    }
+    if(onlySubmitted) {
+      where.submissionId = Not(IsNull());
+    }
+    const papers = await this.dataSource.manager.getRepository(Paper).find({
+      relations: {
+        student: {
+          specialization: { domain: true },
+          extraData: true,
+          profile: false,
+        },
+        teacher: { profile: false },
+        submission: true,
+      },
+      where,
+    });
+    sortArray(papers, [
+      paper => paper.student.specialization.domain.name,
+      paper => paper.student.specialization.name,
+      paper => paper.type,
+      paper => paper.student.lastName,
+      paper => paper.student.extraData?.parentInitial || '',
+      paper => paper.student.firstName,
+    ]);
+    const columns = filterFalsy<ExcelJS.TableColumnProperties>([
+      { name: 'ID lucrare' },
+      { name: 'Nume și prenume student' },
+      { name: 'Inițiala părintelui' },
+      { name: 'Profesor coordonator', filterButton: true },
+      { name: 'Titlul lucrării' },
+      { name: 'Tipul lucrării', filterButton: true },
+      { name: 'Specializarea', filterButton: true },
+      { name: 'Domeniul', filterButton: true },
+      { name: 'Comisia', filterButton: true },
+      { name: 'E-mail' },
+      fullStudent && { name: 'Anul înmatriculării', filterButton: true },
+      { name: 'Promoție', filterButton: true },
+      { name: 'Lucrare validată', filterButton: true },
+      fullStudent && { name: 'M.G. ani studiu' },
+      { name: 'Lucrare înscrisă', filterButton: true },
+    ]);
+    const rows = papers.map(paper => {
+      const student = paper.student;
+      const domain = student.specialization.domain;
+      const specialization = student.specialization;
+      return filterFalsy<string | number>([
+        paper.id,
+        student.fullName,
+        student.extraData?.parentInitial || '',
+        paper.teacher.fullName,
+        paper.title,
+        PAPER_TYPES[paper.type],
+        `${specialization.name} - ${STUDY_FORMS[specialization.studyForm]}`,
+        `${domain.name} - ${DOMAIN_TYPES[domain.type]}`,
+        paper.committee?.name || 'N/A',
+        student.email,
+        fullStudent && student.matriculationYear,
+        student.promotion,
+        paper.isValid === null ? 'N/A' : (paper.isValid ? 'Validată' : 'Invalidată'),
+        fullStudent && (student.generalAverage?.toFixed(2) || 'N/A'),
+        paper.submissionId ? 'Da' : 'Nu',
+      ]);
+    });
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Lucrări');
+    sheet.addTable({
+      name: 'PapersTable',
+      ref: 'A1',
+      headerRow: true,
+      columns,
+      rows,
+    });
+    console.log(columns, rows);
     this._autoSizeColumns(sheet);
     const arrayBuffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(arrayBuffer);

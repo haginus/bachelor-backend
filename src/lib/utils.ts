@@ -81,3 +81,7 @@ export function sortArray<T>(array: T[], criteria: SortCriterion<T>[]): T[] {
   };
   return array.sort(sortFn);
 }
+
+export function filterFalsy<T>(array: (T | null | undefined | false)[]): T[] {
+  return array.filter((item): item is T => item !== null && item !== undefined && item !== false);
+}
