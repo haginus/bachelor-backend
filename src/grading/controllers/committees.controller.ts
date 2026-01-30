@@ -3,6 +3,8 @@ import { CommitteesService } from "../services/committees.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { CommitteeDto } from "../dto/committee.dto";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { User } from "src/users/entities/user.entity";
 
 @Controller('committees')
 @UserTypes([UserType.Admin, UserType.Secretary])
@@ -15,9 +17,21 @@ export class CommitteesController {
     return this.committeesService.findAll();
   }
 
+  @Get('me')
+  @UserTypes([UserType.Teacher])
+  async findMine(
+    @CurrentUser() user: User,
+  ) {
+    return this.committeesService.findByTeacher(user.id);
+  }
+
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.committeesService.findOne(id);
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.committeesService.findOne(id, user);
   }
 
   @Post()
@@ -34,11 +48,13 @@ export class CommitteesController {
   }
 
   @Put(':id/final-grades')
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
   async markGradesFinal(
     @Param('id', ParseIntPipe) id: number,
     @Body('finalGrades', new ParseBoolPipe({ optional: true })) finalGrades: boolean = true,
+    @CurrentUser() user: User,
   ) {
-    return this.committeesService.markGradesFinal(id, finalGrades);
+    return this.committeesService.markGradesFinal(id, finalGrades, user);
   }
 
   @Put(':id/papers')

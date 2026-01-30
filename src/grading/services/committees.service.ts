@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsRelations, In, Repository, DataSource } from "typeorm";
 import { Committee } from "../entities/committee.entity";
@@ -10,6 +10,9 @@ import { CommitteeMember } from "../entities/committee-member.entity";
 import { indexArray } from "src/lib/utils";
 import { Paper } from "src/papers/entities/paper.entity";
 import { PaperGrade } from "../entities/paper-grade.entity";
+import { User } from "src/users/entities/user.entity";
+import { UserType } from "src/lib/enums/user-type.enum";
+import { DocumentCategory } from "src/lib/enums/document-category.enum";
 
 @Injectable()
 export class CommitteesService {
@@ -37,7 +40,52 @@ export class CommitteesService {
     });
   }
 
-  async findOne(id: number): Promise<Committee> {
+  async findByTeacher(teacherId: number): Promise<Committee[]> {
+    return this.committeesRepository.find({
+      relations: this.defaultRelations,
+      where: {
+        members: {
+          teacher: { id: teacherId },
+        },
+      },
+    });
+  }
+
+  async findOne(id: number, user?: User): Promise<Committee> {
+    const committee = await this.committeesRepository.findOne({
+      where: { id },
+      relations: {
+        ...this.defaultRelations,
+        domains: {
+          specializations: true,
+        },
+        papers: {
+          student: true,
+          teacher: true,
+          submission: true,
+          documents: true,
+          grades: {
+            committeeMember: {
+              teacher: true
+            },
+          }
+        }
+      },
+    });
+    if(!committee) {
+      throw new NotFoundException();
+    }
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+      this.checkCommitteeMembership(committee, user);
+    }
+    committee.papers.forEach(paper => {
+      paper.requiredDocuments = paper.requiredDocuments.filter(document => document.category === DocumentCategory.PaperFiles);
+      paper.documents = paper.documents.filter(document => document.category === DocumentCategory.PaperFiles);
+    });
+    return committee;
+  }
+
+  private async _findOneMin(id: number, user?: User): Promise<Committee> {
     const committee = await this.committeesRepository.findOne({
       where: { id },
       relations: {
@@ -50,7 +98,28 @@ export class CommitteesService {
     if(!committee) {
       throw new NotFoundException();
     }
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+      this.checkCommitteeMembership(committee, user);
+    }
     return committee;
+  }
+
+  private checkCommitteeMembership(committee: Committee, user: User, additionalRights?: MembershipRights[]) {
+    const rightChecks: Record<MembershipRights, (member: CommitteeMember) => boolean> = {
+      canGrade: (member) => member.role !== CommitteeMemberRole.Secretary,
+      canSchedule: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
+      canMarkGradesFinal: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
+    };
+    const member = committee.members.find(m => m.teacher.id === user.id);
+    if(!member) {
+      throw new ForbiddenException();
+    }
+    additionalRights?.forEach(right => {
+      const check = rightChecks[right];
+      if(!check(member)) {
+        throw new ForbiddenException();
+      }
+    });
   }
 
   private async getDtoRelations(dto: CommitteeDto) {
@@ -101,20 +170,29 @@ export class CommitteesService {
   }
 
   async update(id: number, dto: CommitteeDto): Promise<Committee> {
-    const committee = await this.findOne(id);
+    const committee = await this._findOneMin(id);
     const relations = await this.getDtoRelations(dto);
     Object.assign(committee, dto, relations);
     return this.committeesRepository.save(committee);
   }
 
-  async markGradesFinal(id: number, finalGrades = true): Promise<Committee> {
-    const committee = await this.findOne(id);
+  async markGradesFinal(id: number, finalGrades = true, user?: User): Promise<Committee> {
+    const committee = await this._findOneMin(id);
+    if(user) {
+      this.checkCommitteeMembership(committee, user, ['canMarkGradesFinal']);
+      if(user.type === UserType.Teacher && finalGrades === false) {
+        throw new ForbiddenException('Profesorii nu pot demarca finalizarea notelor. Contactați administratorul sau secretariatul.');
+      }
+    }
+    if(committee.finalGrades === finalGrades) {
+      throw new BadRequestException('Starea notelor finale este deja setată la valoarea specificată.');
+    }
     committee.finalGrades = finalGrades;
     return this.committeesRepository.save(committee);
   }
 
   async setPapers(id: number, paperIds: number[]): Promise<Committee> {
-    const committee = await this.findOne(id);
+    const committee = await this._findOneMin(id);
     const domainSet = new Set(committee.domains.map(d => d.id));
     const papersSet = new Set(paperIds);
     const papers = await this.dataSource.getRepository(Paper).find({
@@ -146,11 +224,13 @@ export class CommitteesService {
       await manager.update(Paper, { id: In(committeePapers.map(p => p.id)) }, { committee, scheduledGrading: null, updatedAt: new Date() });
       await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
     });
-    return this.findOne(id);
+    return this._findOneMin(id);
   }
 
   async delete(id: number): Promise<void> {
-    const committee = await this.findOne(id);
+    const committee = await this._findOneMin(id);
     await this.committeesRepository.remove(committee);
   }
 }
+
+type MembershipRights = 'canGrade' | 'canSchedule' | 'canMarkGradesFinal';
