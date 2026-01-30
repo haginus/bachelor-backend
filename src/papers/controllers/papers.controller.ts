@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -6,12 +6,12 @@ import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
-import { DocumentCategory } from "src/lib/enums/document-category.enum";
 import { PaperDto } from "../dto/paper.dto";
 import { ValidatePaperDto } from "../dto/validate-paper.dto";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 import { User } from "src/users/entities/user.entity";
 import { PaperExportQueryDto } from "../dto/paper-export-query.dto";
+import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
 
 @Controller('papers')
 export class PapersController {
@@ -22,19 +22,14 @@ export class PapersController {
   ) {}
 
   @UserTypes([UserType.Student, UserType.Teacher])
+  @UseInterceptors(PaperInterceptor())
   @Get('me')
   async findMine(
     @CurrentUser() user: any,
   ) {
     return user.type === UserType.Student
       ? this.papersService.findOneByStudent(user.id)
-      : this.papersService.findAllByTeacher(user.id).then(papers => (
-        papers.map(paper => ({
-          ...paper,
-          requiredDocuments: paper.requiredDocuments.filter(document => document.category === DocumentCategory.PaperFiles),
-          documents: paper.documents.filter(document => document.category === DocumentCategory.PaperFiles)
-        }))
-      ));
+      : this.papersService.findAllByTeacher(user.id);
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])

@@ -65,7 +65,12 @@ export class PapersService {
         committee: { 
           members: { teacher: true }, 
           activityDays: true 
-        } 
+        },
+        grades: {
+          committeeMember: {
+            teacher: { profile: false }
+          }
+        }
       }),
     });
     if(!paper) {

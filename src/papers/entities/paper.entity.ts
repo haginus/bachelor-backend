@@ -4,7 +4,7 @@ import { Student, Teacher } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Document } from "./document.entity";
 import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
-import { instanceToPlain, plainToInstance, Transform, Type } from "class-transformer";
+import { Expose, plainToInstance } from "class-transformer";
 import { PaperGrade } from "src/grading/entities/paper-grade.entity";
 import { Committee } from "src/grading/entities/committee.entity";
 import { Submission } from "./submission.entity";
@@ -68,6 +68,15 @@ export class Paper {
 
   @OneToMany(() => PaperGrade, paperGrade => paperGrade.paper)
   grades: PaperGrade[];
+
+  @Expose()
+  get gradeAverage(): number | undefined {
+    if(!this.grades) {
+      return undefined;
+    }
+    const sum = this.grades.reduce((acc, { forPaper, forPresentation }) => acc + (forPaper + forPresentation) / 2, 0);
+    return this.grades.length > 0 ? sum / this.grades.length : undefined;
+  }
 
   @Column({ 
     type: 'simple-json', 

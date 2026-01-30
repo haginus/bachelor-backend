@@ -12,7 +12,6 @@ import { Paper } from "src/papers/entities/paper.entity";
 import { PaperGrade } from "../entities/paper-grade.entity";
 import { User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
-import { DocumentCategory } from "src/lib/enums/document-category.enum";
 import { GradePaperDto } from "../dto/grade-paper.dto";
 
 @Injectable()
@@ -79,10 +78,6 @@ export class CommitteesService {
     if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
       this.checkCommitteeMembership(committee, user);
     }
-    committee.papers.forEach(paper => {
-      paper.requiredDocuments = paper.requiredDocuments.filter(document => document.category === DocumentCategory.PaperFiles);
-      paper.documents = paper.documents.filter(document => document.category === DocumentCategory.PaperFiles);
-    });
     return committee;
   }
 

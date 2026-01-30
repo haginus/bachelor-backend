@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put, UseInterceptors } from "@nestjs/common";
 import { CommitteesService } from "../services/committees.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -6,6 +6,7 @@ import { CommitteeDto } from "../dto/committee.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { GradePaperDto } from "../dto/grade-paper.dto";
+import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
 
 @Controller('committees')
 @UserTypes([UserType.Admin, UserType.Secretary])
@@ -28,6 +29,7 @@ export class CommitteesController {
 
   @Get(':id')
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
+  @UseInterceptors(PaperInterceptor((committee) => committee.papers))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,
