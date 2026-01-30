@@ -5,6 +5,7 @@ import { UserType } from "src/lib/enums/user-type.enum";
 import { CommitteeDto } from "../dto/committee.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
+import { GradePaperDto } from "../dto/grade-paper.dto";
 
 @Controller('committees')
 @UserTypes([UserType.Admin, UserType.Secretary])
@@ -68,5 +69,16 @@ export class CommitteesController {
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.committeesService.delete(id);
+  }
+
+  @Post(':committeeId/grade-paper')
+  @UserTypes([UserType.Teacher])
+  async gradePaper(
+    @Param('committeeId', ParseIntPipe) committeeId: number,
+    @Body() dto: GradePaperDto,
+    @CurrentUser() user: User,
+  ) {
+    dto.committeeId = committeeId;
+    return this.committeesService.gradePaper(dto, user);
   }
 }

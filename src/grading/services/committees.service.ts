@@ -13,6 +13,7 @@ import { PaperGrade } from "../entities/paper-grade.entity";
 import { User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { DocumentCategory } from "src/lib/enums/document-category.enum";
+import { GradePaperDto } from "../dto/grade-paper.dto";
 
 @Injectable()
 export class CommitteesService {
@@ -104,7 +105,7 @@ export class CommitteesService {
     return committee;
   }
 
-  private checkCommitteeMembership(committee: Committee, user: User, additionalRights?: MembershipRights[]) {
+  private checkCommitteeMembership(committee: Committee, user: User, additionalRights?: MembershipRights[]): CommitteeMember {
     const rightChecks: Record<MembershipRights, (member: CommitteeMember) => boolean> = {
       canGrade: (member) => member.role !== CommitteeMemberRole.Secretary,
       canSchedule: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
@@ -120,6 +121,7 @@ export class CommitteesService {
         throw new ForbiddenException();
       }
     });
+    return member;
   }
 
   private async getDtoRelations(dto: CommitteeDto) {
@@ -225,6 +227,28 @@ export class CommitteesService {
       await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
     });
     return this._findOneMin(id);
+  }
+
+  async gradePaper(dto: GradePaperDto, user: User): Promise<PaperGrade> {
+    const committee = await this._findOneMin(dto.committeeId);
+    const committeeMember = this.checkCommitteeMembership(committee, user, ['canGrade']);
+    const paper = committee.papers.find(p => p.id === dto.paperId);
+    if(!paper) {
+      throw new BadRequestException('Lucrarea specificată nu aparține comisiei.');
+    }
+    if(committee.finalGrades) {
+      throw new BadRequestException('Notarea lucrărilor este finalizată pentru această comisie.');
+    }
+    const grade = this.dataSource.manager.getRepository(PaperGrade).create({
+      forPaper: dto.forPaper,
+      forPresentation: dto.forPresentation,
+      paper,
+      committeeMember,
+    });
+    await this.dataSource.manager.save(grade);
+    // @ts-ignore
+    delete grade.paper;
+    return grade;
   }
 
   async delete(id: number): Promise<void> {
