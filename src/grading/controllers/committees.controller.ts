@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { CommitteesService } from "../services/committees.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -82,5 +82,14 @@ export class CommitteesController {
   ) {
     dto.committeeId = committeeId;
     return this.committeesService.gradePaper(dto, user);
+  }
+
+  @Get(':id/files/:fileName')
+  async generateCatalog(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('fileName') fileName: string,
+  ) {
+    const buffer = await this.committeesService.generateCommitteeFile(id, fileName);
+    return new StreamableFile(buffer);
   }
 }

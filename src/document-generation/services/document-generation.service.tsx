@@ -12,9 +12,13 @@ import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-docum
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
-import { filterFalsy, sortArray } from "src/lib/utils";
+import { filterFalsy, groupBy, sortArray } from "src/lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
+import { Committee } from "src/grading/entities/committee.entity";
+import { CommitteeCatalog as CommitteeCatalogPdf } from "../templates/committee-catalog";
+import { CommitteeCatalog as CommitteeCatalogWord } from "../word-templates";
+import { CommitteeFinalCatalog as CommitteeFinalCatalogPdf } from "../templates/committee-final-catalog";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -97,6 +101,96 @@ export class DocumentGenerationService {
 
   generateStatutoryDeclaration(props: StudentDocumentGenerationProps) {
     return renderToBuffer(<StatutoryDeclaration {...props} />);
+  }
+
+  private async getCommitteeForGeneration(committeeId: number) {
+    const committee = await this.dataSource.manager.getRepository(Committee).findOne({
+      relations: {
+        members: {
+          teacher: { profile: false },
+        },
+        papers: {
+          grades: {
+            committeeMember: true,
+          },
+          teacher: { profile: false },
+          student: { 
+            profile: false, 
+            extraData: true,
+            specialization: { domain: true },
+          },
+        }
+      },
+      where: { id: committeeId },
+    });
+    if(!committee) {
+      throw new NotFoundException(`Comisia nu a fost găsită.`);
+    }
+    return committee;
+  }
+
+  private getPaperSortCriteria() {
+    return [
+      (paper: Paper) => paper.student.promotion,
+      (paper: Paper) => [paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName].filter(Boolean).join(' '),
+    ];
+  }
+
+  private async getCommitteeCatalogGenerationProps(committeeId: number) {
+    const committee = await this.getCommitteeForGeneration(committeeId);
+    sortArray(committee.papers, this.getPaperSortCriteria());
+    const paperGroups = Object.values(
+      groupBy(
+        committee.papers,
+        paper => [paper.student.promotion, paper.student.specialization.id].toString()
+      )
+    );
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return {
+      committee,
+      paperGroups,
+      sessionSettings,
+    };
+  }
+
+  private async getCommitteeFinalCatalogGenerationProps(committeeId: number) {
+    const committee = await this.getCommitteeForGeneration(committeeId);
+    sortArray(committee.papers, this.getPaperSortCriteria());
+    const paperGroups = Object.values(
+      groupBy(
+        committee.papers,
+        paper => paper.student.specialization.id,
+      )
+    );
+    const paperPromotionGroups = paperGroups.map(papers => {
+      return Object.values(
+        groupBy(
+          papers,
+          paper => paper.student.promotion,
+        )
+      );
+    });
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return {
+      committee,
+      paperPromotionGroups,
+      sessionSettings,
+    };
+  }
+
+  async generateCommitteeCatalogPdf(committeeId: number): Promise<Buffer> {
+    const props = await this.getCommitteeCatalogGenerationProps(committeeId);
+    return renderToBuffer(<CommitteeCatalogPdf {...props} />);
+  }
+
+  async generateCommitteeCatalogWord(committeeId: number): Promise<Buffer> {
+    const props = await this.getCommitteeCatalogGenerationProps(committeeId);
+    return CommitteeCatalogWord(props);
+  }
+
+  async generateCommitteeFinalCatalogPdf(committeeId: number): Promise<Buffer> {
+    const props = await this.getCommitteeFinalCatalogGenerationProps(committeeId);
+    return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
   }
 
   async generateSignUpRequestsExcel(): Promise<Buffer> {
@@ -229,7 +323,6 @@ export class DocumentGenerationService {
       columns,
       rows,
     });
-    console.log(columns, rows);
     this._autoSizeColumns(sheet);
     const arrayBuffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(arrayBuffer);

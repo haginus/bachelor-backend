@@ -13,6 +13,7 @@ import { PaperGrade } from "../entities/paper-grade.entity";
 import { User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { GradePaperDto } from "../dto/grade-paper.dto";
+import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 
 @Injectable()
 export class CommitteesService {
@@ -23,6 +24,7 @@ export class CommitteesService {
     private readonly domainsService: DomainsService,
     private readonly teachersService: TeachersService,
     private readonly dataSource: DataSource,
+    private readonly documentGenerationService: DocumentGenerationService,
   ) {}
 
   private readonly defaultRelations: FindOptionsRelations<Committee> = {
@@ -105,6 +107,7 @@ export class CommitteesService {
       canGrade: (member) => member.role !== CommitteeMemberRole.Secretary,
       canSchedule: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
       canMarkGradesFinal: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
+      canGenerateFiles: (member) => member.role === CommitteeMemberRole.President || member.role === CommitteeMemberRole.Secretary,
     };
     const member = committee.members.find(m => m.teacher.id === user.id);
     if(!member) {
@@ -246,10 +249,27 @@ export class CommitteesService {
     return grade;
   }
 
+  async generateCommitteeFile(committeeId: number, fileName: string, user?: User): Promise<Buffer> {
+    const committee = await this._findOneMin(committeeId);
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+      this.checkCommitteeMembership(committee, user, ['canGenerateFiles']);
+    }
+    switch(fileName) {
+      case 'catalog_pdf':
+        return this.documentGenerationService.generateCommitteeCatalogPdf(committeeId);
+      case 'catalog_docx':
+        return this.documentGenerationService.generateCommitteeCatalogWord(committeeId);
+      case 'final_catalog_pdf':
+        return this.documentGenerationService.generateCommitteeFinalCatalogPdf(committeeId);
+      default:
+        throw new BadRequestException('Numele fișierului specificat nu este valid.');
+    }
+  }
+
   async delete(id: number): Promise<void> {
     const committee = await this._findOneMin(id);
     await this.committeesRepository.remove(committee);
   }
 }
 
-type MembershipRights = 'canGrade' | 'canSchedule' | 'canMarkGradesFinal';
+type MembershipRights = 'canGrade' | 'canSchedule' | 'canMarkGradesFinal' | 'canGenerateFiles';

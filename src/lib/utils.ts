@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { CommitteeMember } from 'src/grading/entities/committee-member.entity';
 
 export function stripTime(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -84,4 +85,18 @@ export function sortArray<T>(array: T[], criteria: SortCriterion<T>[]): T[] {
 
 export function filterFalsy<T>(array: (T | null | undefined | false)[]): T[] {
   return array.filter((item): item is T => item !== null && item !== undefined && item !== false);
+}
+
+export function sortCommitteeMembers(members: CommitteeMember[]): CommitteeMember[] {
+  const titleOrder = {
+    "P": 0,
+    "C": 1,
+    "L": 2,
+    "A": 3,
+    "D": 4,
+  };
+  return sortArray(members, [
+    member => member.role === 'president' ? -100 : (member.role === 'secretary' ? 100 : 0),
+    member => titleOrder[member.teacher?.title?.[0] || 'Z'] || 0,
+  ]);
 }

@@ -1,8 +1,9 @@
-import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { AfterLoad, Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { CommitteeMember } from "./committee-member.entity";
 import { CommitteeActivityDay } from "./committee-activity-day.entity";
 import { Paper } from "src/papers/entities/paper.entity";
 import { Domain } from "src/users/entities/domain.entity";
+import { sortCommitteeMembers } from "src/lib/utils";
 
 @Entity()
 export class Committee {
@@ -34,4 +35,11 @@ export class Committee {
 
   @OneToMany(() => Paper, paper => paper.committee, { cascade: true })
   papers: Paper[];
+
+  @AfterLoad()
+  _afterLoad() {
+    if(this.members) {
+      sortCommitteeMembers(this.members);
+    }
+  }
 }

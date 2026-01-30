@@ -7,10 +7,12 @@ import { PaperGrade } from './entities/paper-grade.entity';
 import { CommitteesController } from './controllers/committees.controller';
 import { CommitteesService } from './services/committees.service';
 import { UsersModule } from 'src/users/users.module';
+import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
 
 @Module({
   imports: [
     UsersModule,
+    DocumentGenerationModule,
     TypeOrmModule.forFeature([
       Committee,
       CommitteeMember,
