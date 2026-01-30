@@ -62,10 +62,17 @@ export class DocumentsService {
   }
 
   async upload({ name, type, paperId, file }: UploadDocumentDto, user: User) {
-    if(type === DocumentType.Signed) {
-      throw new BadRequestException('Nu puteți încărca un document semnat.');
+    if(type !== DocumentType.Copy) {
+      throw new BadRequestException('Puteți încărca doar documente de tip copie.');
     }
-    const { requiredDocument } = await this.checkDocumentWriteAccess({ name, type, paperId, file }, user);
+    if(!file) {
+      throw new BadRequestException('Fișierul este obligatoriu pentru acest tip de document.');
+    }
+    const { requiredDocument } = await this.checkDocumentWriteAccess({ name, type, paperId }, user);
+    const mimeTypes = requiredDocument.acceptedMimeTypes.split(',');
+    if(!mimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(`MIME Type-ul fișierului este invalid. Tipuri acceptate: ${mimeTypes.join(', ')}`);
+    }
     return this.create(
       {
         name,
@@ -161,7 +168,7 @@ export class DocumentsService {
     }
   }
 
-  async create(dto: CreateDocumentDto, fileContent: Buffer, user?: User, isReupload: boolean = false): Promise<Document> {
+  private async create(dto: CreateDocumentDto, fileContent: Buffer, user?: User, isReupload: boolean = false): Promise<Document> {
     const document = this.documentsRepository.create(dto);
     const fileExtension = mimeTypeExtensions[dto.mimeType];
     await this.dataSource.transaction(async manager => {
@@ -187,7 +194,7 @@ export class DocumentsService {
       .select()
       .from(CommitteeMember, 'committeeMember')
       .where('committeeMember.committeeId = :committeeId', { committeeId })
-      .andWhere('committeeMember.memberId = :memberId', { memberId: userId })
+      .andWhere('committeeMember.teacherId = :teacherId', { teacherId: userId })
       .getCount();
     return count > 0;
   }
@@ -233,9 +240,9 @@ export class DocumentsService {
     }
   }
 
-  private async checkDocumentWriteAccess({ name, type, paperId, file }: { name: string; type: DocumentType; paperId: number; file?: Express.Multer.File }, user?: User) {
+  private async checkDocumentWriteAccess({ name, type, paperId, isDelete = false }: { name: string; type: DocumentType; paperId: number; isDelete?: boolean }, user?: User) {
     if(type == DocumentType.Generated) {
-      throw new BadRequestException('Nu puteți încărca un document de tip generat.');
+      throw new BadRequestException('Nu puteți modifica un document de tip generat.');
     }
     const paper = await this.papersRepository.findOne({ where: { id: paperId } });
     if(!paper) {
@@ -251,15 +258,6 @@ export class DocumentsService {
     if(!requiredDocument.types[type]) {
       throw new BadRequestException('Tip de document invalid.');
     }
-    const mimeTypes = requiredDocument.acceptedMimeTypes.split(',');
-    if(type === DocumentType.Copy) {
-      if(!file) {
-        throw new BadRequestException('Fișierul este obligatoriu pentru acest tip de document.');
-      }
-      if(!mimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(`MIME Type-ul fișierului este invalid. Tipuri acceptate: ${mimeTypes.join(', ')}`);
-      }
-    }
     if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
       switch(requiredDocument.uploadBy) {
         case DocumentUploadPerspective.Student:
@@ -267,7 +265,7 @@ export class DocumentsService {
             throw new ForbiddenException();
           }
           if(!await this._studentCanUpload(requiredDocument.category)) {
-            throw new BadRequestException("Nu suntem în termenul în care puteți încărca acest document.");
+            throw new BadRequestException("Nu suntem în termenul în care puteți modifica acest document.");
           }
           break;
         case DocumentUploadPerspective.Teacher:
@@ -283,20 +281,22 @@ export class DocumentsService {
         default:
           throw new ForbiddenException();
       }
-      const existingDocuments = await this.documentsRepository.find({
-        where: { paperId, name },
-      });
-      if(type === DocumentType.Signed) {
-        const generatedDocument = existingDocuments.find(doc => doc.type === DocumentType.Generated);
-        if(!generatedDocument) {
-          throw new BadRequestException('Documentul generat nu există.');
-        }
-        if(existingDocuments.some(doc => doc.type === DocumentType.Signed)) {
-          throw new BadRequestException('Documentul este deja semnat.');
-        }
-      } else if(type === DocumentType.Copy) {
-        if(existingDocuments.some(doc => doc.type === DocumentType.Copy)) {
-          throw new BadRequestException('Documentul este deja încărcat.');
+      if(!isDelete) {
+        const existingDocuments = await this.documentsRepository.find({
+          where: { paperId, name },
+        });
+        if(type === DocumentType.Signed) {
+          const generatedDocument = existingDocuments.find(doc => doc.type === DocumentType.Generated);
+          if(!generatedDocument) {
+            throw new BadRequestException('Documentul generat nu există.');
+          }
+          if(existingDocuments.some(doc => doc.type === DocumentType.Signed)) {
+            throw new BadRequestException('Documentul este deja semnat.');
+          }
+        } else if(type === DocumentType.Copy) {
+          if(existingDocuments.some(doc => doc.type === DocumentType.Copy)) {
+            throw new BadRequestException('Documentul este deja încărcat.');
+          }
         }
       }
     }
@@ -311,6 +311,12 @@ export class DocumentsService {
       throw new BadRequestException('Perioada de încărcare a documentelor a expirat.');
     }
     return { requiredDocument, paper };
+  }
+
+  async delete(id: number, user: User): Promise<void> {
+    const document = await this.findOne(id, user);
+    await this.checkDocumentWriteAccess({ ...document, isDelete: true }, user);
+    await this.documentsRepository.softRemove(document);
   }
 
   private _getStoragePath(fileName: string): string {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { DocumentsService } from "../services/documents.service";
 import { UploadDocumentDto } from "../dto/upload-document.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -54,5 +54,13 @@ export class DocumentsController {
   ) {
     const fileBuffer = await this.documentsService.getDocumentContent(id, user);
     return new StreamableFile(fileBuffer);
+  }
+
+  @Delete(':id')
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.documentsService.delete(id, user);
   }
 }
