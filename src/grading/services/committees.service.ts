@@ -305,7 +305,7 @@ export class CommitteesService {
       case 'student_assignation_pdf':
         return this.documentGenerationService.generateCommitteeStudentAssignationPdf([committeeId]);
       case 'student_assignation_xlsx':
-        return this.documentGenerationService.generateCommitteeStudentAssignationExcel([committeeId]);
+        return this.documentGenerationService.generateCommitteeStudentAssignationXlsx([committeeId]);
       case 'paper_documents_zip':
         return this.documentGenerationService.generatePaperDocumentsArchive(
           committee.papers.map(p => p.id), 

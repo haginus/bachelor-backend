@@ -25,6 +25,7 @@ import { Document } from "src/papers/entities/document.entity";
 import { mimeTypeExtensions } from "src/lib/mimes";
 import { createReadStream } from "fs";
 import { CommitteeStudentAssignation as CommitteeStudentAssignationPdf } from "../templates/committee-student-assignation";
+import { CommitteeCompositions as CommitteeCompositionsPdf } from "../templates/committee-compositions";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -210,6 +211,18 @@ export class DocumentGenerationService {
     return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
   }
 
+  async generateCommitteeCompositionsPdf(): Promise<Buffer> {
+    const committees = await this.getCommitteesForGeneration();
+    const committeeGroups = Object.values(
+      groupBy(
+        committees,
+        committee => committee.domains.map(domain => domain.id).sort().toString()
+      )
+    );
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return renderToBuffer(<CommitteeCompositionsPdf groups={committeeGroups} sessionSettings={sessionSettings} />);
+  }
+
   private async getCommitteeStudentsAssignationGenerationProps(committeeIds?: number[]) {
     const committees = await this.getCommitteesForGeneration(committeeIds);
     const sessionSettings = await this.sessionSettingsService.getSettings();
@@ -224,7 +237,7 @@ export class DocumentGenerationService {
     return renderToBuffer(<CommitteeStudentAssignationPdf {...props} />);
   }
 
-  async generateCommitteeStudentAssignationExcel(committeeIds?: number[]): Promise<Buffer> {
+  async generateCommitteeStudentAssignationXlsx(committeeIds?: number[]): Promise<Buffer> {
     const { committees } = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
     const workbook = new ExcelJS.Workbook();
     committees.forEach(committee => {
@@ -249,25 +262,27 @@ export class DocumentGenerationService {
           { name: 'Domeniul', filterButton: true },
           { name: 'E-mail', filterButton: true }
         ],
-        rows: committee.papers.map(paper => {
-          const student = paper.student;
-          const domain = student.specialization.domain;
-          return [
-            paper.scheduledGrading?.toLocaleString('ro-RO', {
-              timeZone: 'Europe/Bucharest',
-              hour: '2-digit',
-              minute: '2-digit',
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            }) || '',
-            student.fullName,
-            paper.teacher.fullName,
-            paper.title,
-            `${domain.name} - ${DOMAIN_TYPES[domain.type]}`,
-            student.email,
-          ];
-        }),
+        rows: this._tableRows(
+          committee.papers.map(paper => {
+            const student = paper.student;
+            const domain = student.specialization.domain;
+            return [
+              paper.scheduledGrading?.toLocaleString('ro-RO', {
+                timeZone: 'Europe/Bucharest',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              }) || '',
+              student.fullName,
+              paper.teacher.fullName,
+              paper.title,
+              `${domain.name} - ${DOMAIN_TYPES[domain.type]}`,
+              student.email,
+            ];
+          })
+        ),
       });
       this._autoSizeColumns(sheet);
     });
@@ -329,7 +344,7 @@ export class DocumentGenerationService {
     return Buffer.from(arrayBuffer);
   }
 
-  async generatePapersExcel({ onlySubmitted = false, teacherId, fullStudent = false }: { onlySubmitted?: boolean; teacherId?: number; fullStudent?: boolean; }): Promise<Buffer> {
+  async generatePapersXlsx({ onlySubmitted = false, teacherId, fullStudent = false }: { onlySubmitted?: boolean; teacherId?: number; fullStudent?: boolean; }): Promise<Buffer> {
     const where: FindOptionsWhere<Paper> = {};
     if(teacherId) {
       where.teacher = { id: teacherId };
@@ -345,6 +360,7 @@ export class DocumentGenerationService {
           profile: false,
         },
         teacher: { profile: false },
+        committee: true,
         submission: true,
       },
       where,
@@ -358,11 +374,11 @@ export class DocumentGenerationService {
       paper => paper.student.firstName,
     ]);
     const columns = filterFalsy<ExcelJS.TableColumnProperties>([
-      { name: 'ID lucrare' },
-      { name: 'Nume și prenume student' },
-      { name: 'Inițiala părintelui' },
+      { name: 'ID lucrare', filterButton: true },
+      { name: 'Nume și prenume student', filterButton: true },
+      { name: 'Inițiala părintelui', filterButton: true },
       { name: 'Profesor coordonator', filterButton: true },
-      { name: 'Titlul lucrării' },
+      { name: 'Titlul lucrării', filterButton: true },
       { name: 'Tipul lucrării', filterButton: true },
       { name: 'Specializarea', filterButton: true },
       { name: 'Domeniul', filterButton: true },
@@ -371,7 +387,7 @@ export class DocumentGenerationService {
       fullStudent && { name: 'Anul înmatriculării', filterButton: true },
       { name: 'Promoție', filterButton: true },
       { name: 'Lucrare validată', filterButton: true },
-      fullStudent && { name: 'M.G. ani studiu' },
+      fullStudent && { name: 'M.G. ani studiu', filterButton: true },
       { name: 'Lucrare înscrisă', filterButton: true },
     ]);
     const rows = papers.map(paper => {
@@ -419,6 +435,13 @@ export class DocumentGenerationService {
       });
       column.width = maxLength + 2;
     });
+  }
+
+  private _tableRows(rows: any[][]) {
+    if(rows.length === 0) {
+      rows.push(['']);
+    }
+    return rows;
   }
 
   async generatePaperDocumentsArchive(paperIds: number[], documentNames?: string[]): Promise<Buffer> {

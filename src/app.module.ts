@@ -20,6 +20,7 @@ import { DocumentGenerationModule } from './document-generation/document-generat
 import { CsvModule } from './csv/csv.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { GoogleRecaptchaModule, GoogleRecaptchaNetwork } from '@nestlab/google-recaptcha';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { GoogleRecaptchaModule, GoogleRecaptchaNetwork } from '@nestlab/google-r
     DocumentGenerationModule,
     CsvModule,
     StatisticsModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [

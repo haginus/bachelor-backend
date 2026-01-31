@@ -32,7 +32,7 @@ export class User {
 
   @Expose()
   get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
+    return [this.title, this.lastName, this.firstName].filter(Boolean).join(' ');
   }
 
   @Column()

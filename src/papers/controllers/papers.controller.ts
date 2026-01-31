@@ -41,7 +41,7 @@ export class PapersController {
     if(user.type === UserType.Teacher && (!query.teacherId || query.teacherId !== user.id)) {
       throw new ForbiddenException();
     }
-    const buffer = await this.documentGenerationService.generatePapersExcel({ 
+    const buffer = await this.documentGenerationService.generatePapersXlsx({ 
       onlySubmitted: query.onlySubmitted,
       teacherId: query.teacherId,
       fullStudent: user.type !== UserType.Teacher,
