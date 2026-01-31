@@ -12,7 +12,7 @@ import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-docum
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
-import { filterFalsy, getDocumentStoragePath, groupBy, indexArray, sortArray } from "src/lib/utils";
+import { ellipsize, filterFalsy, getDocumentStoragePath, groupBy, indexArray, removeCharacters, sortArray } from "src/lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "src/grading/entities/committee.entity";
@@ -24,6 +24,7 @@ import archiver from "archiver";
 import { Document } from "src/papers/entities/document.entity";
 import { mimeTypeExtensions } from "src/lib/mimes";
 import { createReadStream } from "fs";
+import { CommitteeStudentAssignation as CommitteeStudentAssignationPdf } from "../templates/committee-student-assignation";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -108,16 +109,17 @@ export class DocumentGenerationService {
     return renderToBuffer(<StatutoryDeclaration {...props} />);
   }
 
-  private async getCommitteeForGeneration(committeeId: number) {
-    const committee = await this.dataSource.manager.getRepository(Committee).findOne({
+  private async getCommitteesForGeneration(committeeIds?: number[], grades = true) {
+    const committees = await this.dataSource.manager.getRepository(Committee).find({
       relations: {
+        domains: true,
         members: {
           teacher: { profile: false },
         },
         papers: {
-          grades: {
+          grades: grades ? {
             committeeMember: true,
-          },
+          } : false,
           teacher: { profile: false },
           student: { 
             profile: false, 
@@ -126,14 +128,24 @@ export class DocumentGenerationService {
           },
         }
       },
-      where: { id: committeeId },
+      where: committeeIds ? { id: In(committeeIds) } : undefined,
     });
-    if(!committee) {
-      throw new NotFoundException(`Comisia nu a fost găsită.`);
+    const nameAndNumber = (name: string): [string, number] => {
+      const numberPart = (name.match(/\d+/) || '')[0];
+      return [name.replace(numberPart, ''), parseInt(numberPart)];
     }
-    return committee;
+    sortArray(committees, [
+      committee => committee.domains[0].type,
+      committee => nameAndNumber(committee.name)[0],
+      committee => nameAndNumber(committee.name)[1],
+    ]);
+    return committees;
   }
 
+  private async getCommitteeForGeneration(committeeId: number, grades = true) {
+    const [committee] = await this.getCommitteesForGeneration([committeeId], grades);
+    return committee;
+  }
   private getPaperSortCriteria() {
     return [
       (paper: Paper) => paper.student.promotion,
@@ -196,6 +208,71 @@ export class DocumentGenerationService {
   async generateCommitteeFinalCatalogPdf(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeFinalCatalogGenerationProps(committeeId);
     return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
+  }
+
+  private async getCommitteeStudentsAssignationGenerationProps(committeeIds?: number[]) {
+    const committees = await this.getCommitteesForGeneration(committeeIds);
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return {
+      committees,
+      sessionSettings,
+    };
+  }
+
+  async generateCommitteeStudentAssignationPdf(committeeIds?: number[]): Promise<Buffer> {
+    const props = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+    return renderToBuffer(<CommitteeStudentAssignationPdf {...props} />);
+  }
+
+  async generateCommitteeStudentAssignationExcel(committeeIds?: number[]): Promise<Buffer> {
+    const { committees } = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+    const workbook = new ExcelJS.Workbook();
+    committees.forEach(committee => {
+      const sheetName = ellipsize(
+        removeCharacters(committee.name, ['/', '\\', '?', '*', ':', '[', ']']),
+        31
+      );
+      const sheet = workbook.addWorksheet(sheetName);
+      sortArray(committee.papers, [
+        paper => paper.scheduledGrading?.getTime() || 0,
+        paper => paper.id,
+      ]);
+      sheet.addTable({
+        name: 'StudentTable' + committee.id,
+        ref: 'A1',
+        headerRow: true,
+        columns: [
+          { name: 'Programare', filterButton: true },
+          { name: 'Nume și prenume', filterButton: true },
+          { name: 'Profesor coordonator', filterButton: true },
+          { name: 'Titlul lucrării', filterButton: true },
+          { name: 'Domeniul', filterButton: true },
+          { name: 'E-mail', filterButton: true }
+        ],
+        rows: committee.papers.map(paper => {
+          const student = paper.student;
+          const domain = student.specialization.domain;
+          return [
+            paper.scheduledGrading?.toLocaleString('ro-RO', {
+              timeZone: 'Europe/Bucharest',
+              hour: '2-digit',
+              minute: '2-digit',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            }) || '',
+            student.fullName,
+            paper.teacher.fullName,
+            paper.title,
+            `${domain.name} - ${DOMAIN_TYPES[domain.type]}`,
+            student.email,
+          ];
+        }),
+      });
+      this._autoSizeColumns(sheet);
+    });
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   async generateSignUpRequestsExcel(): Promise<Buffer> {

@@ -51,6 +51,27 @@ export function unaccent(str: string): string {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+export function ellipsize(str: string, maxLength: number, mode: 'start' | 'middle' | 'end' = 'end'): string {
+  if (str.length <= maxLength) {
+    return str;
+  }
+  switch (mode) {
+    case 'start':
+      return '...' + str.slice(str.length - maxLength + 3);
+    case 'middle':
+      const half = Math.floor((maxLength - 3) / 2);
+      return str.slice(0, half) + '...' + str.slice(str.length - half);
+    case 'end':
+    default:
+      return str.slice(0, maxLength - 3) + '...';
+  }
+}
+
+export function removeCharacters(str: string, characters: string[]) {
+  const charactersSet = new Set(characters);
+  return str.split('').filter(c => !charactersSet.has(c)).join('');
+}
+
 export function toComparable(value: string | number | Date): string | number {
   if(value instanceof Date) {
     return value.getTime();
