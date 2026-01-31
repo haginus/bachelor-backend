@@ -7,13 +7,14 @@ import { DomainsService } from "src/users/services/domains.service";
 import { CommitteeMemberRole } from "src/lib/enums/committee-member-role.enum";
 import { TeachersService } from "src/users/services/teachers.service";
 import { CommitteeMember } from "../entities/committee-member.entity";
-import { indexArray } from "src/lib/utils";
+import { inclusiveDate, indexArray } from "src/lib/utils";
 import { Paper } from "src/papers/entities/paper.entity";
 import { PaperGrade } from "../entities/paper-grade.entity";
 import { User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { GradePaperDto } from "../dto/grade-paper.dto";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
+import { SchedulePapersDto } from "../dto/schedule-papers.dto";
 
 @Injectable()
 export class CommitteesService {
@@ -225,6 +226,41 @@ export class CommitteesService {
       await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
     });
     return this._findOneMin(id);
+  }
+
+  async schedulePapers(dto: SchedulePapersDto, user: User): Promise<Committee> {
+    const committee = await this._findOneMin(dto.committeeId);
+    this.checkCommitteeMembership(committee, user, ['canSchedule']);
+    const paperIndex = indexArray(committee.papers, p => p.id);
+    const updates: Partial<Paper>[] = [];
+    dto.papers?.forEach(paperDto => {
+      const paper = paperIndex[paperDto.paperId];
+      if(!paper) {
+        throw new BadRequestException(`Lucrarea cu ID-ul ${paperDto.paperId} nu aparține comisiei.`);
+      }
+      if(
+        paperDto.scheduledGrading && 
+        !committee.activityDays.find(day => (
+          day.startTime.getTime() <= paperDto.scheduledGrading!.getTime() && 
+          paperDto.scheduledGrading!.getTime() < inclusiveDate(day.startTime).getTime()
+        ))
+      ) {
+        throw new BadRequestException(`Data și ora programate pentru lucrarea cu ID-ul ${paperDto.paperId} nu se încadrează în zilele de activitate ale comisiei.`);
+      }
+      updates.push({
+        id: paper.id,
+        scheduledGrading: paperDto.scheduledGrading ?? null,
+      });
+    });
+    await this.dataSource.manager.transaction(async manager => {
+      committee.publicScheduling = dto.publicScheduling ?? committee.publicScheduling;
+      committee.paperPresentationTime = dto.paperPresentationTime ?? committee.paperPresentationTime;
+      await manager.save(committee);
+      for(const update of updates) {
+        await manager.update(Paper, { id: update.id }, { scheduledGrading: update.scheduledGrading });
+      }
+    });
+    return this._findOneMin(dto.committeeId);
   }
 
   async gradePaper(dto: GradePaperDto, user: User): Promise<PaperGrade> {

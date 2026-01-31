@@ -4,8 +4,9 @@ import { applyDecorators } from '@nestjs/common';
 import { IsOptional, IsDate as _IsDate } from 'class-validator';
 import { stripTime } from '../utils';
 
-function toDate(value: any): Date | undefined {
-  if (value === undefined || value === null) return undefined;
+function toDate(value: any): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
   if (value instanceof Date) return value;
 
   if (typeof value === 'string') {

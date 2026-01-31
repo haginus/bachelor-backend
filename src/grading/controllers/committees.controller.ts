@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Post, Put, StreamableFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Patch, Post, Put, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { CommitteesService } from "../services/committees.service";
 import { UserTypes } from "src/auth/decorators/user-types.decorator";
 import { UserType } from "src/lib/enums/user-type.enum";
@@ -7,6 +7,7 @@ import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { GradePaperDto } from "../dto/grade-paper.dto";
 import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
+import { SchedulePapersDto } from "../dto/schedule-papers.dto";
 
 @Controller('committees')
 @UserTypes([UserType.Admin, UserType.Secretary])
@@ -68,9 +69,15 @@ export class CommitteesController {
     return this.committeesService.setPapers(id, paperIds);
   }
 
-  @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    return this.committeesService.delete(id);
+  @Patch(':committeeId/schedule-papers')
+  @UserTypes([UserType.Teacher])
+  async schedulePapers(
+    @Param('committeeId', ParseIntPipe) committeeId: number,
+    @Body() dto: SchedulePapersDto,
+    @CurrentUser() user: User,
+  ) {
+    dto.committeeId = committeeId;
+    return this.committeesService.schedulePapers(dto, user);
   }
 
   @Post(':committeeId/grade-paper')
@@ -91,5 +98,10 @@ export class CommitteesController {
   ) {
     const buffer = await this.committeesService.generateCommitteeFile(id, fileName);
     return new StreamableFile(buffer);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return this.committeesService.delete(id);
   }
 }
