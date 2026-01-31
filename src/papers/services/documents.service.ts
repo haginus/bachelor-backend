@@ -12,7 +12,7 @@ import { DocumentType } from "src/lib/enums/document-type.enum";
 import { DocumentUploadPerspective } from "src/lib/enums/document-upload-perspective.enum";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { CreateDocumentDto } from "../dto/create-document.dto";
-import { indexArray, safePath } from "src/lib/utils";
+import { getDocumentStoragePath, indexArray } from "src/lib/utils";
 import { mimeTypeExtensions } from "src/lib/mimes";
 import { writeFile, readFile } from "fs/promises";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
@@ -320,6 +320,6 @@ export class DocumentsService {
   }
 
   private _getStoragePath(fileName: string): string {
-    return safePath(process.cwd(), 'storage', 'documents', fileName);
+    return getDocumentStoragePath(fileName);
   }
 }

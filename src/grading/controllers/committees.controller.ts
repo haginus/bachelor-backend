@@ -92,7 +92,8 @@ export class CommitteesController {
   }
 
   @Get(':id/files/:fileName')
-  async generateCatalog(
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
+  async generateCommitteeFile(
     @Param('id', ParseIntPipe) id: number,
     @Param('fileName') fileName: string,
   ) {

@@ -2,7 +2,7 @@ import React from "react";
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { Paper } from "src/papers/entities/paper.entity";
-import { DataSource, EntityManager, FindOptionsWhere, IsNull, Not } from "typeorm";
+import { DataSource, EntityManager, FindOptionsWhere, In, IsNull, Not } from "typeorm";
 import { Font, renderToBuffer } from "@react-pdf/renderer";
 import { SignUpForm } from "../templates/sign-up-form";
 import path from "path";
@@ -12,13 +12,18 @@ import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-docum
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
-import { filterFalsy, groupBy, sortArray } from "src/lib/utils";
+import { filterFalsy, getDocumentStoragePath, groupBy, indexArray, sortArray } from "src/lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "src/grading/entities/committee.entity";
 import { CommitteeCatalog as CommitteeCatalogPdf } from "../templates/committee-catalog";
 import { CommitteeCatalog as CommitteeCatalogWord } from "../word-templates";
 import { CommitteeFinalCatalog as CommitteeFinalCatalogPdf } from "../templates/committee-final-catalog";
+import { requiredDocumentSpecs } from "src/lib/required-document-specs";
+import archiver from "archiver";
+import { Document } from "src/papers/entities/document.entity";
+import { mimeTypeExtensions } from "src/lib/mimes";
+import { createReadStream } from "fs";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -336,6 +341,46 @@ export class DocumentGenerationService {
         maxLength = Math.max(maxLength, cellValue.length);
       });
       column.width = maxLength + 2;
+    });
+  }
+
+  async generatePaperDocumentsArchive(paperIds: number[], documentNames?: string[]): Promise<Buffer> {
+    const qb = this.dataSource.manager.getRepository(Paper).createQueryBuilder('paper')
+      .whereInIds(paperIds)
+      .leftJoinAndSelect('paper.student', 'student');
+    if(documentNames && documentNames.length > 0) {
+      qb.leftJoinAndSelect('paper.documents', 'document', 'document.name IN (:...documentNames)', { documentNames });
+    } else {
+      qb.leftJoinAndSelect('paper.documents', 'document');
+    }
+    const papers = await qb.getMany();
+    if(papers.flatMap(paper => paper.documents).length == 0) {
+      throw new BadRequestException('Nu există documente pentru lucrările selectate.');
+    }
+    const requiredDocumentsIndex = indexArray(requiredDocumentSpecs, doc => doc.name);
+    const archive = archiver('zip', {
+      zlib: { level: 0 }
+    });
+    papers.forEach(paper => {
+      const studentName = `${paper.student.lastName} ${paper.student.firstName}`;
+      const directoryName = `${studentName}, ${paper.title}`;
+      const lastDocuments = paper.documents.reduce((acc, doc) => {
+        acc[doc.name] = !acc[doc.name] || acc[doc.name].id < doc.id ? doc : acc[doc.name];
+        return acc;
+      }, {} as Record<string, Document>);
+      Object.values(lastDocuments).forEach(document => {
+        const requiredDoc = requiredDocumentsIndex[document.name];
+        const extension = mimeTypeExtensions[document.mimeType];
+        const buffer = createReadStream(getDocumentStoragePath(`${document.id}.${extension}`));
+        archive.append(buffer, { prefix: directoryName, name: `${requiredDoc.title} - ${studentName}.${extension}` });
+      });
+    });
+    return new Promise<Buffer>((resolve, reject) => {
+      const buffers: Buffer[] = [];
+      archive.on('data', (data: Buffer) => buffers.push(data));
+      archive.on('end', () => resolve(Buffer.concat(buffers)));
+      archive.on('error', reject);
+      archive.finalize();
     });
   }
   

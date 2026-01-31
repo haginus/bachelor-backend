@@ -287,16 +287,26 @@ export class CommitteesService {
 
   async generateCommitteeFile(committeeId: number, fileName: string, user?: User): Promise<Buffer> {
     const committee = await this._findOneMin(committeeId);
-    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
-      this.checkCommitteeMembership(committee, user, ['canGenerateFiles']);
+    const checkCanGenerateFiles = () => {
+      if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
+        this.checkCommitteeMembership(committee, user, ['canGenerateFiles']);
+      }
     }
     switch(fileName) {
       case 'catalog_pdf':
+        checkCanGenerateFiles();
         return this.documentGenerationService.generateCommitteeCatalogPdf(committeeId);
       case 'catalog_docx':
+        checkCanGenerateFiles();
         return this.documentGenerationService.generateCommitteeCatalogWord(committeeId);
       case 'final_catalog_pdf':
+        checkCanGenerateFiles();
         return this.documentGenerationService.generateCommitteeFinalCatalogPdf(committeeId);
+      case 'paper_documents_zip':
+        return this.documentGenerationService.generatePaperDocumentsArchive(
+          committee.papers.map(p => p.id), 
+          ['paper', 'plagiarism_report', 'committee_report', 'committee_turnitin']
+        );
       default:
         throw new BadRequestException('Numele fișierului specificat nu este valid.');
     }

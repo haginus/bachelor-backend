@@ -100,3 +100,7 @@ export function sortCommitteeMembers(members: CommitteeMember[]): CommitteeMembe
     member => titleOrder[member.teacher?.title?.[0] || 'Z'] || 0,
   ]);
 }
+
+export function getDocumentStoragePath(fileName: string): string {
+  return safePath(process.cwd(), 'storage', 'documents', fileName);
+}
