@@ -17,7 +17,7 @@ import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "src/grading/entities/committee.entity";
 import { CommitteeCatalog as CommitteeCatalogPdf } from "../templates/committee-catalog";
-import { CommitteeCatalog as CommitteeCatalogWord } from "../word-templates";
+import { CommitteeCatalog as CommitteeCatalogDocx, FinalCatalog as FinalCatalogDocx } from "../word-templates";
 import { CommitteeFinalCatalog as CommitteeFinalCatalogPdf } from "../templates/committee-final-catalog";
 import { requiredDocumentSpecs } from "src/lib/required-document-specs";
 import archiver from "archiver";
@@ -26,6 +26,7 @@ import { mimeTypeExtensions } from "src/lib/mimes";
 import { createReadStream } from "fs";
 import { CommitteeStudentAssignation as CommitteeStudentAssignationPdf } from "../templates/committee-student-assignation";
 import { CommitteeCompositions as CommitteeCompositionsPdf } from "../templates/committee-compositions";
+import { FinalCatalog as FinalCatalogPdf } from "../templates/final-catalog";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -201,14 +202,75 @@ export class DocumentGenerationService {
     return renderToBuffer(<CommitteeCatalogPdf {...props} />);
   }
 
-  async generateCommitteeCatalogWord(committeeId: number): Promise<Buffer> {
+  async generateCommitteeCatalogDocx(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeCatalogGenerationProps(committeeId);
-    return CommitteeCatalogWord(props);
+    return CommitteeCatalogDocx(props);
   }
 
   async generateCommitteeFinalCatalogPdf(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeFinalCatalogGenerationProps(committeeId);
     return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
+  }
+
+  private async getFinalCatalogGenerationProps(mode: 'final' | 'centralizing' = 'final') {
+    let papers = await this.dataSource.manager.getRepository(Paper).find({
+      relations: {
+        grades: true,
+        student: {
+          profile: false,
+          extraData: true,
+          specialization: { domain: true },
+        }
+      },
+      where: {
+        committeeId: Not(IsNull()),
+        submissionId: Not(IsNull()),
+      }
+    });
+    if(mode === 'centralizing') {
+      papers = papers.filter(paper => paper.gradeAverage && paper.gradeAverage >= 6);
+    }
+    sortArray(papers, this.getPaperSortCriteria());
+    const paperGroups = Object.values(
+      groupBy(
+        papers,
+        paper => paper.student.specialization.id,
+      )
+    );
+    const paperPromotionGroups = paperGroups.map(papers => {
+      return Object.values(
+        groupBy(
+          papers,
+          paper => paper.student.promotion,
+        )
+      );
+    });
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return {
+      mode,
+      paperPromotionGroups,
+      sessionSettings,
+    };
+  }
+
+  async generateFinalCatalogPdf(): Promise<Buffer> {
+    const props = await this.getFinalCatalogGenerationProps('final');
+    return renderToBuffer(<FinalCatalogPdf {...props} />);
+  }
+
+  async generateFinalCatalogDocx(): Promise<Buffer> {
+    const props = await this.getFinalCatalogGenerationProps('final');
+    return FinalCatalogDocx(props);
+  }
+
+  async generateCentralizingCatalogPdf(): Promise<Buffer> {
+    const props = await this.getFinalCatalogGenerationProps('centralizing');
+    return renderToBuffer(<FinalCatalogPdf {...props} />);
+  }
+
+  async generateCentralizingCatalogDocx(): Promise<Buffer> {
+    const props = await this.getFinalCatalogGenerationProps('centralizing');
+    return FinalCatalogDocx(props);
   }
 
   async generateCommitteeCompositionsPdf(): Promise<Buffer> {

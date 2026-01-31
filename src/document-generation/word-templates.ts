@@ -50,6 +50,8 @@ const Percent = (size: number) => ({
 
 export async function CommitteeCatalog({ committee, paperGroups, sessionSettings }: { committee: Committee, paperGroups: Paper[][], sessionSettings: SessionSettings }) {
   const document = new Word.Document({
+    ...getDefaultDocumentProperties(),
+    title: `Catalog comisie ${committee.name} - Sesiunea ${sessionSettings.sessionName}`,
     sections: paperGroups.map(group => {
       const referencePaper = group[0];
       const specialization = referencePaper.student.specialization;
@@ -246,150 +248,152 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
   return Buffer.from(buffer);
 }
 
-// export async function FinalCatalogWord({ mode, paperPromotionGroups, sessionSettings }: { mode: 'final' | 'centralizing'; paperPromotionGroups: { promotion: string, items: Paper[] }[][]; sessionSettings: SessionSettings }) {
-//   const catalogName = {
-//     final: 'Catalog final',
-//     centralizing: 'Catalag centralizator'
-//   }[mode];
-//   const document = new Word.Document({
-//     title: `${catalogName} - Sesiunea ${sessionSettings.sessionName}`,
-//     creator: 'Platforma de finalizare studii a Facultății de Matematică și Informatică',
-//     sections: paperPromotionGroups.map(pageGroup => {
-//       const referencePromotion = pageGroup[0];
-//       const referencePaper = referencePromotion.items[0];
-//       const referenceStudent = referencePaper.student;
-//       const studyYears = parseInt(referenceStudent.specialization.studyYears);
-//       const paperTypeString = PAPER_TYPES[referencePaper.type];
-//       const size = 24;
+export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: { mode: 'final' | 'centralizing'; paperPromotionGroups: Paper[][][]; sessionSettings: SessionSettings }) {
+  const catalogName = {
+    final: 'Catalog final',
+    centralizing: 'Catalag centralizator'
+  }[mode];
+  const document = new Word.Document({
+    ...getDefaultDocumentProperties(),
+    title: `${catalogName} - Sesiunea ${sessionSettings.sessionName}`,
+    sections: paperPromotionGroups.map(pageGroup => {
+      const referencePromotion = pageGroup[0];
+      const referencePaper = referencePromotion[0];
+      const referenceStudent = referencePaper.student;
+      const referenceSpecialization = referenceStudent.specialization;
+      const referenceDomain = referenceSpecialization.domain;
+      const studyYears = referenceStudent.specialization.studyYears;
+      const paperTypeString = PAPER_TYPES[referencePaper.type];
+      const size = 24;
 
-//       return {
-//         properties: {
-//           type: Word.SectionType.NEXT_PAGE,
-//           page: {
-//             size: { orientation: Word.PageOrientation.PORTRAIT },
-//             margin: {
-//               top: 1000,
-//               right: 600,
-//               bottom: 1000,
-//               left: 600,
-//             }
-//           },
-//         },
-//         children: [
-//           new Word.Table({
-//             borders: Word.TableBorders.NONE,
-//             width: {
-//               size: 100,
-//               type: Word.WidthType.PERCENTAGE,
-//             },
-//             rows: [
-//               new Word.TableRow({
-//                 children: [
-//                   new Word.TableCell({
-//                     width: {
-//                       size: 65,
-//                       type: Word.WidthType.PERCENTAGE,
-//                     },
-//                     children: [
-//                       new Word.Paragraph({
-//                         children: [
-//                           new Word.TextRun({ text: 'ROMÂNIA', bold: true, size }),
-//                           new Word.TextRun({ text: 'MINISTERUL EDUCAȚIEI', bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Domeniul de ${DOMAIN_TYPES[referenceStudent.domain.type]}: ${referenceStudent.domain.name}`, bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceStudent.specialization.name}`, bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Forma de învățământ: ${referenceStudent.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                   new Word.TableCell({
-//                     width: {
-//                       size: 35,
-//                       type: Word.WidthType.PERCENTAGE,
-//                     },
-//                     verticalAlign: Word.VerticalAlign.BOTTOM,
-//                     children: [
-//                       new Word.Paragraph({
-//                         alignment: Word.AlignmentType.RIGHT,
-//                         children: [
-//                           new Word.TextRun({ text: `Sesiunea ${sessionSettings.sessionName.toLocaleUpperCase()}`, bold: true, break: 1, size }),
-//                           new Word.TextRun({ text: `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`, bold: true, break: 1, size }),
-//                         ],
-//                       }),
-//                     ],
-//                   }),
-//                 ],
-//               }),
-//             ]
-//           }),
-//           new Word.Paragraph({
-//             alignment: Word.AlignmentType.CENTER,
-//             spacing: {
-//               before: 500,
-//               after: 0,
-//             },
-//             children: [
-//               new Word.TextRun({ text: catalogName.toLocaleUpperCase(), bold: true, size: 36 }),
-//               new Word.TextRun({ text: `EXAMEN DE ${paperTypeString.toLocaleUpperCase()}`, bold: true, size: 36, break: 1 }),
-//             ],
-//           }),
-//           ...pageGroup.flatMap((promotionGroup, index) => [
-//             new Word.Paragraph({
-//               spacing: {
-//                 after: 100,
-//               },
-//               children: [
-//                 new Word.TextRun({ text: `Promoția ${promotionGroup.promotion}`, bold: true, break: 1, size }),
-//               ],
-//             }),
-//             new Word.Table({
-//               width: {
-//                 size: 100,
-//                 type: Word.WidthType.PERCENTAGE,
-//               },
-//               rows: [
-//                 new Word.TableRow({
-//                   tableHeader: true,
-//                   children: [
-//                     TableCell({ text: 'Nr. crt.', bold: true, fill: '#bdbdbd', size }),
-//                     TableCell({ text: 'Numele, inițiala tatălui și prenumele absolventului', bold: true, fill: '#bdbdbd', size }),
-//                     TableCell({ text: 'Anul înmatriculării', bold: true, fill: '#bdbdbd', size }),
-//                     TableCell({ text: `Media examenului de ${paperTypeString}`, bold: true, fill: '#bdbdbd', size }),
-//                   ],
-//                 }),
-//                 ...promotionGroup.items.map((paper, i) => new Word.TableRow({
-//                   children: [
-//                     TableCell({ text: `${i + 1}.`, size }),
-//                     TableCell({ text: `${paper.student.user.lastName} ${paper.student.studentExtraDatum?.parentInitial} ${paper.student.user.firstName}`.toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
-//                     TableCell({ text: paper.student.matriculationYear, size }),
-//                     TableCell({ text: paper.gradeAverage?.toFixed(2) || 'ABSENT', size })
-//                   ]
-//                 }))
-//               ]
-//             }),
-//           ]),
-//         ],
-//         footers: {
-//           default: new Word.Footer({
-//             children: [
-//               PeopleSignatureFooter([
-//                 { column: 'left', position: 'DECAN', name: 'Conf. Dr. Cătălin Gherghe', stamp: true },
-//                 { column: 'right', position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
-//                 { column: 'right', position: 'Întocmit', name: ''}
-//               ])
-//             ],
-//           }),
-//         },
-//       }
-//     })
-//   });
-//   const buffer = await Word.Packer.toBuffer(document);
-//   return Buffer.from(buffer);
-// }
+      return {
+        properties: {
+          type: Word.SectionType.NEXT_PAGE,
+          page: {
+            size: { orientation: Word.PageOrientation.PORTRAIT },
+            margin: {
+              top: 1000,
+              right: 600,
+              bottom: 1000,
+              left: 600,
+            }
+          },
+        },
+        children: [
+          new Word.Table({
+            borders: Word.TableBorders.NONE,
+            width: {
+              size: 100,
+              type: Word.WidthType.PERCENTAGE,
+            },
+            rows: [
+              new Word.TableRow({
+                children: [
+                  new Word.TableCell({
+                    width: {
+                      size: 65,
+                      type: Word.WidthType.PERCENTAGE,
+                    },
+                    children: [
+                      new Word.Paragraph({
+                        children: [
+                          new Word.TextRun({ text: 'ROMÂNIA', bold: true, size }),
+                          new Word.TextRun({ text: 'MINISTERUL EDUCAȚIEI', bold: true, break: 1, size }),
+                          new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true, break: 1, size }),
+                          new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Domeniul de ${DOMAIN_TYPES[referenceDomain.type]}: ${referenceDomain.name}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceSpecialization.name}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Forma de învățământ: ${referenceSpecialization.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new Word.TableCell({
+                    width: {
+                      size: 35,
+                      type: Word.WidthType.PERCENTAGE,
+                    },
+                    verticalAlign: Word.VerticalAlign.BOTTOM,
+                    children: [
+                      new Word.Paragraph({
+                        alignment: Word.AlignmentType.RIGHT,
+                        children: [
+                          new Word.TextRun({ text: `Sesiunea ${sessionSettings.sessionName.toLocaleUpperCase()}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`, bold: true, break: 1, size }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ]
+          }),
+          new Word.Paragraph({
+            alignment: Word.AlignmentType.CENTER,
+            spacing: {
+              before: 500,
+              after: 0,
+            },
+            children: [
+              new Word.TextRun({ text: catalogName.toLocaleUpperCase(), bold: true, size: 36 }),
+              new Word.TextRun({ text: `EXAMEN DE ${paperTypeString.toLocaleUpperCase()}`, bold: true, size: 36, break: 1 }),
+            ],
+          }),
+          ...pageGroup.flatMap((promotionGroup, index) => [
+            new Word.Paragraph({
+              spacing: {
+                after: 100,
+              },
+              children: [
+                new Word.TextRun({ text: `Promoția ${promotionGroup[0].student.promotion}`, bold: true, break: 1, size }),
+              ],
+            }),
+            new Word.Table({
+              width: {
+                size: 100,
+                type: Word.WidthType.PERCENTAGE,
+              },
+              rows: [
+                new Word.TableRow({
+                  tableHeader: true,
+                  children: [
+                    TableCell({ text: 'Nr. crt.', bold: true, fill: '#bdbdbd', size }),
+                    TableCell({ text: 'Numele, inițiala tatălui și prenumele absolventului', bold: true, fill: '#bdbdbd', size }),
+                    TableCell({ text: 'Anul înmatriculării', bold: true, fill: '#bdbdbd', size }),
+                    TableCell({ text: `Media examenului de ${paperTypeString}`, bold: true, fill: '#bdbdbd', size }),
+                  ],
+                }),
+                ...promotionGroup.map((paper, i) => new Word.TableRow({
+                  children: [
+                    TableCell({ text: `${i + 1}.`, size }),
+                    TableCell({ text: filterFalsy([paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName]).join(' ').toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
+                    TableCell({ text: paper.student.matriculationYear, size }),
+                    TableCell({ text: paper.gradeAverage?.toFixed(2) || 'ABSENT', size })
+                  ]
+                }))
+              ]
+            }),
+          ]),
+        ],
+        footers: {
+          default: new Word.Footer({
+            children: [
+              PeopleSignatureFooter([
+                { column: 'left', position: 'DECAN', name: 'Conf. Dr. Cătălin Gherghe', stamp: true },
+                { column: 'right', position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
+                { column: 'right', position: 'Întocmit', name: ''}
+              ])
+            ],
+          }),
+        },
+      }
+    })
+  });
+  const buffer = await Word.Packer.toBuffer(document);
+  return Buffer.from(buffer);
+}
 
 interface Person {
   position: string;
@@ -431,4 +435,21 @@ function PeopleSignatureFooter(people: Person[], testSize = 24) {
       }),
     ],
   });
+}
+
+function getDefaultDocumentProperties(): Partial<Word.IPropertiesOptions> {
+  return {
+    styles: {
+      default: {
+        document: {
+          run: {
+            language: {
+              value: 'ro-RO',
+            }
+          }
+        }
+      }
+    },
+    creator: 'Platforma de finalizare studii a Facultății de Matematică și Informatică',
+  };
 }

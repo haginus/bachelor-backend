@@ -10,6 +10,14 @@ export class ReportsService {
 
   async generateReportFile(fileName: string): Promise<Buffer> {
     switch(fileName) {
+      case 'final_catalog_pdf':
+        return this.documentGenerationService.generateFinalCatalogPdf();
+      case 'final_catalog_docx':
+        return this.documentGenerationService.generateFinalCatalogDocx();
+      case 'centralizing_catalog_pdf':
+        return this.documentGenerationService.generateCentralizingCatalogPdf();
+      case 'centralizing_catalog_docx':
+        return this.documentGenerationService.generateCentralizingCatalogDocx();
       case 'committee_compositions_pdf':
         return this.documentGenerationService.generateCommitteeCompositionsPdf();
       case 'student_assignation_pdf':

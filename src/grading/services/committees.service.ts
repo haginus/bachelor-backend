@@ -298,7 +298,7 @@ export class CommitteesService {
         return this.documentGenerationService.generateCommitteeCatalogPdf(committeeId);
       case 'catalog_docx':
         checkCanGenerateFiles();
-        return this.documentGenerationService.generateCommitteeCatalogWord(committeeId);
+        return this.documentGenerationService.generateCommitteeCatalogDocx(committeeId);
       case 'final_catalog_pdf':
         checkCanGenerateFiles();
         return this.documentGenerationService.generateCommitteeFinalCatalogPdf(committeeId);
