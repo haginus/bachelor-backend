@@ -12,7 +12,7 @@ import { StudentDocumentGenerationProps } from "src/lib/interfaces/student-docum
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "src/users/entities/sign-up-request.entity";
-import { ellipsize, filterFalsy, getDocumentStoragePath, groupBy, indexArray, removeCharacters, sortArray } from "src/lib/utils";
+import { ellipsize, filterFalsy, getDocumentStoragePath, groupBy, indexArray, removeCharacters, safePath, sortArray } from "src/lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "src/grading/entities/committee.entity";
@@ -23,10 +23,16 @@ import { requiredDocumentSpecs } from "src/lib/required-document-specs";
 import archiver from "archiver";
 import { Document } from "src/papers/entities/document.entity";
 import { mimeTypeExtensions } from "src/lib/mimes";
-import { createReadStream } from "fs";
+import { createReadStream, createWriteStream } from "fs";
 import { CommitteeStudentAssignation as CommitteeStudentAssignationPdf } from "../templates/committee-student-assignation";
 import { CommitteeCompositions as CommitteeCompositionsPdf } from "../templates/committee-compositions";
 import { FinalCatalog as FinalCatalogPdf } from "../templates/final-catalog";
+import { Observable, Subscriber } from "rxjs";
+import { FileGenerationStatus } from "src/lib/interfaces/file-generation-status.interface";
+import { tmpdir } from "os";
+import { SessionSettings } from "src/common/entities/session-settings.entity";
+import { Student } from "src/users/entities/user.entity";
+import { instanceToPlain } from "class-transformer";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -148,6 +154,7 @@ export class DocumentGenerationService {
     const [committee] = await this.getCommitteesForGeneration([committeeId], grades);
     return committee;
   }
+
   private getPaperSortCriteria() {
     return [
       (paper: Paper) => paper.student.promotion,
@@ -155,7 +162,7 @@ export class DocumentGenerationService {
     ];
   }
 
-  private async getCommitteeCatalogGenerationProps(committeeId: number) {
+  private async getCommitteeCatalogGenerationProps(committeeId: number): Promise<CommitteeCatalogGenerationProps> {
     const committee = await this.getCommitteeForGeneration(committeeId);
     sortArray(committee.papers, this.getPaperSortCriteria());
     const paperGroups = Object.values(
@@ -172,7 +179,7 @@ export class DocumentGenerationService {
     };
   }
 
-  private async getCommitteeFinalCatalogGenerationProps(committeeId: number) {
+  private async getCommitteeFinalCatalogGenerationProps(committeeId: number): Promise<CommitteeFinalCatalogGenerationProps> {
     const committee = await this.getCommitteeForGeneration(committeeId);
     sortArray(committee.papers, this.getPaperSortCriteria());
     const paperGroups = Object.values(
@@ -197,19 +204,31 @@ export class DocumentGenerationService {
     };
   }
 
+  async _generateCommitteeCatalogPdf(props: CommitteeCatalogGenerationProps): Promise<Buffer> {
+    return renderToBuffer(<CommitteeCatalogPdf {...props} />);
+  }
+
   async generateCommitteeCatalogPdf(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeCatalogGenerationProps(committeeId);
-    return renderToBuffer(<CommitteeCatalogPdf {...props} />);
+    return this._generateCommitteeCatalogPdf(props);
+  }
+
+  async _generateCommitteeCatalogDocx(props: CommitteeCatalogGenerationProps): Promise<Buffer> {
+    return CommitteeCatalogDocx(props);
   }
 
   async generateCommitteeCatalogDocx(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeCatalogGenerationProps(committeeId);
-    return CommitteeCatalogDocx(props);
+    return this._generateCommitteeCatalogDocx(props);
+  }
+
+  async _generateCommitteeFinalCatalogPdf(props: CommitteeFinalCatalogGenerationProps): Promise<Buffer> {
+    return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
   }
 
   async generateCommitteeFinalCatalogPdf(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeFinalCatalogGenerationProps(committeeId);
-    return renderToBuffer(<CommitteeFinalCatalogPdf {...props} />);
+    return this._generateCommitteeFinalCatalogPdf(props);
   }
 
   private async getFinalCatalogGenerationProps(mode: 'final' | 'centralizing' = 'final') {
@@ -273,19 +292,23 @@ export class DocumentGenerationService {
     return FinalCatalogDocx(props);
   }
 
-  async generateCommitteeCompositionsPdf(): Promise<Buffer> {
-    const committees = await this.getCommitteesForGeneration();
+  async _generateCommitteeCompositionsPdf(committees: Committee[], sessionSettings: SessionSettings): Promise<Buffer> {
     const committeeGroups = Object.values(
       groupBy(
         committees,
         committee => committee.domains.map(domain => domain.id).sort().toString()
       )
     );
-    const sessionSettings = await this.sessionSettingsService.getSettings();
     return renderToBuffer(<CommitteeCompositionsPdf groups={committeeGroups} sessionSettings={sessionSettings} />);
   }
 
-  private async getCommitteeStudentsAssignationGenerationProps(committeeIds?: number[]) {
+  async generateCommitteeCompositionsPdf(): Promise<Buffer> {
+    const committees = await this.getCommitteesForGeneration();
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    return this._generateCommitteeCompositionsPdf(committees, sessionSettings);
+  }
+
+  private async getCommitteeStudentsAssignationGenerationProps(committeeIds?: number[]): Promise<CommitteeStudentAssignationGenerationProps> {
     const committees = await this.getCommitteesForGeneration(committeeIds);
     const sessionSettings = await this.sessionSettingsService.getSettings();
     return {
@@ -294,13 +317,16 @@ export class DocumentGenerationService {
     };
   }
 
-  async generateCommitteeStudentAssignationPdf(committeeIds?: number[]): Promise<Buffer> {
-    const props = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+  async _generateCommitteeStudentAssignationPdf(props: CommitteeStudentAssignationGenerationProps): Promise<Buffer> {
     return renderToBuffer(<CommitteeStudentAssignationPdf {...props} />);
   }
 
-  async generateCommitteeStudentAssignationXlsx(committeeIds?: number[]): Promise<Buffer> {
-    const { committees } = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+  async generateCommitteeStudentAssignationPdf(committeeIds?: number[]): Promise<Buffer> {
+    const props = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+    return this._generateCommitteeStudentAssignationPdf(props);
+  }
+
+  async _generateCommitteeStudentAssignationXlsx({ committees }: CommitteeStudentAssignationGenerationProps): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     committees.forEach(committee => {
       const sheetName = ellipsize(
@@ -350,6 +376,11 @@ export class DocumentGenerationService {
     });
     const arrayBuffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(arrayBuffer);
+  }
+
+  async generateCommitteeStudentAssignationXlsx(committeeIds?: number[]): Promise<Buffer> {
+    const props = await this.getCommitteeStudentsAssignationGenerationProps(committeeIds);
+    return this._generateCommitteeStudentAssignationXlsx(props);
   }
 
   async generateSignUpRequestsExcel(): Promise<Buffer> {
@@ -545,5 +576,203 @@ export class DocumentGenerationService {
       archive.finalize();
     });
   }
+
+  generateFinalReportArchive(): Observable<FileGenerationStatus> {
+    const progressSections = [
+      { name: 'logs', weight: 0.05 },
+      { name: 'catalogs', weight: 0.05 },
+      { name: 'committee_files', weight: 0.05 },
+      { name: 'committee_files_per_committee', weight: 0.2 },
+      { name: 'student_list', weight: 0.1 },
+      { name: 'student_documents', weight: 0.3 },
+      { name: 'archive', weight: 0.25 },
+    ] as const satisfies readonly ProgressSection<string>[];
+    return this._createFileGenerationObservable(progressSections, async (progressTracker) => {
+      const archive = archiver('zip', {
+        zlib: { level: 6 },
+      });
+      async function appendAndBump(getBuffer: () => Promise<Buffer>, opts: archiver.EntryData, sectionName: typeof progressSections[number]['name'], deltaProgress: number) {
+        const buffer = await getBuffer();
+        archive.append(buffer, opts);
+        progressTracker.bumpProgress(sectionName, deltaProgress);
+      }
+      const destination = safePath(tmpdir(), `/bachelor-backend/final-report-${Date.now()}.zip`);
+      const output = createWriteStream(destination);
+
+      archive.pipe(output);
+
+      // TODO: Logs 
+      progressTracker.setProgress('logs', 1);
+
+      // Catalogs
+      await appendAndBump(() => this.generateFinalCatalogPdf(), { name: 'Catalog final.pdf' }, 'catalogs', 0.5);
+      await appendAndBump(() => this.generateCentralizingCatalogPdf(), { name: 'Catalog centralizator.pdf' }, 'catalogs', 0.5);
+
+      // Committee files
+      const committees = await this.getCommitteesForGeneration(undefined, false);
+      const sessionSettings = await this.sessionSettingsService.getSettings();
+      await appendAndBump(() => this._generateCommitteeCompositionsPdf(committees, sessionSettings), { name: 'Comisii/Componența comisiilor.pdf' }, 'committee_files', 0.5);
+      await appendAndBump(() => this._generateCommitteeStudentAssignationPdf({ committees, sessionSettings }), { name: 'Comisii/Repartizarea studenților pe comisii.pdf' }, 'committee_files', 0.5);
+
+      // Committee files per committee
+      const committeeCount = committees.length;
+      for(let i = 0; i < committeeCount; i++) {
+        const committee = committees[i];
+        const catalogProps = await this.getCommitteeCatalogGenerationProps(committee.id);
+        const finalCatalogProps = await this.getCommitteeFinalCatalogGenerationProps(committee.id);
+        progressTracker.bumpProgress('committee_files_per_committee', 0.25 / committeeCount);
+        const prefix = `Comisii/${committee.name}/`;
+        await appendAndBump(() => this._generateCommitteeCatalogPdf(catalogProps), { name: `Catalog.pdf`, prefix }, 'committee_files_per_committee', 0.25 / committeeCount);
+        await appendAndBump(() => this._generateCommitteeCatalogDocx(catalogProps), { name: `Catalog.docx`, prefix }, 'committee_files_per_committee', 0.25 / committeeCount);
+        await appendAndBump(() => this._generateCommitteeFinalCatalogPdf(finalCatalogProps), { name: `Catalog final.pdf`, prefix }, 'committee_files_per_committee', 0.25 / committeeCount);
+      }
+
+      const students = await this.dataSource.manager.getRepository(Student).find({
+        relations: {
+          specialization: { domain: true },
+          extraData: true,
+          profile: false,
+          paper: {
+            documents: true,
+            committee: true,
+            grades: {
+              committeeMember: {
+                teacher: { profile: false },
+              }
+            }
+          }
+        },
+        where: {
+          paper: { committeeId: Not(IsNull()) },
+        }
+      });
+      progressTracker.setProgress('student_list', 0.5);
+
+      // TODO: Student list
+      progressTracker.setProgress('student_list', 1);
+      
+      // Student documents
+      const studentCount = students.length;
+      const requiredDocumentsIndex = indexArray(requiredDocumentSpecs, doc => doc.name);
+      for(let i = 0; i < studentCount; i++) {
+        const student = students[i];
+        const domain = student.specialization.domain;
+        const domainType = DOMAIN_TYPES[domain.type];
+        const directoryName = `Studenți/${domain.name}_${domainType}/${student.group}/${student.fullName}`;
+
+        const jsonContent = JSON.stringify(instanceToPlain(student, { groups: ['full'] }), null, 2);
+        archive.append(jsonContent, { prefix: directoryName, name: `Date.json` });
+
+        const lastDocuments = student.paper.documents.reduce((acc, doc) => {
+        acc[doc.name] = !acc[doc.name] || acc[doc.name].id < doc.id ? doc : acc[doc.name];
+          return acc;
+        }, {} as Record<string, Document>);
+
+        Object.values(lastDocuments).forEach(document => {
+          const requiredDoc = requiredDocumentsIndex[document.name];
+          const extension = mimeTypeExtensions[document.mimeType];
+          const buffer = createReadStream(getDocumentStoragePath(`${document.id}.${extension}`));
+          archive.append(buffer, { prefix: directoryName, name: `${requiredDoc.title} - ${student.fullName}.${extension}` });
+        });
+
+        progressTracker.setProgress('student_documents', (i + 1) / studentCount);
+      }
+
+      archive.on('progress', (progress) => {
+        progressTracker.setProgress('archive', progress.entries.processed / progress.entries.total);
+      });
+
+      await archive.finalize();
+      return destination;
+    });
+  }
+
+  private _createFileGenerationObservable<N extends string>(
+    progressSections: readonly ProgressSection<N>[],
+    fn: (progressTracker: ProgressTracker<N>) => Promise<string>
+  ): Observable<FileGenerationStatus> {
+    return new Observable<FileGenerationStatus>((subscriber) => {
+      const progressTracker = new ProgressTracker<N>(subscriber, progressSections);
+      fn(progressTracker).then((filePath) => {
+        subscriber.next({ 
+          progress: 1,
+          status: 'completed',
+          filePath,
+          lastGeneratedAt: new Date(),
+        });
+        subscriber.complete();
+      }).catch(error => {
+        subscriber.error(error);
+      });
+    });
+  }
   
+}
+
+interface ProgressSection<N = string> {
+  name: N;
+  weight: number;
+}
+
+class ProgressTracker<N extends string = string> {
+
+  sectionMap: Record<N, ProgressSection<N>>;
+  perSectionProgress: Record<N, number>;
+
+  constructor(
+    private readonly subscriber: Subscriber<FileGenerationStatus>,
+    private readonly sections: readonly ProgressSection<N>[],
+  ) {
+    if(this.sections.reduce((acc, section) => acc + section.weight, 0) !== 1) {
+      throw new Error('Progress sections weights must sum up to 1');
+    }
+    this.perSectionProgress = this.sections.reduce((acc, section) => {
+      acc[section.name] = 0;
+      return acc;
+    }, {} as Record<N, number>);
+    this.sectionMap = indexArray(this.sections, section => section.name);
+    this._emitProgress();
+  }
+
+  setProgress(sectionName: N, progress: number) {
+    this.perSectionProgress[sectionName] = progress;
+    this._emitProgress();
+  }
+
+  bumpProgress(sectionName: N, deltaProgress: number) {
+    this.perSectionProgress[sectionName] += deltaProgress;
+    if(this.perSectionProgress[sectionName] > 1) {
+      this.perSectionProgress[sectionName] = 1;
+    }
+    this._emitProgress();
+  }
+
+  private _emitProgress() {
+    const totalProgress = Object.entries<number>(this.perSectionProgress).reduce((acc, [sectionName, progress]) => {
+      const section = this.sectionMap[sectionName as N];
+      if(!section) return acc;
+      return acc + (progress * section.weight);
+    }, 0);
+    this.subscriber.next({
+      status: 'in_progress',
+      progress: totalProgress,
+    });
+  }
+}
+
+interface CommitteeCatalogGenerationProps {
+  committee: Committee;
+  paperGroups: Paper[][];
+  sessionSettings: SessionSettings;
+}
+
+interface CommitteeFinalCatalogGenerationProps {
+  committee: Committee;
+  paperPromotionGroups: Paper[][][];
+  sessionSettings: SessionSettings;
+}
+
+interface CommitteeStudentAssignationGenerationProps {
+  committees: Committee[];
+  sessionSettings: SessionSettings;
 }

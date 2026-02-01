@@ -24,14 +24,14 @@ export function safePath(...args: string[]): string {
   return resultedPath;
 }
 
-export function indexArray<T, K extends string | number>(array: T[], getKey: (item: T) => K) {
+export function indexArray<T, K extends string | number>(array: readonly T[], getKey: (item: T) => K) {
   return array.reduce((acc, item) => {
     acc[getKey(item)] = item;
     return acc;
   }, {} as Record<K, T>);
 }
 
-export function groupBy<T, K extends string | number>(array: T[], getKey: (item: T) => K) {
+export function groupBy<T, K extends string | number>(array: readonly T[], getKey: (item: T) => K) {
   return array.reduce((acc, item) => {
     const key = getKey(item);
     if(!acc[key]) {

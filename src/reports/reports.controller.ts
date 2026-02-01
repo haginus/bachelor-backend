@@ -1,7 +1,8 @@
-import { Controller, Get, Param, StreamableFile } from '@nestjs/common';
+import { Controller, Get, HttpCode, MessageEvent, Param, Post, Sse, StreamableFile } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { UserTypes } from 'src/auth/decorators/user-types.decorator';
 import { UserType } from 'src/lib/enums/user-type.enum';
+import { map, Observable } from 'rxjs';
 
 @Controller('reports')
 @UserTypes([UserType.Admin, UserType.Secretary])
@@ -17,5 +18,23 @@ export class ReportsController {
   ) {
     const buffer = await this.reportsService.generateReportFile(fileName);
     return new StreamableFile(buffer);
+  }
+
+  @Sse('final-report')
+  getFinalReportStatus(): Observable<MessageEvent> {
+    return this.reportsService.getFinalReportGenerationStatus().pipe(
+      map(data => ({ data })),
+    );
+  }
+
+  @HttpCode(204)
+  @Post('final-report/generate')
+  generateFinalReport() {
+    this.reportsService.generateFinalReport();
+  }
+
+  @Get('final-report/download')
+  getFinalReport() {
+    return this.reportsService.getFinalReport();
   }
 }

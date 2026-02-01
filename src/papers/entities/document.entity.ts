@@ -3,6 +3,7 @@ import { Paper } from "./paper.entity";
 import { User } from "src/users/entities/user.entity";
 import { DocumentType } from "src/lib/enums/document-type.enum";
 import { DocumentCategory } from "src/lib/enums/document-category.enum";
+import { Exclude } from "class-transformer";
 
 @Entity()
 export class Document {
@@ -22,6 +23,7 @@ export class Document {
   @Column()
   mimeType: string;
 
+  @Exclude()
   @Column('simple-json')
   meta: Record<string, any>;
 
