@@ -4,7 +4,6 @@ import { UploadDocumentDto } from "../dto/upload-document.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import { User } from "src/users/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { StreamableFile } from '@nestjs/common';
 import { SignDocumentDto } from "../dto/sign-document.dto";
 
 @Controller('documents')
@@ -52,8 +51,7 @@ export class DocumentsController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,
   ) {
-    const fileBuffer = await this.documentsService.getDocumentContent(id, user);
-    return new StreamableFile(fileBuffer);
+    return this.documentsService.getDocumentContentStream(id, user);
   }
 
   @Delete(':id')

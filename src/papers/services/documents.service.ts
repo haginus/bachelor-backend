@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, StreamableFile } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Document } from "../entities/document.entity";
 import { IsNull, Repository, DataSource, In } from "typeorm";
@@ -14,10 +14,11 @@ import { SessionSettingsService } from "src/common/services/session-settings.ser
 import { CreateDocumentDto } from "../dto/create-document.dto";
 import { getDocumentStoragePath, indexArray } from "src/lib/utils";
 import { mimeTypeExtensions } from "src/lib/mimes";
-import { writeFile, readFile } from "fs/promises";
+import { writeFile, readFile, stat } from "fs/promises";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 import { isEqual } from "lodash";
 import { SignDocumentDto } from "../dto/sign-document.dto";
+import { createReadStream } from "fs";
 
 @Injectable()
 export class DocumentsService {
@@ -45,11 +46,21 @@ export class DocumentsService {
     return document;
   }
 
-  async getDocumentContent(id: number, user?: User): Promise<Buffer> {
+  private async _getDocumentContentPath(id: number, user?: User): Promise<string> {
     const document = await this.findOne(id, user);
     const fileExtension = mimeTypeExtensions[document.mimeType];
-    const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
+    return this._getStoragePath(`${document.id}.${fileExtension}`);
+  }
+
+  async getDocumentContent(id: number, user?: User): Promise<Buffer> {
+    const storagePath = await this._getDocumentContentPath(id, user);
     return readFile(storagePath);
+  }
+
+  async getDocumentContentStream(id: number, user?: User): Promise<StreamableFile> {
+    const storagePath = await this._getDocumentContentPath(id, user);
+    const statResult = await stat(storagePath);
+    return new StreamableFile(createReadStream(storagePath), { length: statResult.size });
   }
 
   async findUploadHistory(paperId: number, name: string): Promise<Document[]> {
