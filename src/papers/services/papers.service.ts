@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Paper } from "../entities/paper.entity";
-import { FindOptionsRelations, Repository, DataSource } from "typeorm";
+import { FindOptionsRelations, Repository, DataSource, IsNull } from "typeorm";
 import { merge } from "lodash";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
@@ -18,6 +18,7 @@ import { DocumentGenerationService } from "src/document-generation/services/docu
 import { CreatePaperDto } from "../dto/create-paper.dto";
 import { MailService } from "src/mail/mail.service";
 import { RequiredDocumentsService } from "./required-documents.service";
+import { Application } from "src/offers/entities/application.entity";
 
 @Injectable()
 export class PapersService {
@@ -208,6 +209,11 @@ export class PapersService {
     paper.requiredDocuments = await this.requiredDocumentsService.getRequiredDocumentsForPaper(paper);
     return this.dataSource.transaction(async manager => {
       const savedPaper = await manager.save(paper);
+      // Remove all pending applications
+      await manager.delete(Application, {
+        student: { id: student.id },
+        accepted: IsNull(),
+      });
       // TODO: logs
       await this.mailService.sendPaperCreatedEmail(savedPaper).catch(() => {
         // TODO: sentry log
@@ -316,7 +322,16 @@ export class PapersService {
     if(paper.teacherId !== user.id) {
       throw new ForbiddenException();
     }
-    await this.papersRepository.softRemove(paper);
+    await this.dataSource.transaction(async manager => {
+      await manager.softRemove(paper);
+      // Update application (if any) to declined so the student cannot re-apply
+      await manager.update(Application, {
+        student: { id: paper.studentId },
+        accepted: true,
+      }, {
+        accepted: false,
+      });
+    });
     await this.mailService.sendPaperRemovedEmail(paper.student, paper.teacher).catch(() => {
       // TODO: sentry log
     });

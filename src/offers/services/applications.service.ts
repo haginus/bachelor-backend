@@ -99,8 +99,10 @@ export class ApplicationsService {
     if(!await this.sessionSettingsService.canApply()) {
       throw new BadRequestException('Nu puteți trimite cereri în afara perioadei de aplicare.');
     }
+    if(student.paper) {
+      throw new BadRequestException('Nu puteți trimite cereri deoarece aveți deja o lucrare atribuită.');
+    }
     const offer = await this.offersService.findOne(dto.offerId);
-    // TODO: check if student has paper
     if(offer.domain.id !== student.specialization.domain.id) {
       throw new BadRequestException('Oferta nu vă este adresată.');
     }
@@ -157,10 +159,10 @@ export class ApplicationsService {
     paper.requiredDocuments = await this.requiredDocumentsService.getRequiredDocumentsForPaper(paper);
     await this.dataSource.transaction(async manager => {
       await manager.save(application);
-      // Remove other applications of the student
+      // Remove other pending applications of the student
       await manager.delete(Application, {
-        id: Not(application.id),
         student: { id: application.student.id },
+        accepted: IsNull(),
       });
       await manager.save(paper);
       await this.mailService.sendAcceptedApplicationEmail(application.student, application.offer.teacher, application);
