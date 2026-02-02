@@ -10,10 +10,12 @@ import { DocumentsService } from './services/documents.service';
 import { DocumentsController } from './controllers/documents.controller';
 import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
 import { Submission } from './entities/submission.entity';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
     CommonModule,
+    MailModule,
     DocumentGenerationModule,
     TypeOrmModule.forFeature([
       Paper,

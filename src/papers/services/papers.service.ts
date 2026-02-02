@@ -6,7 +6,7 @@ import { merge } from "lodash";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { PaperDto } from "../dto/paper.dto";
-import { User } from "src/users/entities/user.entity";
+import { Student, Teacher, User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { inclusiveDate } from "src/lib/utils";
@@ -15,6 +15,9 @@ import { DocumentsService } from "./documents.service";
 import { Submission } from "../entities/submission.entity";
 import { ValidatePaperDto } from "../dto/validate-paper.dto";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
+import { CreatePaperDto } from "../dto/create-paper.dto";
+import { MailService } from "src/mail/mail.service";
+import { RequiredDocumentsService } from "./required-documents.service";
 
 @Injectable()
 export class PapersService {
@@ -26,7 +29,9 @@ export class PapersService {
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
     private readonly documentGenerationService: DocumentGenerationService,
+    private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
   ) {}
 
   defaultRelations: FindOptionsRelations<Paper> = {
@@ -164,6 +169,53 @@ export class PapersService {
     return { rows, count };
   }
 
+  async create(dto: CreatePaperDto, user?: User) {
+    if(user?.type === UserType.Teacher) {
+      if(dto.teacherId !== user.id) {
+        throw new ForbiddenException();
+      }
+      const sessionSettings = await this.sessionSettingsService.getSettings();
+      if(!sessionSettings.canApply()) {
+        throw new BadRequestException('Nu se pot crea lucrări în afara perioadei de asociere.');
+      }
+    }
+    const student = await this.dataSource.getRepository(Student).findOne({
+      where: { id: dto.studentId },
+      relations: { 
+        paper: true,
+        extraData: true,
+        specialization: { domain: true },
+      },
+    });
+    if(!student) {
+      throw new BadRequestException('Studentul specificat nu există.');
+    }
+    if(student.paper) {
+      throw new BadRequestException('Studentul specificat are deja o lucrare asociată.');
+    }
+    const teacher = await this.dataSource.getRepository(Teacher).findOneByOrFail({ id: dto.teacherId }).catch(() => {
+      throw new BadRequestException('Profesorul specificat nu există.');
+    });
+    const topics = await this.topicsService.findByIds(dto.topicIds);
+    const paper = this.dataSource.getRepository(Paper).create({
+      ...dto,
+      type: student.specialization.domain.paperType,
+      topics,
+      student,
+      teacher,
+      requiredDocuments: [],
+    });
+    paper.requiredDocuments = await this.requiredDocumentsService.getRequiredDocumentsForPaper(paper);
+    return this.dataSource.transaction(async manager => {
+      const savedPaper = await manager.save(paper);
+      // TODO: logs
+      await this.mailService.sendPaperCreatedEmail(savedPaper).catch(() => {
+        // TODO: sentry log
+      });
+      return savedPaper;
+    });
+  }
+
   async update(paperId: number, dto: PaperDto, user?: User): Promise<{ result: Paper; documentsGenerated?: boolean; }> {
     const paper = await this.findOne(paperId, user);
     if(paper.isValid !== null) {
@@ -257,5 +309,16 @@ export class PapersService {
     }
     paper.isValid = null;
     return this.papersRepository.save(paper);
+  }
+
+  async delete(paperId: number, user: User): Promise<void> {
+    const paper = await this.findOne(paperId, user);
+    if(paper.teacherId !== user.id) {
+      throw new ForbiddenException();
+    }
+    await this.papersRepository.softRemove(paper);
+    await this.mailService.sendPaperRemovedEmail(paper.student, paper.teacher).catch(() => {
+      // TODO: sentry log
+    });
   }
 }

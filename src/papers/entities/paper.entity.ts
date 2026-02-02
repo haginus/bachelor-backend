@@ -1,7 +1,7 @@
 import { Topic } from "src/common/entities/topic.entity";
 import { PaperType } from "src/lib/enums/paper-type.enum";
 import { Student, Teacher } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Document } from "./document.entity";
 import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
 import { Expose, plainToInstance } from "class-transformer";
@@ -32,6 +32,7 @@ export class Paper {
   scheduledGrading: Date | null;
 
   @Column('int')
+  @Index()
   studentId: number;
 
   @Column('int', { nullable: true })
@@ -47,11 +48,13 @@ export class Paper {
   @JoinColumn({ name: 'submissionId' })
   submission: Submission | null;
 
-  @ManyToMany(() => Topic, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Topic, { onDelete: 'CASCADE' })
   @JoinTable({ name: 'paper_topics' })
   topics: Topic[];
 
-  @OneToOne(() => Student, (student) => student.paper, { onDelete: 'CASCADE' })
+  // We disable foreign key constraints here because papers can be soft-deleted, so a student
+  // with a deleted paper should still be able to have a new paper.
+  @OneToOne(() => Student, (student) => student.paper, { onDelete: 'CASCADE', createForeignKeyConstraints: false })
   @JoinColumn({ name: 'studentId' })
   student: Student;
 

@@ -7,6 +7,7 @@ import { mailContexts } from './mock';
 import { User } from 'src/users/entities/user.entity';
 import { Application } from 'src/offers/entities/application.entity';
 import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
+import { Paper } from 'src/papers/entities/paper.entity';
 
 @Injectable()
 export class MailService {
@@ -65,6 +66,26 @@ export class MailService {
       subject: 'Cerere de asociere acceptată',
       template: './application-accepted',
       context: { studentUser, teacherUser, application, url },
+    });
+  }
+
+  async sendPaperCreatedEmail(paper: Paper) {
+    const url = `${this.frontendUrl}/student/paper`;
+    return this.mailerService.sendMail({
+      to: paper.student.email,
+      subject: `Asocierea dvs. cu ${paper.teacher.firstName} ${paper.teacher.lastName}`,
+      template: './paper-created',
+      context: { paper, url },
+    });
+  }
+
+  async sendPaperRemovedEmail(student: User, teacher: User) {
+    const url = `${this.frontendUrl}/student/teachers`;
+    return this.mailerService.sendMail({
+      to: student.email,
+      subject: 'Asociere ruptă - Găsiți alt profesor',
+      template: './paper-removed',
+      context: { student, teacher, url },
     });
   }
 

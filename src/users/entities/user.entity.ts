@@ -122,6 +122,21 @@ export class Student extends User {
   @OneToOne(() => Paper, (paper) => paper.student, { nullable: true })
   paper: Paper;
 
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(paper.id)
+      FROM paper
+      WHERE paper.studentId = ${alias}.id AND paper.deletedAt IS NULL
+    `,
+    select: false,
+    transformer: {
+      to: () => null,
+      from: (value: number) => value > 0,
+    },
+    type: 'int',
+  })
+  hasPaper: boolean;
+
 }
 
 @ChildEntity(UserType.Teacher)

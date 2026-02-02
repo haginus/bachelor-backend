@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -12,6 +12,7 @@ import { DocumentGenerationService } from "src/document-generation/services/docu
 import { User } from "src/users/entities/user.entity";
 import { PaperExportQueryDto } from "../dto/paper-export-query.dto";
 import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
+import { CreatePaperDto } from "../dto/create-paper.dto";
 
 @Controller('papers')
 export class PapersController {
@@ -50,6 +51,7 @@ export class PapersController {
   }
 
   @Get(':id')
+  @UseInterceptors(PaperInterceptor())
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
@@ -64,7 +66,18 @@ export class PapersController {
     return this.papersService.findAll(query);
   }
 
+  @Post()
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
+  @UseInterceptors(PaperInterceptor())
+  async create(
+    @Body() dto: CreatePaperDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.papersService.create(dto, user);
+  }
+
   @Put(':id')
+  @UseInterceptors(PaperInterceptor((data) => data.result))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PaperDto,
@@ -73,8 +86,9 @@ export class PapersController {
     return this.papersService.update(id, dto, user);
   }
 
-  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])
   @Post(':id/submit')
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])
+  @UseInterceptors(PaperInterceptor())
   async submit(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
@@ -83,6 +97,7 @@ export class PapersController {
   }
 
   @Post(':id/unsubmit')
+  @UseInterceptors(PaperInterceptor())
   async unsubmit(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: any,
@@ -107,4 +122,14 @@ export class PapersController {
   ) {
     return this.papersService.undoValidation(id);
   }
+
+  @UserTypes([UserType.Teacher])
+  @Delete(':id')
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.papersService.delete(id, user);
+  }
+
 }

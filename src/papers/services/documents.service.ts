@@ -122,6 +122,10 @@ export class DocumentsService {
 
   async generatePaperDocuments(paperId: number): Promise<Document[]> {
     const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paperId);
+    if(!generationProps.paper || !generationProps.student.extraData) {
+      // We don't have enough data to generate documents
+      return [];
+    }
     const requiredDocuments = generationProps.paper.requiredDocuments.filter(doc => doc.types[DocumentType.Generated]);
     const existingDocuments = await this.documentsRepository.find({
       where: {

@@ -29,7 +29,7 @@ export class Offer {
   @ManyToOne(() => Domain, (domain) => domain.offers, { onDelete: 'CASCADE' })
   domain: Domain;
 
-  @ManyToMany(() => Topic, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToMany(() => Topic, { onDelete: 'CASCADE' })
   @JoinTable({ name: 'offer_topics' })
   topics: Topic[];
 

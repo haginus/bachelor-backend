@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Student, User } from "../entities/user.entity";
-import { DataSource, FindOptionsOrder, FindOptionsRelations, FindOptionsWhere, ILike, In, Repository } from "typeorm";
+import { DataSource, FindOptionsRelations, In, Repository } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { StudentFilterDto } from "../dto/student-filter.dto";
 import { StudentDto } from "../dto/student.dto";
@@ -36,36 +36,34 @@ export class StudentsService {
   };
 
   async findAll(dto: StudentFilterDto): Promise<Paginated<Student>> {
-    const where: FindOptionsWhere<Student> = {};
+    const qb = this.studentsRepository.createQueryBuilder('student')
+      .addSelect('student.hasPaper')
+      .leftJoinAndSelect('student.specialization', 'specialization')
+      .leftJoinAndSelect('specialization.domain', 'domain');
     if(dto.domainId) {
-      where.specialization = { domain: { id: dto.domainId } };
+      qb.andWhere('specialization.domainId = :domainId', { domainId: dto.domainId } );
     }
     if(dto.specializationId) {
-      where.specialization = { id: dto.specializationId };
+      qb.andWhere('student.specializationId = :specializationId', { specializationId: dto.specializationId } );
     }
     ['group', 'promotion'].forEach(field => {
       if(dto[field]) {
-        where[field] = dto[field];
+        qb.andWhere(`student.${field} = :${field}`, { [field]: dto[field] });
       }
     });
     ['lastName', 'firstName', 'email'].forEach(field => {
       if(dto[field]) {
-        where[field] = ILike(`%${dto[field]}%`);
+        qb.andWhere(`student.${field} LIKE :${field}`, { [field]: `%${dto[field]}%` });
       }
     });
-    let order: FindOptionsOrder<Student> = {};
+    const count = await qb.getCount();
     if(dto.sortBy === 'domain') {
-      order = { specialization: { domain: { name: dto.sortDirection } } };
+      qb.orderBy('domain.name', dto.sortDirection.toUpperCase() as 'ASC' | 'DESC');
     } else {
-      order[dto.sortBy] = dto.sortDirection;
+      qb.orderBy(`student.${dto.sortBy}`, dto.sortDirection.toUpperCase() as 'ASC' | 'DESC');
     }
-    const [rows, count] = await this.studentsRepository.findAndCount({
-      relations: this.defaultRelations,
-      where,
-      order,
-      take: dto.limit,
-      skip: dto.offset,
-    });
+    qb.take(dto.limit).skip(dto.offset);
+    const rows = await qb.getMany();
     return { rows, count };
   }
 
