@@ -39,6 +39,7 @@ export class PapersService {
     student: true,
     teacher: true,
     documents: true,
+    documentReuploadRequests: true,
     topics: true,
     committee: true,
     submission: true,
@@ -88,7 +89,11 @@ export class PapersService {
   async findAllByTeacher(teacherId: number): Promise<Paper[]> {
     return this.papersRepository.find({
       where: { teacher: { id: teacherId } },
-      relations: this.mergeRelations({ teacher: false, student: { specialization: true } }),
+      relations: this.mergeRelations({ 
+        teacher: false, 
+        student: { specialization: true },
+        documentReuploadRequests: false,
+      }),
     });
   }
 
@@ -102,6 +107,7 @@ export class PapersService {
     
     if(query.minified !== true) {
       qb.leftJoinAndSelect('paper.documents', 'documents')
+        .leftJoinAndSelect('paper.documentReuploadRequests', 'documentReuploadRequests')
         .leftJoinAndSelect('paper.grades', 'grades')
         .leftJoinAndSelect('grades.committeeMember', 'committeeMember')
         .leftJoinAndSelect('committeeMember.teacher', 'committeeMemberTeacher');

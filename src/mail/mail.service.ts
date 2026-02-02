@@ -8,6 +8,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Application } from 'src/offers/entities/application.entity';
 import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
 import { Paper } from 'src/papers/entities/paper.entity';
+import { DocumentReuploadRequest } from 'src/papers/entities/document-reupload-request.entity';
 
 @Injectable()
 export class MailService {
@@ -86,6 +87,16 @@ export class MailService {
       subject: 'Asociere ruptă - Găsiți alt profesor',
       template: './paper-removed',
       context: { student, teacher, url },
+    });
+  }
+
+  async sendDocumentReuploadRequestNoticeEmail(user: User, requests: DocumentReuploadRequest[]) {
+    const url = `${this.frontendUrl}/student/paper`;
+    return this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Solicitare de reîncărcare a documentelor',
+      template: './document-reupload-request-notice',
+      context: { user, requests, url },
     });
   }
 

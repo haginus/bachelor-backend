@@ -19,6 +19,7 @@ import { DocumentGenerationService } from "src/document-generation/services/docu
 import { isEqual } from "lodash";
 import { SignDocumentDto } from "../dto/sign-document.dto";
 import { createReadStream } from "fs";
+import { DocumentReuploadRequest } from "../entities/document-reupload-request.entity";
 
 @Injectable()
 export class DocumentsService {
@@ -228,6 +229,13 @@ export class DocumentsService {
     }
   }
 
+  private async _hasReuploadRequest(paperId: number, documentName: string): Promise<boolean> {
+    const requests = await this.dataSource.getRepository(DocumentReuploadRequest).find({
+      where: { paperId, documentName },
+    });
+    return requests.some(request => request.isActive());
+  }
+
   private async checkDocumentReadAccess(document: { paperId: number; category: DocumentCategory; uploadedById?: number | null; }, user?: User) {
     if(!user || user.type === UserType.Admin || user.type === UserType.Secretary || document.uploadedById === user.id) {
       return;
@@ -279,7 +287,7 @@ export class DocumentsService {
           if(user.type !== UserType.Student || paper.studentId !== user.id) {
             throw new ForbiddenException();
           }
-          if(!await this._studentCanUpload(requiredDocument.category)) {
+          if(!await this._studentCanUpload(requiredDocument.category) && !await this._hasReuploadRequest(paperId, name)) {
             throw new BadRequestException("Nu suntem în termenul în care puteți modifica acest document.");
           }
           break;

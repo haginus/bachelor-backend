@@ -9,6 +9,7 @@ import { PaperGrade } from "src/grading/entities/paper-grade.entity";
 import { Committee } from "src/grading/entities/committee.entity";
 import { Submission } from "./submission.entity";
 import { groupBy } from "src/lib/utils";
+import { DocumentReuploadRequest } from "./document-reupload-request.entity";
 
 @Entity()
 export class Paper {
@@ -68,6 +69,9 @@ export class Paper {
 
   @OneToMany(() => Document, (document) => document.paper)
   documents: Document[];
+
+  @OneToMany(() => DocumentReuploadRequest, documentReuploadRequest => documentReuploadRequest.paper)
+  documentReuploadRequests: DocumentReuploadRequest[];
 
   @OneToMany(() => PaperGrade, paperGrade => paperGrade.paper)
   grades: PaperGrade[];

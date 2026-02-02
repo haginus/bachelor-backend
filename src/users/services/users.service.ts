@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { isStudent, Student, User } from "../entities/user.entity";
-import { EntityManager, FindOptionsRelations, Repository, DataSource } from "typeorm";
+import { EntityManager, FindOptionsRelations, Repository, DataSource, In } from "typeorm";
 import { ValidateUserDto } from "../dto/validate-user.dto";
 import { TopicsService } from "src/common/services/topics.service";
 import { UserExtraData } from "../entities/user-extra-data.entity";
@@ -11,6 +11,8 @@ import { RequiredDocumentsService } from "src/papers/services/required-documents
 import { ActivationToken } from "../entities/activation-token.entity";
 import { randomBytes } from "crypto";
 import { MailService } from "src/mail/mail.service";
+import { SessionSettingsService } from "src/common/services/session-settings.service";
+import { DocumentReuploadRequest } from "src/papers/entities/document-reupload-request.entity";
 
 @Injectable()
 export class UsersService {
@@ -21,6 +23,7 @@ export class UsersService {
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
+    private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
     private readonly mailService: MailService,
   ) {}
@@ -101,6 +104,20 @@ export class UsersService {
     }
     if(user.paper?.isValid !== null) {
       throw new BadRequestException('Datele suplimentare nu pot fi modificate după validarea lucrării.');
+    }
+    if(!await this.sessionSettingsService.canUploadSecretaryFiles()) {
+      if(user.paper) {
+        // As a last resort, check if there are reupload requests for the sign_up_form and liquidation_form documents
+        const requests = await this.dataSource.getRepository(DocumentReuploadRequest).find({
+          where: { paperId: user.paper.id, documentName: In(['sign_up_form', 'liquidation_form']) },
+        });
+        const documentNamesWithActiveRequests = new Set(requests.filter(r => r.isActive()).map(r => r.documentName));
+        if(!documentNamesWithActiveRequests.has('sign_up_form') && !documentNamesWithActiveRequests.has('liquidation_form')) {
+          throw new BadRequestException('Nu se pot modifica datele suplimentare în această perioadă.');
+        }
+      } else {
+        throw new BadRequestException('Nu se pot modifica datele suplimentare în această perioadă.');
+      }
     }
     const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
     await this.userExtraDataRepository.save(extraData);
