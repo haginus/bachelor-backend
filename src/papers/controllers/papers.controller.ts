@@ -34,8 +34,8 @@ export class PapersController {
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
-  @Get('export/excel')
-  async exportExcel(
+  @Get('export/xlsx')
+  async exportXlsx(
     @Query() query: PaperExportQueryDto,
     @CurrentUser() user: User,
   ) {
