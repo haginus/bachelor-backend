@@ -25,8 +25,8 @@ export class UserHydrationInterceptor implements NestInterceptor {
     const payload = request.user as JwtPayload;
 
     request.user = await this.usersService.findOne(payload.id);
-    if(payload.impersonatedBy) {
-      request.user.isImpersonated = true;
+    if(payload._impersonatedBy) {
+      request.user._impersonatedBy = payload._impersonatedBy;
     }
     return next.handle();
   }

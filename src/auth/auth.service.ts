@@ -47,10 +47,10 @@ export class AuthService {
   }
 
   async releaseImpersonation(user: JwtPayload) {
-    if(!user.impersonatedBy) {
+    if(!user._impersonatedBy) {
       throw new UnauthorizedException();
     }
-    const impersonator = await this.usersService.findOne(user.impersonatedBy);
+    const impersonator = await this.usersService.findOne(user._impersonatedBy);
     return this.createAuthResponse(impersonator);
   }
 
@@ -87,9 +87,9 @@ export class AuthService {
   }
 
   private async createAuthResponse(user: User, impersonatedBy?: number): Promise<AuthResponse> {
-    let payload: JwtPayload = { id: user.id, email: user.email, type: user.type, impersonatedBy };
+    let payload: JwtPayload = { id: user.id, email: user.email, type: user.type, _impersonatedBy: impersonatedBy };
     if(impersonatedBy) {
-      user.isImpersonated = true;
+      user._impersonatedBy = impersonatedBy;
     }
     return {
       accessToken: this.jwtService.sign(payload),

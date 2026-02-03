@@ -72,7 +72,7 @@ export class User {
   @DeleteDateColumn()
   deletedAt!: Date | null;
 
-  isImpersonated?: boolean;
+  _impersonatedBy?: number;
 }
 
 @ChildEntity(UserType.Admin)

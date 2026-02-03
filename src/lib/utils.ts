@@ -1,3 +1,4 @@
+import { isArray, isEqual, isObject, transform } from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import { CommitteeMember } from 'src/grading/entities/committee-member.entity';
@@ -124,4 +125,12 @@ export function sortCommitteeMembers(members: CommitteeMember[]): CommitteeMembe
 
 export function getDocumentStoragePath(fileName: string): string {
   return safePath(process.cwd(), 'storage', 'documents', fileName);
+}
+
+export function deepDiff(object: Record<any, any>, base: Record<any, any>): Record<any, any> {
+  return transform(object, (result, value, key) => {
+    if(!isEqual(value, base[key])) {
+      result[key] = (isObject(value) && isObject(base[key]) && !isArray(value)) ? deepDiff(value, base[key]) : value;
+    }
+  });
 }
