@@ -8,9 +8,11 @@ import { CommitteesController } from './controllers/committees.controller';
 import { CommitteesService } from './services/committees.service';
 import { UsersModule } from 'src/users/users.module';
 import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     UsersModule,
     DocumentGenerationModule,
     TypeOrmModule.forFeature([

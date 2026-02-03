@@ -9,7 +9,7 @@ import { PaperDto } from "../dto/paper.dto";
 import { Student, Teacher, User } from "src/users/entities/user.entity";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
-import { inclusiveDate } from "src/lib/utils";
+import { deepDiff, inclusiveDate } from "src/lib/utils";
 import { TopicsService } from "src/common/services/topics.service";
 import { DocumentsService } from "./documents.service";
 import { Submission } from "../entities/submission.entity";
@@ -19,6 +19,8 @@ import { CreatePaperDto } from "../dto/create-paper.dto";
 import { MailService } from "src/mail/mail.service";
 import { RequiredDocumentsService } from "./required-documents.service";
 import { Application } from "src/offers/entities/application.entity";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class PapersService {
@@ -33,6 +35,7 @@ export class PapersService {
     private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly dataSource: DataSource,
     private readonly mailService: MailService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   defaultRelations: FindOptionsRelations<Paper> = {
@@ -220,7 +223,14 @@ export class PapersService {
         student: { id: student.id },
         accepted: IsNull(),
       });
-      // TODO: logs
+      await this.loggerService.log({ 
+        name: LogName.PaperCreated,
+        paperId: savedPaper.id,
+        meta: { 
+          payload: dto,
+          creationMode: 'manual',
+        },
+      }, { user, manager });
       await this.mailService.sendPaperCreatedEmail(savedPaper).catch(() => {
         // TODO: sentry log
       });
@@ -246,10 +256,21 @@ export class PapersService {
       }
     }
     const topics = await this.topicsService.findByIds(dto.topicIds);
-    this.papersRepository.merge(paper, { ...dto, topics });
+    const newPaper = this.papersRepository.create({ ...paper, ...dto, topics });
     return {
-      result: await this.papersRepository.save(paper),
-      documentsGenerated: (await this.documentsService.generatePaperDocuments(paper.id)).length > 0,
+      result: await this.dataSource.transaction(async manager => {
+        const updatedPaper = await manager.save(newPaper);
+        await this.loggerService.log({ 
+          name: LogName.PaperUpdated,
+          paperId: paper.id,
+          meta: {
+            payload: dto,
+            changedFields: deepDiff(dto, { ...paper, topicIds: paper.topics.map(t => t.id) }),
+          }
+        }, { user, manager });
+        return updatedPaper;
+      }),
+      documentsGenerated: (await this.documentsService.generatePaperDocuments(newPaper.id)).length > 0,
     };
   }
 
@@ -259,7 +280,11 @@ export class PapersService {
       throw new BadRequestException('Înscrierea există deja.');
     }
     paper.submission = this.submissionsRepository.create({ submittedAt: new Date() });
-    return this.papersRepository.save(paper);
+    return this.dataSource.transaction(async manager => {
+      const savedPaper = await manager.save(paper);
+      await this.loggerService.log({ name: LogName.PaperSubmitted, paperId: paper.id }, { user, manager });
+      return savedPaper;
+    });
   }
 
   async unsubmit(paperId: number, user?: User): Promise<Paper> {
@@ -267,12 +292,21 @@ export class PapersService {
     if(!paper.submission) {
       throw new BadRequestException('Înscrierea nu există.');
     }
-    paper.submission = null;
-    paper.committee = null;
-    return this.papersRepository.save(paper);
+    
+    return this.dataSource.transaction(async manager => {
+      paper.submission = null;
+      await this.loggerService.log({ name: LogName.PaperUnsubmitted, paperId: paper.id }, { user, manager });
+      if(paper.committee) {
+        await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
+        paper.committee = null;
+        paper.scheduledGrading = null;
+      }
+      const savedPaper = await manager.save(paper);
+      return savedPaper;
+    });
   }
 
-  async validate(dto: ValidatePaperDto): Promise<Paper> {
+  async validate(dto: ValidatePaperDto, user?: User): Promise<Paper> {
     const paper = await this.findOne(dto.paperId);
     if(!paper.submission) {
       throw new BadRequestException('Lucrarea nu a fost înscrisă.');
@@ -295,9 +329,17 @@ export class PapersService {
       const signUpForm = paper.documents.find(document => document.name === 'sign_up_form' && document.type === 'signed');
       return this.dataSource.transaction(async manager => {
         await manager.save(paper);
+        await this.loggerService.log({ name: LogName.PaperValidated, paperId: paper.id }, { user, manager });
         if(dto.generalAverage && dto.generalAverage !== paper.student.generalAverage) {
           paper.student.generalAverage = generalAverage;
           await manager.save(paper.student);
+          await this.loggerService.log({ 
+            name: LogName.UserUpdated,
+            userId: paper.student.id,
+            meta: {
+              changedFields: { generalAverage },
+            }
+          }, { user, manager });
         }
         if(signUpForm) {
           const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paper.id, paper.studentId, manager);
@@ -307,20 +349,29 @@ export class PapersService {
         return paper;
       });
     } else {
-      paper.isValid = false;
-      paper.committee = null;
-      paper.scheduledGrading = null;
-      return this.papersRepository.save(paper);
+      return this.dataSource.transaction(async manager => {
+        paper.isValid = false;
+        paper.scheduledGrading = null;
+        if(paper.committee) {
+          await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
+          paper.committee = null;
+        }
+        await this.loggerService.log({ name: LogName.PaperInvalidated, paperId: paper.id }, { user, manager });
+        return manager.save(paper);
+      });
     }
   }
 
-  async undoValidation(paperId: number): Promise<Paper> {
+  async undoValidation(paperId: number, user?: User): Promise<Paper> {
     const paper = await this.findOne(paperId);
     if(paper.isValid === null) {
       throw new BadRequestException('Lucrarea nu a fost validată.');
     }
     paper.isValid = null;
-    return this.papersRepository.save(paper);
+    return this.dataSource.transaction(async manager => {
+      await this.loggerService.log({ name: LogName.PaperCancelledValidation, paperId: paper.id }, { user, manager });
+      return manager.save(paper);;
+    });
   }
 
   async delete(paperId: number, user: User): Promise<void> {
@@ -329,6 +380,17 @@ export class PapersService {
       throw new ForbiddenException();
     }
     await this.dataSource.transaction(async manager => {
+      await this.loggerService.log({ name: LogName.PaperDeleted, paperId: paper.id }, { user, manager });
+      if(paper.submission) {
+        paper.submission = null;
+        await this.loggerService.log({ name: LogName.PaperUnsubmitted, paperId: paper.id }, { user, manager });
+      }
+      if(paper.committee) {
+        await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
+        paper.committee = null;
+        paper.scheduledGrading = null;
+      }
+      await manager.save(paper);
       await manager.softRemove(paper);
       // Update application (if any) to declined so the student cannot re-apply
       await manager.update(Application, {

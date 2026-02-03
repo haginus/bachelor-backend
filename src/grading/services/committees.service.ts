@@ -15,6 +15,8 @@ import { UserType } from "src/lib/enums/user-type.enum";
 import { GradePaperDto } from "../dto/grade-paper.dto";
 import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
 import { SchedulePapersDto } from "../dto/schedule-papers.dto";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class CommitteesService {
@@ -24,8 +26,9 @@ export class CommitteesService {
     @InjectRepository(CommitteeMember) private readonly committeeMembersRepository: Repository<CommitteeMember>,
     private readonly domainsService: DomainsService,
     private readonly teachersService: TeachersService,
-    private readonly dataSource: DataSource,
     private readonly documentGenerationService: DocumentGenerationService,
+    private readonly dataSource: DataSource,
+    private readonly loggerService: LoggerService,
   ) {}
 
   private readonly defaultRelations: FindOptionsRelations<Committee> = {
@@ -192,7 +195,7 @@ export class CommitteesService {
     return this.committeesRepository.save(committee);
   }
 
-  async setPapers(id: number, paperIds: number[]): Promise<Committee> {
+  async setPapers(id: number, paperIds: number[], user?: User): Promise<Committee> {
     const committee = await this._findOneMin(id);
     const domainSet = new Set(committee.domains.map(d => d.id));
     const papersSet = new Set(paperIds);
@@ -222,8 +225,18 @@ export class CommitteesService {
     const committeePapers = [...newPapers, ...movedPapers];
     await this.dataSource.transaction(async manager => {
       await manager.delete(PaperGrade, { paperId: In([...movedPapers, ...removedPapers].map(p => p.id)) });
-      await manager.update(Paper, { id: In(committeePapers.map(p => p.id)) }, { committee, scheduledGrading: null, updatedAt: new Date() });
-      await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
+      if(removedPapers.length > 0) {
+        await manager.update(Paper, { id: In(removedPapers.map(p => p.id)) }, { committee: null, scheduledGrading: null, updatedAt: new Date() });
+        for (const paper of removedPapers) {
+          await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: committee.id } }, { user, manager });
+        }
+      }
+      if(committeePapers.length > 0) {
+        await manager.update(Paper, { id: In(committeePapers.map(p => p.id)) }, { committee, scheduledGrading: null, updatedAt: new Date() });
+        for (const paper of committeePapers) {
+          await this.loggerService.log({ name: LogName.PaperAssigned, paperId: paper.id, meta: { committeeId: committee.id } }, { user, manager });
+        }
+      }
     });
     return this._findOneMin(id);
   }
@@ -279,10 +292,16 @@ export class CommitteesService {
       paper,
       committeeMember,
     });
-    await this.dataSource.manager.save(grade);
-    // @ts-ignore
-    delete grade.paper;
-    return grade;
+    return this.dataSource.manager.transaction(async manager => {
+      await this.loggerService.log({
+        name: LogName.PaperGraded,
+        paperId: paper.id,
+        meta: {
+          payload: { forPaper: dto.forPaper, forPresentation: dto.forPresentation  },
+        },
+      }, { user, manager });
+      return manager.save(grade);
+    });
   }
 
   async generateCommitteeFile(committeeId: number, fileName: string, user?: User): Promise<Buffer> {

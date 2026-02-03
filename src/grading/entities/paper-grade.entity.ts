@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
 import { CommitteeMember } from "./committee-member.entity";
 import { Paper } from "src/papers/entities/paper.entity";
+import { Exclude } from "class-transformer";
 
 @Entity()
 export class PaperGrade {
@@ -23,6 +24,7 @@ export class PaperGrade {
   @ManyToOne(() => CommitteeMember, member => member.paperGrades, { onDelete: 'CASCADE' })
   committeeMember: CommitteeMember;
 
+  @Exclude()
   @ManyToOne(() => Paper, paper => paper.grades, { onDelete: 'CASCADE' })
   paper: Paper;
 }

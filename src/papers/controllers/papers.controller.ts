@@ -110,17 +110,19 @@ export class PapersController {
   async validate(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ValidatePaperDto,
+    @CurrentUser() user: any,
   ) {
     dto.paperId = id;
-    return this.papersService.validate(dto);
+    return this.papersService.validate(dto, user);
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary])
   @Post(':id/undo-validation')
   async undoValidation(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
   ) {
-    return this.papersService.undoValidation(id);
+    return this.papersService.undoValidation(id, user);
   }
 
   @UserTypes([UserType.Teacher])

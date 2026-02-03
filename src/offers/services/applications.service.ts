@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Application } from "../entities/application.entity";
-import { FindOptionsRelations, FindOptionsWhere, IsNull, Not, Repository, DataSource } from "typeorm";
+import { FindOptionsRelations, FindOptionsWhere, IsNull, Repository, DataSource } from "typeorm";
 import { ApplicationQueryDto } from "../dto/application-query.dto";
 import { merge } from "lodash";
 import { Student, User } from "src/users/entities/user.entity";
@@ -11,8 +11,9 @@ import { SessionSettingsService } from "src/common/services/session-settings.ser
 import { OffersService } from "./offers.service";
 import { MailService } from "src/mail/mail.service";
 import { Paper } from "src/papers/entities/paper.entity";
-import { plainToInstance } from "class-transformer";
 import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class ApplicationsService {
@@ -24,6 +25,7 @@ export class ApplicationsService {
     private readonly offersService: OffersService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly mailService: MailService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   defaultRelations: FindOptionsRelations<Application> = {
@@ -145,12 +147,16 @@ export class ApplicationsService {
       throw new BadRequestException('Limita ofertei a fost deja atinsă. Creșteți limita și reîncercați.');
     }
     application.accepted = true;
-    const paper = this.dataSource.getRepository(Paper).create({
+    const paperPayload = {
       title: application.title,
       description: application.description,
       type: application.offer.domain.paperType,
       studentId: application.student.id,
       teacherId: application.offer.teacher.id,
+      topicIds: application.offer.topics.map(t => t.id),
+    };
+    const paper = this.dataSource.getRepository(Paper).create({
+      ...paperPayload,
       topics: application.offer.topics,
       student: application.student,
       teacher: application.offer.teacher,
@@ -164,6 +170,15 @@ export class ApplicationsService {
         student: { id: application.student.id },
         accepted: IsNull(),
       });
+      await this.loggerService.log({
+        name: LogName.PaperCreated,
+        paperId: paper.id,
+        meta: {
+          creationMode: 'applicationAccepted',
+          applicationId: id,
+          payload: paperPayload,
+        }
+      }, { user, manager });
       await manager.save(paper);
       await this.mailService.sendAcceptedApplicationEmail(application.student, application.offer.teacher, application);
     });

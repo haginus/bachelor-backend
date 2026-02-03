@@ -64,9 +64,10 @@ export class CommitteesController {
   @Put(':id/papers')
   async setPapers(
     @Param('id', ParseIntPipe) id: number,
-    @Body('paperIds', new ParseArrayPipe({ items: Number })) paperIds: number[]
+    @Body('paperIds', new ParseArrayPipe({ items: Number })) paperIds: number[],
+    @CurrentUser() user: User,
   ) {
-    return this.committeesService.setPapers(id, paperIds);
+    return this.committeesService.setPapers(id, paperIds, user);
   }
 
   @Patch(':committeeId/schedule-papers')
