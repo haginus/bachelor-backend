@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Param, Post } from "@nestjs/common";
 import { DocumentReuploadRequestsService } from "../services/document-reupload-requests.service";
 import { DocumentReuploadRequestBulkCreateDto } from "../dto/reupload-request-bulk-create.dto";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { User } from "src/users/entities/user.entity";
 
 @Controller('document-reupload-requests')
 export class DocumentReuploadRequestsController {
@@ -10,12 +12,18 @@ export class DocumentReuploadRequestsController {
   ) {}
 
   @Post()
-  async bulkCreate(@Body() dto: DocumentReuploadRequestBulkCreateDto) {
-    return this.documentReuploadRequestsService.bulkCreate(dto);
+  async bulkCreate(
+    @Body() dto: DocumentReuploadRequestBulkCreateDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.documentReuploadRequestsService.bulkCreate(dto, user);
   }
 
   @Delete(':id')
-  async cancel(@Param('id') id: number) {
-    return this.documentReuploadRequestsService.cancel(id);
+  async cancel(
+    @Param('id') id: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.documentReuploadRequestsService.cancel(id, user);
   }
 }

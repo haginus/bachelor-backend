@@ -20,6 +20,8 @@ import { isEqual } from "lodash";
 import { SignDocumentDto } from "../dto/sign-document.dto";
 import { createReadStream } from "fs";
 import { DocumentReuploadRequest } from "../entities/document-reupload-request.entity";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class DocumentsService {
@@ -30,6 +32,7 @@ export class DocumentsService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
     private readonly documentGenerationService: DocumentGenerationService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   async findOne(id: number, user?: User): Promise<Document> {
@@ -155,7 +158,7 @@ export class DocumentsService {
         });
         for(const document of documentsToRemove) {
           await queryRunner.manager.softRemove(document);
-          // TODO: Log document deletion
+          await this.loggerService.log({ name: LogName.DocumentDeleted, documentId: document.id, paperId }, { manager: queryRunner.manager });
         }
         const fileContent = await this.documentGenerationService.generatePaperDocument(requiredDocument.name, generationProps);
         const newDocument = this.documentsRepository.create({
@@ -170,6 +173,7 @@ export class DocumentsService {
           },
         });
         await queryRunner.manager.save(newDocument);
+        await this.loggerService.log({ name: LogName.DocumentCreated, documentId: newDocument.id, paperId }, { manager: queryRunner.manager });
         const storagePath = this._getStoragePath(`${newDocument.id}.pdf`);
         await writeFile(storagePath, fileContent);
         generatedDocuments.push(newDocument);
@@ -189,9 +193,16 @@ export class DocumentsService {
     const fileExtension = mimeTypeExtensions[dto.mimeType];
     await this.dataSource.transaction(async manager => {
       if(isReupload) {
-        await manager.softDelete(Document, { paperId: dto.paperId, name: dto.name, type: dto.type, deletedAt: IsNull() });
+        const documentsToRemove = await manager.find(Document, { 
+          where: { paperId: dto.paperId, name: dto.name, type: dto.type } 
+        });
+        for(const document of documentsToRemove) {
+          await manager.softRemove(document);
+          await this.loggerService.log({ name: LogName.DocumentDeleted, documentId: document.id, paperId: dto.paperId }, { user, manager });
+        }
       }
       await manager.save(document);
+      await this.loggerService.log({ name: LogName.DocumentCreated, documentId: document.id, paperId: dto.paperId }, { user, manager });
       const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
       await writeFile(storagePath, fileContent);
     });
@@ -201,8 +212,11 @@ export class DocumentsService {
   async updateDocumentContent(document: Document, newContent: Buffer): Promise<Document> {
     const fileExtension = mimeTypeExtensions[document.mimeType];
     const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
-    await writeFile(storagePath, newContent);
-    return document;
+    return this.dataSource.transaction(async manager => {
+      await writeFile(storagePath, newContent);
+      await this.loggerService.log({ name: LogName.DocumentContentUpdated, documentId: document.id, paperId: document.paperId }, { manager });
+      return document;
+    });
   }
 
   private async _userIsInCommittee(committeeId: number, userId: number): Promise<boolean> {
@@ -339,7 +353,10 @@ export class DocumentsService {
   async delete(id: number, user: User): Promise<void> {
     const document = await this.findOne(id, user);
     await this.checkDocumentWriteAccess({ ...document, isDelete: true }, user);
-    await this.documentsRepository.softRemove(document);
+    await this.dataSource.transaction(async manager => {
+      await manager.softRemove(document);
+      await this.loggerService.log({ name: LogName.DocumentDeleted, documentId: document.id, paperId: document.paperId }, { user, manager });
+    });
   }
 
   private _getStoragePath(fileName: string): string {
