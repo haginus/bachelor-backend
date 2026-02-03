@@ -1,0 +1,35 @@
+import { Body, Controller, Delete, Get, Param, Post, Put, SerializeOptions } from "@nestjs/common";
+import { UserType } from "src/lib/enums/user-type.enum";
+import { UserTypes } from "src/auth/decorators/user-types.decorator";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { User } from "../entities/user.entity";
+import { AdminsService } from "../services/admins.service";
+import { AdminDto } from "../dto/admin.dto";
+
+@Controller('admins')
+@UserTypes([UserType.Admin])
+@SerializeOptions({ groups: ['full'] })
+export class AdminsController {
+
+  constructor(private readonly adminsService: AdminsService) {}
+
+  @Get()
+  async findAll() {
+    return this.adminsService.findAll();
+  }
+
+  @Post()
+  async create(@Body() dto: AdminDto, @CurrentUser() user: User) {
+    return this.adminsService.create(dto, user);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() dto: AdminDto, @CurrentUser() user: User) {
+    return this.adminsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: number, @CurrentUser() user: User) {
+    return this.adminsService.remove(id, user);
+  }
+}

@@ -25,6 +25,8 @@ import { SignUpRequest } from './entities/sign-up-request.entity';
 import { SignUpRequestsController } from './controllers/sign-up-requests.controller';
 import { SignUpRequestsService } from './services/sign-up-requests.service';
 import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
+import { AdminsController } from './controllers/admins.controller';
+import { AdminsService } from './services/admins.service';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { DocumentGenerationModule } from 'src/document-generation/document-gener
     UsersController,
     StudentsController,
     TeachersController,
+    AdminsController,
   ],
   providers: [
     DomainsService,
@@ -62,6 +65,7 @@ import { DocumentGenerationModule } from 'src/document-generation/document-gener
     UsersService,
     StudentsService,
     TeachersService,
+    AdminsService,
     SignUpRequestsService,
   ],
   exports: [
