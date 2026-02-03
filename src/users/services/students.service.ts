@@ -14,6 +14,8 @@ import { CsvParserService } from "src/csv/csv-parser.service";
 import { StudentCsvDto } from "../dto/student-csv.dto";
 import { UserType } from "src/lib/enums/user-type.enum";
 import { indexArray } from "src/lib/utils";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class StudentsService {
@@ -27,6 +29,7 @@ export class StudentsService {
     private readonly documentsService: DocumentsService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly csvParserService: CsvParserService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<Student> = {
@@ -84,34 +87,36 @@ export class StudentsService {
     }
   }
 
-  async create(dto: StudentDto): Promise<Student> {
+  async create(dto: StudentDto, requestUser?: User): Promise<Student> {
     await this.usersService.checkEmailExists(dto.email);
     const relations = await this.getRelations(dto);
     const student = this.studentsRepository.create({ ...dto, ...relations });
-    return this._create(student);
+    return this._create(student, requestUser);
   }
 
-  private async _create(student: Student): Promise<Student> {
+  private async _create(student: Student, requestUser?: User): Promise<Student> {
     return this.dataSource.transaction(async manager => {
       const result = await manager.save(student);
+      await this.loggerService.log({ name: LogName.UserCreated, userId: result.id, meta: { payload: student } }, { user: requestUser, manager });
       await this.usersService.sendActivationEmail(result, manager);
       return result;
     });
   }
 
-  async update(id: number, dto: StudentDto): Promise<{ result: Student; documentsGenerated: boolean; }> {
+  async update(id: number, dto: StudentDto, requestUser?: User): Promise<{ result: Student; documentsGenerated: boolean; }> {
     await this.usersService.checkEmailExists(dto.email, id);
     const student = await this.findOne(id);
     const relations = await this.getRelations(dto);
     const updatedStudent = this.studentsRepository.merge(student, dto, relations);
-    return this._update(updatedStudent);
+    return this._update(updatedStudent, requestUser);
   }
 
-  private async _update(student: Student): Promise<{ result: Student; documentsGenerated: boolean; }> {
+  private async _update(student: Student, requestUser?: User): Promise<{ result: Student; documentsGenerated: boolean; }> {
     if(student.paper && student.paper.isValid !== null) {
       throw new BadRequestException('Studentul nu poate fi modificat după validarea lucrării acestuia.');
     }
     const result = await this.studentsRepository.save(student);
+    await this.loggerService.log({ name: LogName.UserUpdated, userId: result.id, meta: { payload: student } }, { user: requestUser });
     let documentsGenerated = false;
     if(result.paper) {
       await this.requiredDocumentsService.updateRequiredDocumentsForPaper(result.paper.id);
@@ -120,12 +125,15 @@ export class StudentsService {
     return { result, documentsGenerated };
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, requestUser?: User): Promise<void> {
     const student = await this.findOne(id);
-    await this.studentsRepository.softRemove(student);
+    await this.dataSource.transaction(async manager => {
+      await manager.softRemove(student);
+      await this.loggerService.log({ name: LogName.UserDeleted, userId: student.id }, { user: requestUser, manager });
+    });
   }
 
-  async import(file: Buffer, specializationId: number): Promise<ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }>> {
+  async import(file: Buffer, specializationId: number, requestUser?: User): Promise<ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }>> {
     const specialization = await this.specializationsService.findOne(specializationId);
     const parsedDtos = await this.csvParserService.parse(file, {
       headers: [
@@ -171,8 +179,8 @@ export class StudentsService {
         }
         const studentEntity = this.studentsRepository.create({ ...existingUser, ...studentDto, specialization });
         const data = existingUser
-          ? await this._update(studentEntity)
-          : await this._create(studentEntity);
+          ? await this._update(studentEntity, requestUser)
+          : await this._create(studentEntity, requestUser);
         if(!existingUser) {
           bulkResult.summary.created++;
         } else {

@@ -5,6 +5,8 @@ import { TeachersService } from "../services/teachers.service";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
 import { UserDto } from "../dto/user.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { User } from "../entities/user.entity";
 
 @Controller('teachers')
 @UserTypes([UserType.Admin])
@@ -19,23 +21,29 @@ export class TeachersController {
   }
 
   @Post()
-  async create(@Body() dto: UserDto) {
-    return this.teachersService.create(dto);
+  async create(
+    @Body() dto: UserDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.teachersService.create(dto, user);
   }
 
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
-  async import(@UploadedFile() file: Express.Multer.File) {
-    return this.teachersService.import(file.buffer);
+  async import(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    return this.teachersService.import(file.buffer, user);
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() dto: UserDto) {
-    return this.teachersService.update(id, dto);
+  async update(@Param('id') id: number, @Body() dto: UserDto, @CurrentUser() user: User) {
+    return this.teachersService.update(id, dto, user);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number) {
-    return this.teachersService.remove(id);
+  async remove(@Param('id') id: number, @CurrentUser() user: User) {
+    return this.teachersService.remove(id, user);
   }
 }

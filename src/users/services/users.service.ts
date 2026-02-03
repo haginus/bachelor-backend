@@ -13,6 +13,10 @@ import { randomBytes } from "crypto";
 import { MailService } from "src/mail/mail.service";
 import { SessionSettingsService } from "src/common/services/session-settings.service";
 import { DocumentReuploadRequest } from "src/papers/entities/document-reupload-request.entity";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
+import { deepDiff } from "src/lib/utils";
+import { instanceToPlain } from "class-transformer";
 
 @Injectable()
 export class UsersService {
@@ -26,6 +30,7 @@ export class UsersService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly dataSource: DataSource,
     private readonly mailService: MailService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   private defaultRelations: FindOptionsRelations<User & Student> = {
@@ -89,7 +94,10 @@ export class UsersService {
         throw new BadRequestException('Precizați cel puțin o temă.');
       }
     }
-    return this.usersRepository.save(user);
+    return this.dataSource.transaction(async manager => {
+      await this.loggerService.log({ name: LogName.UserValidated, userId: user.id }, { user, manager });
+      return this.usersRepository.save(user);
+    });
   }
 
   async findExtraDataByUserId(userId: number): Promise<UserExtraData | null> {
@@ -119,8 +127,22 @@ export class UsersService {
         throw new BadRequestException('Nu se pot modifica datele suplimentare în această perioadă.');
       }
     }
+    const existingExtraData = await this.findExtraDataByUserId(userId);
     const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
-    await this.userExtraDataRepository.save(extraData);
+    await this.dataSource.transaction(async manager => {
+      await this.userExtraDataRepository.save(extraData);
+      await this.loggerService.log(
+        { 
+          name: existingExtraData ? LogName.UserExtraDataUpdated : LogName.UserExtraDataCreated,
+          userId: user.id, 
+          meta: { 
+            payload: dto,
+            changedFields: existingExtraData ? deepDiff(instanceToPlain(existingExtraData), instanceToPlain(extraData)) : null,
+          }
+        },
+        { user, manager }
+      );
+    });
     let documentsGenerated = false;
     if(user.paper) {
       await this.requiredDocumentsService.updateRequiredDocumentsForPaper(user.paper.id);

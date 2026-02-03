@@ -42,8 +42,11 @@ export class StudentsController {
   }
 
   @Post()
-  async create(@Body() dto: StudentDto) {
-    return this.studentsService.create(dto);
+  async create(
+    @Body() dto: StudentDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.studentsService.create(dto, user);
   }
 
   @Post('import')
@@ -51,17 +54,25 @@ export class StudentsController {
   async import(
     @UploadedFile() file: Express.Multer.File,
     @Body('specializationId', ParseIntPipe) specializationId: number,
+    @CurrentUser() user: User,
   ) {
-    return this.studentsService.import(file.buffer, specializationId);
+    return this.studentsService.import(file.buffer, specializationId, user);
   }
 
   @Put(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: StudentDto) {
-    return this.studentsService.update(id, dto);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: StudentDto,
+    @CurrentUser() user: User
+  ) {
+    return this.studentsService.update(id, dto, user);
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.studentsService.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User
+  ) {
+    return this.studentsService.remove(id, user);
   }
 }

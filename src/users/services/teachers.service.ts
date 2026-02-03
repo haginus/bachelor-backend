@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Teacher } from "../entities/user.entity";
+import { Teacher, User } from "../entities/user.entity";
 import { In, Repository, DataSource } from "typeorm";
 import { Paginated } from "src/lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
@@ -8,6 +8,8 @@ import { UserDto } from "../dto/user.dto";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
 import { CsvParserService } from "src/csv/csv-parser.service";
 import { ImportResult } from "src/lib/interfaces/import-result.interface";
+import { LoggerService } from "src/common/services/logger.service";
+import { LogName } from "src/lib/enums/log-name.enum";
 
 @Injectable()
 export class TeachersService {
@@ -17,6 +19,7 @@ export class TeachersService {
     private readonly usersService: UsersService,
     private readonly dataSource: DataSource,
     private readonly csvParserService: CsvParserService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   private getQueryBuilder(detailed = false) {
@@ -79,29 +82,37 @@ export class TeachersService {
     return teacher;
   }
 
-  async create(dto: UserDto): Promise<Teacher> {
+  async create(dto: UserDto, requestUser?: User): Promise<Teacher> {
     await this.usersService.checkEmailExists(dto.email);
     const teacher = this.teachersRepository.create(dto);
     return this.dataSource.transaction(async manager => {
       const result = await manager.save(teacher);
+      await this.loggerService.log({ name: LogName.UserCreated, userId: result.id, meta: { payload: dto } }, { user: requestUser, manager });
       await this.usersService.sendActivationEmail(result, manager);
       return result;
     });
   }
 
-  async update(id: number, dto: UserDto): Promise<Teacher> {
+  async update(id: number, dto: UserDto, requestUser?: User): Promise<Teacher> {
     await this.usersService.checkEmailExists(dto.email, id);
     const teacher = await this.findOne(id);
     const updatedTeacher = this.teachersRepository.merge(teacher, dto);
-    return this.teachersRepository.save(updatedTeacher);
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(updatedTeacher);
+      await this.loggerService.log({ name: LogName.UserUpdated, userId: result.id, meta: { payload: dto } }, { user: requestUser, manager });
+      return result;
+    });
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, requestUser?: User): Promise<void> {
     const teacher = await this.findOne(id);
-    await this.teachersRepository.softRemove(teacher);
+    await this.dataSource.transaction(async manager => {
+      await manager.softRemove(teacher);
+      await this.loggerService.log({ name: LogName.UserDeleted, userId: teacher.id }, { user: requestUser, manager });
+    });
   }
 
-  async import(file: Buffer): Promise<ImportResult<UserDto, Teacher>> {
+  async import(file: Buffer, requestUser?: User): Promise<ImportResult<UserDto, Teacher>> {
     const dtos = await this.csvParserService.parse(file, {
       headers: [
         ['TITLU', 'title'],
@@ -112,7 +123,7 @@ export class TeachersService {
       ],
       dto: UserDto,
     });
-    const promises = dtos.map(dto => this.create(dto));
+    const promises = dtos.map(dto => this.create(dto, requestUser));
     const results = await Promise.allSettled(promises);
     const bulkResult: ImportResult<UserDto, Teacher> = {
       summary: {
