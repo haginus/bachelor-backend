@@ -9,16 +9,19 @@ import { Application } from 'src/offers/entities/application.entity';
 import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
 import { Paper } from 'src/papers/entities/paper.entity';
 import { DocumentReuploadRequest } from 'src/papers/entities/document-reupload-request.entity';
+import { FeedbackDto } from 'src/feedback/feedback.dto';
 
 @Injectable()
 export class MailService {
   constructor(private mailerService: MailerService, private configService: ConfigService) {
     this.frontendUrl = this.configService.get<string>('FRONTEND_URL')!;
     this.secretaryEmail = this.configService.get<string>('SECRETARY_EMAIL')!;
+    this.sysadminEmail = this.configService.get<string>('SYSADMIN_EMAIL')!;
   }
 
   private readonly frontendUrl: string;
   private readonly secretaryEmail: string;
+  private readonly sysadminEmail: string;
 
   async sendWelcomeEmail(user: User, token: string) {
     return this.mailerService.sendMail({
@@ -26,6 +29,17 @@ export class MailService {
       subject: 'Activați contul dvs.',
       template: './welcome',
       context: { user, token },
+    });
+  }
+  
+  async sendFeedbackEmail(report: FeedbackDto) {
+    return this.mailerService.sendMail({
+      to: this.sysadminEmail,
+      cc: report.replyToEmail,
+      replyTo: report.replyToEmail,
+      subject: `[${report.type.toUpperCase()}] Tichet nou de la ${report.user.firstName} ${report.user.lastName}`,
+      template: './feedback',
+      context: { report },
     });
   }
 

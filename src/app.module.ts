@@ -21,6 +21,7 @@ import { CsvModule } from './csv/csv.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { GoogleRecaptchaModule, GoogleRecaptchaNetwork } from '@nestlab/google-recaptcha';
 import { ReportsModule } from './reports/reports.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ReportsModule } from './reports/reports.module';
     }),
     CommonModule,
     MailModule,
+    FeedbackModule,
     UsersModule,
     AuthModule,
     OffersModule,
