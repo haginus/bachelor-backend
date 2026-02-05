@@ -22,7 +22,7 @@ export class Log {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   timestamp: Date;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'json', nullable: true })
   meta: Record<string, any> | null;
 
   @Column('int', { nullable: true })
