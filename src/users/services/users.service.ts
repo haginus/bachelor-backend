@@ -134,7 +134,8 @@ export class UsersService {
       await this.loggerService.log(
         { 
           name: existingExtraData ? LogName.UserExtraDataUpdated : LogName.UserExtraDataCreated,
-          userId: user.id, 
+          userId: user.id,
+          userExtraDataId: user.id,
           meta: { 
             payload: dto,
             changedFields: existingExtraData ? deepDiff(instanceToPlain(existingExtraData), instanceToPlain(extraData)) : null,
