@@ -16,16 +16,12 @@ export class LogsService {
     const [rows, count] = await this.logsRepository.findAndCount({
       order: { id: "DESC" },
       relations: {
-        byUser: true,
-        impersonatedByUser: true,
-        user: true,
-        userExtraData: true,
         paper: { student: true, teacher: true },
-        document: true,
-        documentReuploadRequest: true,
       },
       where: this.buildWhereClause(query),
       withDeleted: true,
+      take: query.limit,
+      skip: query.offset,
     });
     return { rows, count };
   }

@@ -46,31 +46,31 @@ export class Log {
   @Column('int', { nullable: true })
   documentReuploadRequestId: number | null;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, eager: true })
   @JoinColumn({ name: 'byUserId' })
   byUser: User | null;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, eager: true })
   @JoinColumn({ name: 'impersonatedByUserId' })
   impersonatedByUser: User | null;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, eager: true })
   @JoinColumn({ name: 'userId' })
   user: User | null;
 
-  @ManyToOne(() => UserExtraData, { nullable: true })
+  @ManyToOne(() => UserExtraData, { nullable: true, eager: true })
   @JoinColumn({ name: 'userExtraDataId' })
   userExtraData: UserExtraData | null;
 
-  @ManyToOne(() => Paper, { nullable: true })
+  @ManyToOne(() => Paper, { nullable: true, eager: true })
   @JoinColumn({ name: 'paperId' })
   paper: Paper | null;
 
-  @ManyToOne(() => Document, { nullable: true })
+  @ManyToOne(() => Document, { nullable: true, eager: true })
   @JoinColumn({ name: 'documentId' })
   document: Document | null;
 
-  @ManyToOne(() => DocumentReuploadRequest, { nullable: true })
+  @ManyToOne(() => DocumentReuploadRequest, { nullable: true, eager: true })
   @JoinColumn({ name: 'documentReuploadRequestId' })
   documentReuploadRequest: DocumentReuploadRequest | null;
 
