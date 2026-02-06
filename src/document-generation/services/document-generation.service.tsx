@@ -33,6 +33,9 @@ import { tmpdir } from "os";
 import { SessionSettings } from "src/common/entities/session-settings.entity";
 import { Student } from "src/users/entities/user.entity";
 import { instanceToPlain } from "class-transformer";
+import { render } from "@react-email/render";
+import { StudentList } from "../templates-html/student-list";
+import { Log } from "src/common/entities/log.entity";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -601,7 +604,8 @@ export class DocumentGenerationService {
 
       archive.pipe(output);
 
-      // TODO: Logs 
+      const logs = await this.dataSource.getRepository(Log).find();
+      archive.append(JSON.stringify(logs, (k, v) => (v === null ? undefined : v), 2), { name: 'Loguri.json' });
       progressTracker.setProgress('logs', 1);
 
       // Catalogs
@@ -633,6 +637,7 @@ export class DocumentGenerationService {
           extraData: true,
           profile: false,
           paper: {
+            teacher: { profile: false },
             documents: true,
             committee: true,
             grades: {
@@ -646,9 +651,25 @@ export class DocumentGenerationService {
           paper: { committeeId: Not(IsNull()) },
         }
       });
+      sortArray(students, [
+        student => student.specialization.domain.name,
+        student => student.specialization.name,
+        student => student.group,
+        student => student.lastName,
+        student => student.extraData?.parentInitial || '',
+        student => student.firstName,
+      ]);
+      const studentsByDomain = groupBy(students, student => student.specialization.domain.id);
       progressTracker.setProgress('student_list', 0.5);
-
-      // TODO: Student list
+      const domainCount = Object.keys(studentsByDomain).length;
+      for(const domainId in studentsByDomain) {
+        const students = studentsByDomain[domainId];
+        const domain = students[0].specialization.domain;
+        const studentList = await render(<StudentList domain={domain} students={students} />);
+        const directoryName = `Studenți/${domain.name}_${DOMAIN_TYPES[domain.type]}`;
+        archive.append(studentList, { name: `Listă studenți.html`, prefix: directoryName });
+        progressTracker.bumpProgress('student_list', 0.5 / domainCount);
+      }
       progressTracker.setProgress('student_list', 1);
       
       // Student documents
@@ -657,8 +678,7 @@ export class DocumentGenerationService {
       for(let i = 0; i < studentCount; i++) {
         const student = students[i];
         const domain = student.specialization.domain;
-        const domainType = DOMAIN_TYPES[domain.type];
-        const directoryName = `Studenți/${domain.name}_${domainType}/${student.group}/${student.fullName}`;
+        const directoryName = `Studenți/${domain.name}_${DOMAIN_TYPES[domain.type]}/${student.group}_${student.fullName}`;
 
         const jsonContent = JSON.stringify(instanceToPlain(student, { groups: ['full'] }), null, 2);
         archive.append(jsonContent, { prefix: directoryName, name: `Date.json` });
