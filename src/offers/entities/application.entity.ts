@@ -26,7 +26,7 @@ export class Application {
   @ManyToOne(() => Offer, (offer) => offer.applications, { onDelete: 'CASCADE' })
   offer: Offer;
 
-  @ManyToOne(() => Student, (student) => student.applications)
+  @ManyToOne(() => Student, (student) => student.applications, { onDelete: 'CASCADE' })
   student: Student;
 
   @CreateDateColumn()

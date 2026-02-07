@@ -16,7 +16,7 @@ export class ActivationToken {
   @Column({ default: false })
   used: boolean;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
   @CreateDateColumn()
