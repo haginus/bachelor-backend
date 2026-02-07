@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { SessionSettings } from "../entities/session-settings.entity";
 import { DataSource, Repository } from "typeorm";
-import { stripTime } from "src/lib/utils";
+import { getDocumentStoragePath, stripTime } from "src/lib/utils";
 import { SessionSettingsDto } from "../dto/session-settings.dto";
 import { Log } from "../entities/log.entity";
 import { DocumentReuploadRequest } from "src/papers/entities/document-reupload-request.entity";
@@ -13,6 +13,9 @@ import { Document } from "src/papers/entities/document.entity";
 import { Student } from "src/users/entities/user.entity";
 import { PaperGrade } from "src/grading/entities/paper-grade.entity";
 import { UserExtraData } from "src/users/entities/user-extra-data.entity";
+import { Paper } from "src/papers/entities/paper.entity";
+import { Submission } from "src/papers/entities/submission.entity";
+import { rm } from "fs/promises";
 
 @Injectable()
 export class SessionSettingsService {
@@ -22,9 +25,7 @@ export class SessionSettingsService {
   constructor(
     @InjectRepository(SessionSettings) private readonly sessionSettingsRepository: Repository<SessionSettings>,
     private readonly dataSource: DataSource,
-  ) {
-    this.beginNewSession().then(() => console.log('Sesiune nouă începută cu succes!'))
-  }
+  ) {}
 
   async getSettings(): Promise<SessionSettings> {
     if (this.settingsCache) {
@@ -83,8 +84,11 @@ export class SessionSettingsService {
       for(const student of students) {
         if(student.paper.gradeAverage! >= 6) {
           await queryRunner.manager.remove(student);
+          await queryRunner.manager.remove(student.paper);
         }
       }
+      await queryRunner.manager.updateAll(Paper, { isValid: null, submission: null });
+      await queryRunner.manager.deleteAll(Submission);
       await queryRunner.manager.deleteAll(UserExtraData);
       await queryRunner.manager.deleteAll(Application);
       await queryRunner.manager.deleteAll(Offer);
@@ -93,6 +97,7 @@ export class SessionSettingsService {
       await queryRunner.manager.deleteAll(PaperGrade);
       await queryRunner.manager.deleteAll(Committee);
       const sessionSettings = await queryRunner.manager.save(this.getDefaultSettings());
+      await rm(getDocumentStoragePath(''), { recursive: true, force: true });
       await queryRunner.commitTransaction();
       return sessionSettings;
     } catch (err) {
