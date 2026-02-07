@@ -37,6 +37,19 @@ export class AuthService {
     return this.createAuthResponse(user);
   }
 
+  async findAlternativeIdentities(userId: number, email: string): Promise<User[]> {
+    const users = await this.usersService.findAllByEmail(email);
+    return users.filter(u => u.id !== userId);
+  }
+
+  async switch(userId: number, currentUser: JwtPayload) {
+    const user = await this.usersService.findOne(userId);
+    if(currentUser.email !== user.email) {
+      throw new UnauthorizedException('Nu aveți permisiunea de a comuta la acest cont.');
+    }
+    return this.createAuthResponse(user, currentUser._impersonatedBy);
+  }
+
   async validateSudoPassword(sudoPassword: string, user: JwtPayload): Promise<boolean> {
     return this.validateUser(user.email, sudoPassword).then(() => true).catch(() => false);
   }
@@ -91,10 +104,12 @@ export class AuthService {
     if(impersonatedBy) {
       user._impersonatedBy = impersonatedBy;
     }
+    const alternativeIdentities = await this.findAlternativeIdentities(user.id, user.email);
     return {
       accessToken: this.jwtService.sign(payload),
       refreshToken: '',
       user: instanceToPlain(user, { groups: ['full'] }) as User,
+      alternativeIdentities: instanceToPlain(alternativeIdentities, { groups: ['full'] }) as User[],
     };
   }
 }

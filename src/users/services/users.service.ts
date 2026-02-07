@@ -55,11 +55,15 @@ export class UsersService {
   }
 
   async findOneByEmailNullable(email: string): Promise<User | null> {
-    const user = await this.usersRepository.findOne({ 
+    const users = await this.findAllByEmail(email);
+    return users.find(u => u.password !== null) || users[0] || null;
+  }
+
+  async findAllByEmail(email: string): Promise<User[]> {
+    return this.usersRepository.find({ 
       where: { email },
       relations: this.defaultRelations
     });
-    return user;
   }
 
   async checkEmailExists(email: string, userId?: number): Promise<void> {

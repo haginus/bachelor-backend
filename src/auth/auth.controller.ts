@@ -47,6 +47,20 @@ export class AuthController {
     return user;
   }
 
+  @Get("alternative-identities")
+  @SerializeOptions({ groups: ['full'] })
+  async alternativeIdentities(@CurrentUser() user: User) {
+    return this.authService.findAlternativeIdentities(user.id, user.email);
+  }
+
+  @Post('switch/:userId')
+  async switch(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.authService.switch(userId, user);
+  }
+
   @Post('sudo')
   async sudo(
     @Body('password') password: string,
