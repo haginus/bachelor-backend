@@ -1,4 +1,5 @@
 import { IsEnum, IsOptional } from "class-validator";
+import { Bool } from "src/lib/decorators/bool.decorator";
 
 export class TopicQueryDto {
   @IsOptional()
@@ -8,4 +9,7 @@ export class TopicQueryDto {
   @IsOptional()
   @IsEnum(['asc', 'desc'])
   sortDirection: 'asc' | 'desc' = 'asc';
+
+  @Bool({ optional: true })
+  detailed: boolean = false;
 }
