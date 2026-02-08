@@ -87,7 +87,7 @@ export class SessionSettingsService {
           await queryRunner.manager.remove(student.paper);
         }
       }
-      await queryRunner.manager.updateAll(Paper, { isValid: null, submission: null });
+      await queryRunner.manager.updateAll(Paper, { isValid: null, submission: null, scheduledGrading: null });
       await queryRunner.manager.deleteAll(Submission);
       await queryRunner.manager.deleteAll(UserExtraData);
       await queryRunner.manager.deleteAll(Application);
