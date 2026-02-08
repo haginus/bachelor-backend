@@ -9,6 +9,7 @@ import { CommitteesService } from './services/committees.service';
 import { UsersModule } from 'src/users/users.module';
 import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
 import { CommonModule } from 'src/common/common.module';
+import { PaperAutoAssignService } from './services/paper-auto-assign.service';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { CommonModule } from 'src/common/common.module';
     CommitteesController
   ],
   providers: [
-    CommitteesService
+    CommitteesService,
+    PaperAutoAssignService,
   ],
 })
 export class GradingModule {}

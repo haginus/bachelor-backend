@@ -8,12 +8,16 @@ import { User } from "src/users/entities/user.entity";
 import { GradePaperDto } from "../dto/grade-paper.dto";
 import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
 import { SchedulePapersDto } from "../dto/schedule-papers.dto";
+import { PaperAutoAssignService } from "../services/paper-auto-assign.service";
 
 @Controller('committees')
 @UserTypes([UserType.Admin, UserType.Secretary])
 export class CommitteesController {
 
-  constructor(private readonly committeesService: CommitteesService) {}
+  constructor(
+    private readonly committeesService: CommitteesService,
+    private readonly paperAutoAssignService: PaperAutoAssignService,
+  ) {}
 
   @Get()
   async findAll() {
@@ -59,6 +63,11 @@ export class CommitteesController {
     @CurrentUser() user: User,
   ) {
     return this.committeesService.markGradesFinal(id, finalGrades, user);
+  }
+
+  @Post('auto-assign-papers')
+  async autoAssignPapers() {
+    return this.paperAutoAssignService.autoAssignPapers();
   }
 
   @Put(':id/papers')
