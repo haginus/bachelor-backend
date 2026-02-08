@@ -88,23 +88,31 @@ export class StudentsService {
   }
 
   async create(dto: StudentDto, requestUser?: User): Promise<Student> {
-    await this.usersService.checkEmailExists(dto.email);
+    const existingUser = await this.usersService.findOneByEmailNullable(dto.email);
+    if(existingUser && !dto.merge) {
+      throw new BadRequestException('Adresa de e-mail este deja utilizată.');
+    }
     const relations = await this.getRelations(dto);
     const student = this.studentsRepository.create({ ...dto, ...relations });
-    return this._create(student, requestUser);
+    return this._create(student, dto.merge, requestUser);
   }
 
-  private async _create(student: Student, requestUser?: User): Promise<Student> {
+  private async _create(student: Student, isMerge: boolean = false, requestUser?: User): Promise<Student> {
     return this.dataSource.transaction(async manager => {
       const result = await manager.save(student);
       await this.loggerService.log({ name: LogName.UserCreated, userId: result.id, meta: { payload: student } }, { user: requestUser, manager });
-      await this.usersService.sendActivationEmail(result, manager);
+      if(!isMerge) {
+        await this.usersService.sendActivationEmail(result, manager);
+      }
       return result;
     });
   }
 
   async update(id: number, dto: StudentDto, requestUser?: User): Promise<{ result: Student; documentsGenerated: boolean; }> {
-    await this.usersService.checkEmailExists(dto.email, id);
+    const existingUser = await this.usersService.findOneByEmailNullable(dto.email);
+    if(existingUser && existingUser.id !== id && !dto.merge) {
+      throw new BadRequestException('Adresa de e-mail este deja utilizată.');
+    }
     const student = await this.findOne(id);
     const relations = await this.getRelations(dto);
     const updatedStudent = this.studentsRepository.merge(student, dto, relations);
@@ -180,7 +188,7 @@ export class StudentsService {
         const studentEntity = this.studentsRepository.create({ ...existingUser, ...studentDto, specialization });
         const data = existingUser
           ? await this._update(studentEntity, requestUser)
-          : await this._create(studentEntity, requestUser);
+          : await this._create(studentEntity, false, requestUser);
         if(!existingUser) {
           bulkResult.summary.created++;
         } else {

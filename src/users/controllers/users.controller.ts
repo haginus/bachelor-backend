@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Patch, Post, Put, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ProfileDto } from "../dto/profile.dto";
 import { ProfilesService } from "../services/profiles.service";
@@ -77,6 +77,14 @@ export class UsersController {
       throw new ForbiddenException();
     }
     return this.usersService.updateExtraData(id, dto);
+  }
+
+  @Get('check-email')
+  async checkEmail(
+    @Query('email') email: string,
+  ) {
+    const user = await this.usersService.findOneByEmailNullable(email);
+    return { existingId: user?.id || null };
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary])

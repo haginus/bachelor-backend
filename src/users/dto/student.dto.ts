@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, Max, Min, ValidateIf } from "class-validator";
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, Max, Min, ValidateIf } from "class-validator";
 import { UserDto } from "./user.dto";
 import { FundingForm } from "src/lib/enums/funding-form.enum";
 import { TrimString } from "src/lib/transformers/trim-string.transformer";
@@ -39,5 +39,9 @@ export class StudentDto extends UserDto {
   @Max(10)
   @ValidateIf((_, v) => v !== null)
   generalAverage: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  merge?: boolean;
 
 }
