@@ -1,6 +1,6 @@
 import React from 'react';
-import { Domain } from 'src/users/entities/domain.entity';
-import { Student } from 'src/users/entities/user.entity';
+import { Domain } from '../../users/entities/domain.entity';
+import { Student } from '../../users/entities/user.entity';
 
 interface StudentListProps {
   domain: Domain;

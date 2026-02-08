@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Button, Link, Section, Text } from '@react-email/components';
 import { MailScreen } from '../partials/mail-screen';
 import { styles } from "../styles";
-import { Paper } from 'src/papers/entities/paper.entity';
+import { Paper } from '../../papers/entities/paper.entity';
 
 interface EmailProps {
   paper: Paper;

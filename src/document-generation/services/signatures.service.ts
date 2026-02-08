@@ -2,10 +2,10 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from "@nestjs/typeorm";
 import { Signature } from "../entities/signature.entity";
 import { DataSource, Repository } from "typeorm";
-import { User } from "src/users/entities/user.entity";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { User } from "../../users/entities/user.entity";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { readFile, writeFile } from "fs/promises";
-import { safePath } from "src/lib/utils";
+import { safePath } from "../../lib/utils";
 import sharp from "sharp";
 
 @Injectable()

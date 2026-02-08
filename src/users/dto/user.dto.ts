@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class UserDto {
 

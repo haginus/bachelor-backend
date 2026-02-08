@@ -2,7 +2,7 @@ import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 import { MailScreen } from '../partials/mail-screen';
 import { styles } from "../styles";
-import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
+import { SignUpRequest } from '../../users/entities/sign-up-request.entity';
 
 interface EmailProps {
   signUpRequest: SignUpRequest;

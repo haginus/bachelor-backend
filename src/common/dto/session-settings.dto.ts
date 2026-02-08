@@ -1,6 +1,6 @@
 import { Transform } from "class-transformer";
 import { IsBoolean, IsDate, IsNotEmpty, IsNumberString, IsString } from "class-validator";
-import { stripTime } from "src/lib/utils";
+import { stripTime } from "../../lib/utils";
 
 export class SessionSettingsDto {
 

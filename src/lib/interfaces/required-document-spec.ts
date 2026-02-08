@@ -1,7 +1,7 @@
-import { Paper } from "src/papers/entities/paper.entity";
+import { Paper } from "../../papers/entities/paper.entity";
 import { DocumentCategory } from "../enums/document-category.enum";
 import { DocumentUploadPerspective } from "../enums/document-upload-perspective.enum";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
 
 export type RequiredDocumentTypes = { generated: true; signed?: boolean } | { copy: true };
 

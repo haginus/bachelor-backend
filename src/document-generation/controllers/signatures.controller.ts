@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseIntPipe, Put, StreamableFile, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { SignaturesService } from "../services/signatures.service";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { User } from "src/users/entities/user.entity";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { User } from "../../users/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller('signatures')

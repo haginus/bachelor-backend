@@ -1,13 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from 'src/users/services/users.service';
+import { UsersService } from '../users/services/users.service';
 import { compareSync, hashSync } from 'bcrypt';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { instanceToPlain } from 'class-transformer';
-import { AuthResponse } from 'src/lib/interfaces/auth-response.interface';
-import { JwtPayload } from 'src/lib/interfaces/jwt-payload.interface';
+import { AuthResponse } from '../lib/interfaces/auth-response.interface';
+import { JwtPayload } from '../lib/interfaces/jwt-payload.interface';
 import { DataSource } from 'typeorm';
-import { ActivationToken } from 'src/users/entities/activation-token.entity';
+import { ActivationToken } from '../users/entities/activation-token.entity';
 import { ChangePasswordWithActivationTokenDto } from './dto/change-password-with-activation-token.dto';
 
 @Injectable()

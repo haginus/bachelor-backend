@@ -1,27 +1,27 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, StreamableFile } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Document } from "../entities/document.entity";
-import { IsNull, Repository, DataSource, In } from "typeorm";
-import { User } from "src/users/entities/user.entity";
+import { Repository, DataSource, In } from "typeorm";
+import { User } from "../../users/entities/user.entity";
 import { UploadDocumentDto } from "../dto/upload-document.dto";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { Paper } from "../entities/paper.entity";
-import { CommitteeMember } from "src/grading/entities/committee-member.entity";
-import { DocumentCategory } from "src/lib/enums/document-category.enum";
-import { DocumentType } from "src/lib/enums/document-type.enum";
-import { DocumentUploadPerspective } from "src/lib/enums/document-upload-perspective.enum";
-import { SessionSettingsService } from "src/common/services/session-settings.service";
+import { CommitteeMember } from "../../grading/entities/committee-member.entity";
+import { DocumentCategory } from "../../lib/enums/document-category.enum";
+import { DocumentType } from "../../lib/enums/document-type.enum";
+import { DocumentUploadPerspective } from "../../lib/enums/document-upload-perspective.enum";
+import { SessionSettingsService } from "../../common/services/session-settings.service";
 import { CreateDocumentDto } from "../dto/create-document.dto";
-import { getDocumentStoragePath, indexArray } from "src/lib/utils";
-import { mimeTypeExtensions } from "src/lib/mimes";
+import { getDocumentStoragePath, indexArray } from "../../lib/utils";
+import { mimeTypeExtensions } from "../../lib/mimes";
 import { writeFile, readFile, stat } from "fs/promises";
-import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
+import { DocumentGenerationService } from "../../document-generation/services/document-generation.service";
 import { isEqual } from "lodash";
 import { SignDocumentDto } from "../dto/sign-document.dto";
 import { createReadStream } from "fs";
 import { DocumentReuploadRequest } from "../entities/document-reupload-request.entity";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class DocumentsService {

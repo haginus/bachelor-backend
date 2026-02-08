@@ -2,8 +2,8 @@ import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 import { MailScreen } from '../partials/mail-screen';
 import { styles } from "../styles";
-import { User } from 'src/users/entities/user.entity';
-import { Application } from 'src/offers/entities/application.entity';
+import { User } from '../../users/entities/user.entity';
+import { Application } from '../../offers/entities/application.entity';
 
 interface EmailProps {
   studentUser: User;

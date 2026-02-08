@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, IsString, ValidateIf, ValidateNested } from "class-validator";
-import { IsDate } from "src/lib/decorators/date.decorator";
-import { IsIntId } from "src/lib/decorators/is-int-id.decorator";
+import { IsDate } from "../../lib/decorators/date.decorator";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 
 export class DocumentReuploadRequestBulkCreateDto {
 

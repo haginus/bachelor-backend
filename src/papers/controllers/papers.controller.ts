@@ -1,17 +1,17 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { PapersService } from "../services/papers.service";
 import { Paper } from "../entities/paper.entity";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { PaperQueryDto } from "../dto/paper-query.dto";
-import { Paginated } from "src/lib/interfaces/paginated.interface";
+import { Paginated } from "../../lib/interfaces/paginated.interface";
 import { PaperDto } from "../dto/paper.dto";
 import { ValidatePaperDto } from "../dto/validate-paper.dto";
-import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
-import { User } from "src/users/entities/user.entity";
+import { DocumentGenerationService } from "../../document-generation/services/document-generation.service";
+import { User } from "../../users/entities/user.entity";
 import { PaperExportQueryDto } from "../dto/paper-export-query.dto";
-import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
+import { PaperInterceptor } from "../../auth/interceptors/paper-serializer.interceptor";
 import { CreatePaperDto } from "../dto/create-paper.dto";
 
 @Controller('papers')

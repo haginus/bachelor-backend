@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CommonModule } from 'src/common/common.module';
+import { CommonModule } from '../common/common.module';
 import { DocumentGenerationService } from './services/document-generation.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Signature } from './entities/signature.entity';

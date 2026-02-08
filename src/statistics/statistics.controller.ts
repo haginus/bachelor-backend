@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
-import { UserTypes } from 'src/auth/decorators/user-types.decorator';
-import { UserType } from 'src/lib/enums/user-type.enum';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserType } from '../lib/enums/user-type.enum';
 
 @Controller('statistics')
 @UserTypes([UserType.Admin, UserType.Secretary])

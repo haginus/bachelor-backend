@@ -1,5 +1,5 @@
-import { DocumentCategory } from "src/lib/enums/document-category.enum";
-import { DocumentType } from "src/lib/enums/document-type.enum";
+import { DocumentCategory } from "../../lib/enums/document-category.enum";
+import { DocumentType } from "../../lib/enums/document-type.enum";
 
 export class CreateDocumentDto {
   paperId: number;

@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { DomainsService } from "../services/domains.service";
 import { DomainDto } from "../dto/domain.dto";
-import { Public } from "src/auth/decorators/public.decorator";
-import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { Public } from "../../auth/decorators/public.decorator";
+import { OptionalJwtAuthGuard } from "../../auth/guards/optional-jwt-auth.guard";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
 
 @Controller('domains')

@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { ApplicationsService } from "../services/applications.service";
-import { Student, User } from "src/users/entities/user.entity";
+import { Student, User } from "../../users/entities/user.entity";
 import { ApplicationQueryDto } from "../dto/application-query.dto";
 import { ApplicationDto } from "../dto/application.dto";
-import { HydrateUser } from "src/auth/decorators/hydrate-user.decorator";
+import { HydrateUser } from "../../auth/decorators/hydrate-user.decorator";
 
 @Controller('applications')
 export class ApplicationsController {

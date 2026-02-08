@@ -5,7 +5,7 @@ import { FindOptionsRelations, Repository } from "typeorm";
 import { SpecializationsService } from "./specializations.service";
 import { SignUpRequestDto } from "../dto/sign-up-request.dto";
 import { Student, User } from "../entities/user.entity";
-import { MailService } from "src/mail/mail.service";
+import { MailService } from "../../mail/mail.service";
 import { SignUpRequestPartialDto } from "../dto/sign-up-request-partial.dto";
 import { StudentsService } from "./students.service";
 

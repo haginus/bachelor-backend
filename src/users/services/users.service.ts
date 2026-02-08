@@ -3,19 +3,19 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { isStudent, Student, User } from "../entities/user.entity";
 import { EntityManager, FindOptionsRelations, Repository, DataSource, In } from "typeorm";
 import { ValidateUserDto } from "../dto/validate-user.dto";
-import { TopicsService } from "src/common/services/topics.service";
+import { TopicsService } from "../../common/services/topics.service";
 import { UserExtraData } from "../entities/user-extra-data.entity";
 import { UserExtraDataDto } from "../dto/user-extra-data.dto";
-import { DocumentsService } from "src/papers/services/documents.service";
-import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
+import { DocumentsService } from "../../papers/services/documents.service";
+import { RequiredDocumentsService } from "../../papers/services/required-documents.service";
 import { ActivationToken } from "../entities/activation-token.entity";
 import { randomBytes } from "crypto";
-import { MailService } from "src/mail/mail.service";
-import { SessionSettingsService } from "src/common/services/session-settings.service";
-import { DocumentReuploadRequest } from "src/papers/entities/document-reupload-request.entity";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
-import { deepDiff } from "src/lib/utils";
+import { MailService } from "../../mail/mail.service";
+import { SessionSettingsService } from "../../common/services/session-settings.service";
+import { DocumentReuploadRequest } from "../../papers/entities/document-reupload-request.entity";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
+import { deepDiff } from "../../lib/utils";
 import { instanceToPlain } from "class-transformer";
 
 @Injectable()

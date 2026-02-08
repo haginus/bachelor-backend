@@ -1,5 +1,5 @@
-import { Bool } from "src/lib/decorators/bool.decorator";
-import { IsIntId } from "src/lib/decorators/is-int-id.decorator";
+import { Bool } from "../../lib/decorators/bool.decorator";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 
 export class PaperExportQueryDto {
 

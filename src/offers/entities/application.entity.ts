@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Offer } from "./offer.entity";
-import { Student } from "src/users/entities/user.entity";
+import { Student } from "../../users/entities/user.entity";
 
 @Entity()
 export class Application {

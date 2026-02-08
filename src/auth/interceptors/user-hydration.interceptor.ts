@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { JwtPayload } from "src/lib/interfaces/jwt-payload.interface";
-import { UsersService } from "src/users/services/users.service";
+import { JwtPayload } from "../../lib/interfaces/jwt-payload.interface";
+import { UsersService } from "../../users/services/users.service";
 import { HYDRATE_USER_KEY } from "../decorators/hydrate-user.decorator";
 
 @Injectable()

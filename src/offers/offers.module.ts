@@ -4,14 +4,14 @@ import { Offer } from './entities/offer.entity';
 import { Application } from './entities/application.entity';
 import { OffersController } from './controllers/offers.controller';
 import { OffersService } from './services/offers.service';
-import { CommonModule } from 'src/common/common.module';
-import { UsersModule } from 'src/users/users.module';
+import { CommonModule } from '../common/common.module';
+import { UsersModule } from '../users/users.module';
 import { TeacherOffersService } from './services/teacher-offers.service';
 import { TeacherOffersController } from './controllers/teacher-offers.controller';
 import { ApplicationsService } from './services/applications.service';
 import { ApplicationsController } from './controllers/applications.controller';
-import { MailModule } from 'src/mail/mail.module';
-import { PapersModule } from 'src/papers/papers.module';
+import { MailModule } from '../mail/mail.module';
+import { PapersModule } from '../papers/papers.module';
 
 @Module({
   imports: [

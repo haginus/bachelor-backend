@@ -1,6 +1,6 @@
 import { IsArray, IsEnum, IsNotEmpty, IsString } from "class-validator";
-import { DomainType } from "src/lib/enums/domain-type.enum";
-import { PaperType } from "src/lib/enums/paper-type.enum";
+import { DomainType } from "../../lib/enums/domain-type.enum";
+import { PaperType } from "../../lib/enums/paper-type.enum";
 import { SpecializationDto } from "./specialization.dto";
 import { Type } from "class-transformer";
 

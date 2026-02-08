@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { DocumentsService } from "../services/documents.service";
 import { UploadDocumentDto } from "../dto/upload-document.dto";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { User } from "src/users/entities/user.entity";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { User } from "../../users/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { SignDocumentDto } from "../dto/sign-document.dto";
 

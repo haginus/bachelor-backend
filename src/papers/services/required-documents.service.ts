@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Paper } from "../entities/paper.entity";
 import { Repository } from "typeorm";
-import { SessionSettingsService } from "src/common/services/session-settings.service";
-import { requiredDocumentSpecs } from "src/lib/required-document-specs";
+import { SessionSettingsService } from "../../common/services/session-settings.service";
+import { requiredDocumentSpecs } from "../../lib/required-document-specs";
 import { plainToInstance } from "class-transformer";
-import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
+import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
 
 @Injectable()
 export class RequiredDocumentsService {

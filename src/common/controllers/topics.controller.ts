@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
 import { TopicsService } from "../services/topics.service";
 import { TopicDto } from "../dto/topic.dto";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { TopicQueryDto } from "../dto/topic-query.dto";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { User } from "src/users/entities/user.entity";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { User } from "../../users/entities/user.entity";
 
 @Controller('topics')
 export class TopicsController {

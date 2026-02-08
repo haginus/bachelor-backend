@@ -1,10 +1,10 @@
-import { LogName } from "src/lib/enums/log-name.enum";
-import { LogSeverity } from "src/lib/enums/log-severity.enum";
-import { DocumentReuploadRequest } from "src/papers/entities/document-reupload-request.entity";
-import { Document } from "src/papers/entities/document.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { UserExtraData } from "src/users/entities/user-extra-data.entity";
-import { User } from "src/users/entities/user.entity";
+import { LogName } from "../../lib/enums/log-name.enum";
+import { LogSeverity } from "../../lib/enums/log-severity.enum";
+import { DocumentReuploadRequest } from "../../papers/entities/document-reupload-request.entity";
+import { Document } from "../../papers/entities/document.entity";
+import { Paper } from "../../papers/entities/paper.entity";
+import { UserExtraData } from "../../users/entities/user-extra-data.entity";
+import { User } from "../../users/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()

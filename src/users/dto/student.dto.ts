@@ -1,7 +1,7 @@
 import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, Max, Min, ValidateIf } from "class-validator";
 import { UserDto } from "./user.dto";
-import { FundingForm } from "src/lib/enums/funding-form.enum";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { FundingForm } from "../../lib/enums/funding-form.enum";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class StudentDto extends UserDto {
 

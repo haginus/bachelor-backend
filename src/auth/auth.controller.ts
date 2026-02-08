@@ -3,7 +3,7 @@ import { AuthService } from "./auth.service";
 import { Public } from "./decorators/public.decorator";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { CurrentUser } from "./decorators/current-user.decorator";
-import { User } from "src/users/entities/user.entity";
+import { User } from "../users/entities/user.entity";
 import { HydrateUser } from "./decorators/hydrate-user.decorator";
 import { Sudo } from "./decorators/sudo.decorator";
 import { ChangePasswordWithActivationTokenDto } from "./dto/change-password-with-activation-token.dto";

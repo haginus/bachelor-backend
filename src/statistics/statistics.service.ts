@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { console } from 'inspector';
-import { Committee } from 'src/grading/entities/committee.entity';
-import { Statistic } from 'src/lib/interfaces/statistic.interface';
-import { Paper } from 'src/papers/entities/paper.entity';
-import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
-import { User } from 'src/users/entities/user.entity';
+import { Committee } from '../grading/entities/committee.entity';
+import { Statistic } from '../lib/interfaces/statistic.interface';
+import { Paper } from '../papers/entities/paper.entity';
+import { SignUpRequest } from '../users/entities/sign-up-request.entity';
+import { User } from '../users/entities/user.entity';
 import { DataSource, IsNull, Not } from 'typeorm';
 
 @Injectable()

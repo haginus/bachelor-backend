@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Paper } from "./paper.entity";
-import { inclusiveDate } from "src/lib/utils";
+import { inclusiveDate } from "../../lib/utils";
 
 @Entity()
 export class DocumentReuploadRequest {

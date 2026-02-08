@@ -2,8 +2,8 @@ import React from "react";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
 import { PAPER_TYPES } from "../constants";
-import { Committee } from "src/grading/entities/committee.entity";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
+import { Committee } from "../../grading/entities/committee.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
 
 interface CommitteeCompositionsProps {
   groups: Committee[][];

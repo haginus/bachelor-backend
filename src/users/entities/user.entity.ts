@@ -1,15 +1,15 @@
 import { Exclude, Expose } from "class-transformer";
-import { FundingForm } from "src/lib/enums/funding-form.enum";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { FundingForm } from "../../lib/enums/funding-form.enum";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { ChildEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VirtualColumn } from "typeorm";
 import { Specialization } from "./specialization.entity";
 import { Profile } from "./profile.entity";
-import { Topic } from "src/common/entities/topic.entity";
-import { Offer } from "src/offers/entities/offer.entity";
-import { Application } from "src/offers/entities/application.entity";
-import { Paper } from "src/papers/entities/paper.entity";
+import { Topic } from "../../common/entities/topic.entity";
+import { Offer } from "../../offers/entities/offer.entity";
+import { Application } from "../../offers/entities/application.entity";
+import { Paper } from "../../papers/entities/paper.entity";
 import { UserExtraData } from "./user-extra-data.entity";
-import { CommitteeMember } from "src/grading/entities/committee-member.entity";
+import { CommitteeMember } from "../../grading/entities/committee-member.entity";
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: "type" } })

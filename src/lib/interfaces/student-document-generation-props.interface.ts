@@ -1,6 +1,6 @@
-import { SessionSettings } from "src/common/entities/session-settings.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { Student } from "src/users/entities/user.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
+import { Paper } from "../../papers/entities/paper.entity";
+import { Student } from "../../users/entities/user.entity";
 
 export interface StudentDocumentGenerationProps {
   student: Student;

@@ -1,9 +1,9 @@
 import { Transform } from "class-transformer";
 import { IsEnum, IsIn, IsInt, IsOptional, IsString } from "class-validator";
-import { Bool } from "src/lib/decorators/bool.decorator";
-import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
-import { PaperType } from "src/lib/enums/paper-type.enum";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { Bool } from "../../lib/decorators/bool.decorator";
+import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
+import { PaperType } from "../../lib/enums/paper-type.enum";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class PaperQueryDto extends PaginatedQueryDto {
 

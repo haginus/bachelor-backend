@@ -1,5 +1,5 @@
 import { Exclude } from "class-transformer";
-import { isDateInInclusiveRange } from "src/lib/utils";
+import { isDateInInclusiveRange } from "../../lib/utils";
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity()

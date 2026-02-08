@@ -1,9 +1,9 @@
 import { AfterLoad, Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { CommitteeMember } from "./committee-member.entity";
 import { CommitteeActivityDay } from "./committee-activity-day.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { Domain } from "src/users/entities/domain.entity";
-import { sortCommitteeMembers } from "src/lib/utils";
+import { Paper } from "../../papers/entities/paper.entity";
+import { Domain } from "../../users/entities/domain.entity";
+import { sortCommitteeMembers } from "../../lib/utils";
 
 @Entity()
 export class Committee {

@@ -1,4 +1,4 @@
-import { StudyForm } from "src/lib/enums/study-form.enum";
+import { StudyForm } from "../../lib/enums/study-form.enum";
 import { Domain } from "./domain.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
 

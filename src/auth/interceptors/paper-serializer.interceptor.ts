@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
 import { Observable, map } from 'rxjs';
-import { DocumentCategory } from 'src/lib/enums/document-category.enum';
-import { UserType } from 'src/lib/enums/user-type.enum';
-import { Paper } from 'src/papers/entities/paper.entity';
-import { User } from 'src/users/entities/user.entity';
+import { DocumentCategory } from '../../lib/enums/document-category.enum';
+import { UserType } from '../../lib/enums/user-type.enum';
+import { Paper } from '../../papers/entities/paper.entity';
+import { User } from '../../users/entities/user.entity';
 
 export function PaperInterceptor(
   extractor?: (value: any) => Paper | Paper[] | undefined,

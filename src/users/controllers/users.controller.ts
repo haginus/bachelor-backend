@@ -2,13 +2,13 @@ import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Patch, 
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ProfileDto } from "../dto/profile.dto";
 import { ProfilesService } from "../services/profiles.service";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
 import { UsersService } from "../services/users.service";
 import { ValidateUserDto } from "../dto/validate-user.dto";
 import { UserExtraDataDto } from "../dto/user-extra-data.dto";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 
 @Controller('users')
 export class UsersController {

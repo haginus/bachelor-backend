@@ -5,10 +5,10 @@ import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/tab
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
 import { CommitteeCatalogFooter } from "../components/committee-catalog-footer";
 import { flattenStyles, gradeAverageString } from "../utils";
-import { Committee } from "src/grading/entities/committee.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
-import { indexArray } from "src/lib/utils";
+import { Committee } from "../../grading/entities/committee.entity";
+import { Paper } from "../../papers/entities/paper.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
+import { indexArray } from "../../lib/utils";
 
 const styles = StyleSheet.create({
   footer: {

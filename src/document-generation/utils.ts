@@ -1,6 +1,6 @@
 import { View, Text } from "@react-pdf/renderer";
 import React from "react";
-import { Committee } from "src/grading/entities/committee.entity";
+import { Committee } from "../grading/entities/committee.entity";
 import { NUMBERS } from "./constants";
 
 export function flattenStyles(style: React.ComponentProps<typeof View | typeof Text>['style']) {

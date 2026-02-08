@@ -1,9 +1,9 @@
 import { applyDecorators } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
 import { isEnum, isInt, IsInt, isPositive, Max, Min, registerDecorator, ValidationArguments, ValidationOptions } from "class-validator";
-import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
-import { LogName } from "src/lib/enums/log-name.enum";
-import { LogSeverity } from "src/lib/enums/log-severity.enum";
+import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
+import { LogName } from "../../lib/enums/log-name.enum";
+import { LogSeverity } from "../../lib/enums/log-severity.enum";
 
 export class ValueContainer<T = any> {
 

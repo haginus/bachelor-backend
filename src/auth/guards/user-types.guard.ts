@@ -1,8 +1,8 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { USER_TYPES_KEY } from '../decorators/user-types.decorator';
-import { UserType } from 'src/lib/enums/user-type.enum';
-import { JwtPayload } from 'src/lib/interfaces/jwt-payload.interface';
+import { UserType } from '../../lib/enums/user-type.enum';
+import { JwtPayload } from '../../lib/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class UserTypesGuard implements CanActivate {

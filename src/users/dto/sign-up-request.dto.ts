@@ -1,6 +1,6 @@
 import { IsEmail, IsEnum, IsInt, IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-validator";
-import { FundingForm } from "src/lib/enums/funding-form.enum";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { FundingForm } from "../../lib/enums/funding-form.enum";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class SignUpRequestDto {
 

@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Paper } from "./paper.entity";
-import { User } from "src/users/entities/user.entity";
-import { DocumentType } from "src/lib/enums/document-type.enum";
-import { DocumentCategory } from "src/lib/enums/document-category.enum";
+import { User } from "../../users/entities/user.entity";
+import { DocumentType } from "../../lib/enums/document-type.enum";
+import { DocumentCategory } from "../../lib/enums/document-category.enum";
 import { Exclude } from "class-transformer";
 
 @Entity()

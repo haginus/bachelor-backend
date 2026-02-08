@@ -1,9 +1,9 @@
 import { OmitType } from "@nestjs/swagger";
 import { StudentDto } from "./student.dto";
 import { IsEnum, IsNotEmpty } from "class-validator";
-import { FundingForm } from "src/lib/enums/funding-form.enum";
+import { FundingForm } from "../../lib/enums/funding-form.enum";
 import { Transform } from "class-transformer";
-import { unaccent } from "src/lib/utils";
+import { unaccent } from "../../lib/utils";
 
 export class StudentCsvDto extends OmitType(StudentDto, ['specializationId', 'fundingForm'] as const) {
 

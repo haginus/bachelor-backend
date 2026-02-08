@@ -6,9 +6,9 @@ import { CommitteeActivityDay } from './entities/committee-activity-day.entity';
 import { PaperGrade } from './entities/paper-grade.entity';
 import { CommitteesController } from './controllers/committees.controller';
 import { CommitteesService } from './services/committees.service';
-import { UsersModule } from 'src/users/users.module';
-import { DocumentGenerationModule } from 'src/document-generation/document-generation.module';
-import { CommonModule } from 'src/common/common.module';
+import { UsersModule } from '../users/users.module';
+import { DocumentGenerationModule } from '../document-generation/document-generation.module';
+import { CommonModule } from '../common/common.module';
 import { PaperAutoAssignService } from './services/paper-auto-assign.service';
 
 @Module({

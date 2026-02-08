@@ -3,11 +3,11 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
 import { Cell as _Cell, HeaderCell, Row } from "../components/table";
 import { PAPER_TYPES } from "../constants";
-import { Committee } from "src/grading/entities/committee.entity";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { User } from "src/users/entities/user.entity";
-import { groupBy } from "src/lib/utils";
+import { Committee } from "../../grading/entities/committee.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
+import { Paper } from "../../papers/entities/paper.entity";
+import { User } from "../../users/entities/user.entity";
+import { groupBy } from "../../lib/utils";
 
 interface CommitteeStudentAssignationProps {
   committees: Committee[];

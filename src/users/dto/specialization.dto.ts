@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
-import { StudyForm } from "src/lib/enums/study-form.enum";
+import { StudyForm } from "../../lib/enums/study-form.enum";
 
 export class SpecializationDto {
 

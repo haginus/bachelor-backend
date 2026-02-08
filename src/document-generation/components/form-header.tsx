@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
 import { Checkboxes } from "./checkboxes";
-import { Student } from "src/users/entities/user.entity";
+import { Student } from "../../users/entities/user.entity";
 
 interface FormHeaderProps {
   student: Student;

@@ -1,7 +1,7 @@
-import { CommitteeMemberRole } from "src/lib/enums/committee-member-role.enum";
+import { CommitteeMemberRole } from "../../lib/enums/committee-member-role.enum";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
 import { Committee } from "./committee.entity";
-import { Teacher } from "src/users/entities/user.entity";
+import { Teacher } from "../../users/entities/user.entity";
 import { PaperGrade } from "./paper-grade.entity";
 
 @Entity()

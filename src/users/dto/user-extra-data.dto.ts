@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { IsEmail, IsEnum, IsNotEmpty, IsString, Matches, MaxLength, ValidateNested } from "class-validator";
-import { IsDate } from "src/lib/decorators/date.decorator";
-import { CivilState } from "src/lib/enums/civil-state.enum";
+import { IsDate } from "../../lib/decorators/date.decorator";
+import { CivilState } from "../../lib/enums/civil-state.enum";
 import { AddressDto } from "./address.dto";
 
 export class UserExtraDataDto {

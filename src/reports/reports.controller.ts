@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, MessageEvent, Param, Post, Sse, StreamableFile } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { UserTypes } from 'src/auth/decorators/user-types.decorator';
-import { UserType } from 'src/lib/enums/user-type.enum';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserType } from '../lib/enums/user-type.enum';
 import { map, Observable } from 'rxjs';
 
 @Controller('reports')

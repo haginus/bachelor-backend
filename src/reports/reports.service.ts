@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream, statSync } from 'fs';
-import { BehaviorSubject, interval, take } from 'rxjs';
-import { DocumentGenerationService } from 'src/document-generation/services/document-generation.service';
-import { FileGenerationStatus } from 'src/lib/interfaces/file-generation-status.interface';
+import { BehaviorSubject } from 'rxjs';
+import { DocumentGenerationService } from '../document-generation/services/document-generation.service';
+import { FileGenerationStatus } from '../lib/interfaces/file-generation-status.interface';
 
 @Injectable()
 export class ReportsService {

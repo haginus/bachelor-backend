@@ -1,9 +1,9 @@
-import { CivilState } from "src/lib/enums/civil-state.enum";
-import { DomainType } from "src/lib/enums/domain-type.enum";
-import { FundingForm } from "src/lib/enums/funding-form.enum";
-import { PaperType } from "src/lib/enums/paper-type.enum";
-import { StudyForm } from "src/lib/enums/study-form.enum";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { CivilState } from "../lib/enums/civil-state.enum";
+import { DomainType } from "../lib/enums/domain-type.enum";
+import { FundingForm } from "../lib/enums/funding-form.enum";
+import { PaperType } from "../lib/enums/paper-type.enum";
+import { StudyForm } from "../lib/enums/study-form.enum";
+import { UserType } from "../lib/enums/user-type.enum";
 
 export const CIVIL_STATES: Record<CivilState, string> = {
   [CivilState.NotMarried]: 'Necăsătorit',

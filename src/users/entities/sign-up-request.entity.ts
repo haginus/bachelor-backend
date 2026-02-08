@@ -1,4 +1,4 @@
-import { FundingForm } from "src/lib/enums/funding-form.enum";
+import { FundingForm } from "../../lib/enums/funding-form.enum";
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Specialization } from "./specialization.entity";
 

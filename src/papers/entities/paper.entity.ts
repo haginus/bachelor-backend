@@ -1,14 +1,14 @@
-import { Topic } from "src/common/entities/topic.entity";
-import { PaperType } from "src/lib/enums/paper-type.enum";
-import { Student, Teacher } from "src/users/entities/user.entity";
+import { Topic } from "../../common/entities/topic.entity";
+import { PaperType } from "../../lib/enums/paper-type.enum";
+import { Student, Teacher } from "../../users/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Document } from "./document.entity";
-import { RequiredDocumentDto } from "src/lib/dto/required-document.dto";
+import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
 import { Expose, plainToInstance } from "class-transformer";
-import { PaperGrade } from "src/grading/entities/paper-grade.entity";
-import { Committee } from "src/grading/entities/committee.entity";
+import { PaperGrade } from "../../grading/entities/paper-grade.entity";
+import { Committee } from "../../grading/entities/committee.entity";
 import { Submission } from "./submission.entity";
-import { groupBy } from "src/lib/utils";
+import { groupBy } from "../../lib/utils";
 import { DocumentReuploadRequest } from "./document-reupload-request.entity";
 
 @Entity()

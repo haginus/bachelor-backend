@@ -2,10 +2,10 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from "@nestjs/typeorm";
 import { Offer } from "../entities/offer.entity";
 import { Repository } from "typeorm";
-import { TeachersService } from "src/users/services/teachers.service";
+import { TeachersService } from "../../users/services/teachers.service";
 import { OfferDto } from "../dto/offer.dto";
-import { DomainsService } from "src/users/services/domains.service";
-import { TopicsService } from "src/common/services/topics.service";
+import { DomainsService } from "../../users/services/domains.service";
+import { TopicsService } from "../../common/services/topics.service";
 
 @Injectable()
 export class OffersService {

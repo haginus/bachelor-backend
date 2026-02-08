@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 import { globalStyles } from "../global-styles";
-import { Committee } from "src/grading/entities/committee.entity";
+import { Committee } from "../../grading/entities/committee.entity";
 
 interface CommitteeCatalogFooterProps {
   committee: Committee;

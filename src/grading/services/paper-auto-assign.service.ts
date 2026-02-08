@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { DataSource, Equal, In, IsNull, Not, Or } from "typeorm";
 import { Committee } from "../entities/committee.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { ImportResult } from "src/lib/interfaces/import-result.interface";
+import { Paper } from "../../papers/entities/paper.entity";
+import { ImportResult } from "../../lib/interfaces/import-result.interface";
 
 @Injectable()
 export class PaperAutoAssignService {

@@ -3,9 +3,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "../entities/user.entity";
 import { In, Repository, DataSource } from "typeorm";
 import { UsersService } from "./users.service";
-import { CsvParserService } from "src/csv/csv-parser.service";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { CsvParserService } from "../../csv/csv-parser.service";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 import { AdminDto } from "../dto/admin.dto";
 
 @Injectable()

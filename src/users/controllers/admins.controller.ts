@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, SerializeOptions } from "@nestjs/common";
-import { UserType } from "src/lib/enums/user-type.enum";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
 import { AdminsService } from "../services/admins.service";
 import { AdminDto } from "../dto/admin.dto";

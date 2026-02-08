@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from "class-validator";
-import { FeedbackType } from "src/lib/enums/feedback-type.enum";
+import { FeedbackType } from "../lib/enums/feedback-type.enum";
 
 class FeedbackUserDto {
 

@@ -4,12 +4,12 @@ import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { ReactEmailAdapter } from './adapters/react-email.adapter';
 import { mailContexts } from './mock';
-import { User } from 'src/users/entities/user.entity';
-import { Application } from 'src/offers/entities/application.entity';
-import { SignUpRequest } from 'src/users/entities/sign-up-request.entity';
-import { Paper } from 'src/papers/entities/paper.entity';
-import { DocumentReuploadRequest } from 'src/papers/entities/document-reupload-request.entity';
-import { FeedbackDto } from 'src/feedback/feedback.dto';
+import { User } from '../users/entities/user.entity';
+import { Application } from '../offers/entities/application.entity';
+import { SignUpRequest } from '../users/entities/sign-up-request.entity';
+import { Paper } from '../papers/entities/paper.entity';
+import { DocumentReuploadRequest } from '../papers/entities/document-reupload-request.entity';
+import { FeedbackDto } from '../feedback/feedback.dto';
 
 @Injectable()
 export class MailService {

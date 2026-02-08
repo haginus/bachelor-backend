@@ -1,6 +1,6 @@
 import { IsEnum, IsNotEmpty, IsString } from "class-validator";
-import { IsIntId } from "src/lib/decorators/is-int-id.decorator";
-import { DocumentType } from "src/lib/enums/document-type.enum";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
+import { DocumentType } from "../../lib/enums/document-type.enum";
 
 export class UploadDocumentDto {
 

@@ -1,6 +1,6 @@
 import { Expose, Type } from "class-transformer";
-import { TopicResponseDto } from "src/common/dto/topic-response.dto";
-import { UserResponseDto } from "src/users/dto/user-response.dto";
+import { TopicResponseDto } from "../../common/dto/topic-response.dto";
+import { UserResponseDto } from "../../users/dto/user-response.dto";
 
 export class OfferResponseDto {
 

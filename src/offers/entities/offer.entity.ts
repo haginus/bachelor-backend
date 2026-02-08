@@ -1,6 +1,6 @@
-import { Topic } from "src/common/entities/topic.entity";
-import { Domain } from "src/users/entities/domain.entity";
-import { Teacher } from "src/users/entities/user.entity";
+import { Topic } from "../../common/entities/topic.entity";
+import { Domain } from "../../users/entities/domain.entity";
+import { Teacher } from "../../users/entities/user.entity";
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
 import { Application } from "./application.entity";
 

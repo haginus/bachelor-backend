@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
-import { IsDate } from "src/lib/decorators/date.decorator";
+import { IsDate } from "../../lib/decorators/date.decorator";
 
 export class CommitteeActivityDayDto {
 

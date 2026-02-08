@@ -4,7 +4,7 @@ import { globalStyles } from '../global-styles';
 import { CIVIL_STATES, PAPER_TYPES } from '../constants'
 import { FormHeader } from '../components/form-header';
 import { DateAndSignature } from '../components/date-and-signature';
-import { StudentDocumentGenerationProps } from 'src/lib/interfaces/student-document-generation-props.interface';
+import { StudentDocumentGenerationProps } from '../../lib/interfaces/student-document-generation-props.interface';
 import { GdprPage } from '../components/gdpr-page';
 import { PageCount } from '../components/page-count';
 

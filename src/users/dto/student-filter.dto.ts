@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer";
 import { IsEnum, IsInt, IsNumberString, IsOptional, IsString } from "class-validator";
-import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class StudentFilterDto extends PaginatedQueryDto {
 

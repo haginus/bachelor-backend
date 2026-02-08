@@ -1,8 +1,8 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { TeacherOffersService } from "../services/teacher-offers.service";
-import { HydrateUser } from "src/auth/decorators/hydrate-user.decorator";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { Student } from "src/users/entities/user.entity";
+import { HydrateUser } from "../../auth/decorators/hydrate-user.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { Student } from "../../users/entities/user.entity";
 import { TeacherOffersQueryDto } from "../dto/teacher-offers-query.dto";
 
 @Controller('teacher-offers')

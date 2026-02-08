@@ -2,7 +2,7 @@ import { Text } from '@react-email/components';
 import * as React from 'react';
 import { MailScreen } from '../partials/mail-screen';
 import { styles } from "../styles";
-import { FeedbackDto } from 'src/feedback/feedback.dto';
+import { FeedbackDto } from '../../feedback/feedback.dto';
 
 interface EmailProps {
   report: FeedbackDto;

@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { OffersService } from "../services/offers.service";
 import { OfferDto } from "../dto/offer.dto";
 

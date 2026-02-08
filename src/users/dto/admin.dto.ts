@@ -1,6 +1,6 @@
 import { IsEnum } from "class-validator";
 import { UserDto } from "./user.dto";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserType } from "../../lib/enums/user-type.enum";
 
 export class AdminDto extends UserDto {
 

@@ -2,10 +2,10 @@ import * as React from 'react';
 import { Button, Section, Text } from '@react-email/components';
 import { MailScreen } from '../partials/mail-screen';
 import { styles } from "../styles";
-import { User } from 'src/users/entities/user.entity';
-import { DocumentReuploadRequest } from 'src/papers/entities/document-reupload-request.entity';
-import { requiredDocumentSpecs } from 'src/lib/required-document-specs';
-import { indexArray } from 'src/lib/utils';
+import { User } from '../../users/entities/user.entity';
+import { DocumentReuploadRequest } from '../../papers/entities/document-reupload-request.entity';
+import { requiredDocumentSpecs } from '../../lib/required-document-specs';
+import { indexArray } from '../../lib/utils';
 
 interface EmailProps {
   user: User;

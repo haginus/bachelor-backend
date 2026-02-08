@@ -2,14 +2,14 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Teacher, User } from "../entities/user.entity";
 import { In, Repository, DataSource } from "typeorm";
-import { Paginated } from "src/lib/interfaces/paginated.interface";
+import { Paginated } from "../../lib/interfaces/paginated.interface";
 import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
-import { CsvParserService } from "src/csv/csv-parser.service";
-import { ImportResult } from "src/lib/interfaces/import-result.interface";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { CsvParserService } from "../../csv/csv-parser.service";
+import { ImportResult } from "../../lib/interfaces/import-result.interface";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class TeachersService {

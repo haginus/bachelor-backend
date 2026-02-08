@@ -1,7 +1,7 @@
 import { IsEnum, IsOptional, IsString } from "class-validator";
-import { Bool } from "src/lib/decorators/bool.decorator";
-import { PaginatedQueryDto } from "src/lib/dto/paginated-query.dto";
-import { TrimString } from "src/lib/transformers/trim-string.transformer";
+import { Bool } from "../../lib/decorators/bool.decorator";
+import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class TeacherFilterDto extends PaginatedQueryDto {
 

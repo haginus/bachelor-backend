@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { User } from "./user.entity";
-import { CivilState } from "src/lib/enums/civil-state.enum";
+import { CivilState } from "../../lib/enums/civil-state.enum";
 import { Address } from "./address.entity";
 
 @Entity()

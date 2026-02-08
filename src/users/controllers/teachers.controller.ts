@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, SerializeOptions, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { UserType } from "src/lib/enums/user-type.enum";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
 import { TeachersService } from "../services/teachers.service";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
 import { UserDto } from "../dto/user.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
 
 @Controller('teachers')

@@ -1,6 +1,6 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
 import { setUser } from "@sentry/nestjs";
-import { JwtPayload } from "src/lib/interfaces/jwt-payload.interface";
+import { JwtPayload } from "../../lib/interfaces/jwt-payload.interface";
 
 @Injectable()
 export class SentryUserInterceptor implements NestInterceptor {

@@ -1,10 +1,10 @@
 import * as Word from "docx";
 import { DOMAIN_TYPES, PAPER_TYPES } from "./constants";
-import { Committee } from "src/grading/entities/committee.entity";
-import { Paper } from "src/papers/entities/paper.entity";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
+import { Committee } from "../grading/entities/committee.entity";
+import { Paper } from "../papers/entities/paper.entity";
+import { SessionSettings } from "../common/entities/session-settings.entity";
 import { gradeAverageString } from "./utils";
-import { filterFalsy } from "src/lib/utils";
+import { filterFalsy } from "../lib/utils";
 
 interface TableCellOptions {
   text: string;

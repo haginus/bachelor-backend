@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseIntPipe, Post, Put, Query, SerializeOptions, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { StudentsService } from "../services/students.service";
 import { StudentFilterDto } from "../dto/student-filter.dto";
-import { UserType } from "src/lib/enums/user-type.enum";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
 import { StudentDto } from "../dto/student.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
-import { SessionSettingsService } from "src/common/services/session-settings.service";
+import { SessionSettingsService } from "../../common/services/session-settings.service";
 import { instanceToPlain } from "class-transformer";
 
 @Controller('students')

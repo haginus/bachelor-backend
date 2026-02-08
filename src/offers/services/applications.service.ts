@@ -4,16 +4,16 @@ import { Application } from "../entities/application.entity";
 import { FindOptionsRelations, FindOptionsWhere, IsNull, Repository, DataSource } from "typeorm";
 import { ApplicationQueryDto } from "../dto/application-query.dto";
 import { merge } from "lodash";
-import { Student, User } from "src/users/entities/user.entity";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { Student, User } from "../../users/entities/user.entity";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { ApplicationDto } from "../dto/application.dto";
-import { SessionSettingsService } from "src/common/services/session-settings.service";
+import { SessionSettingsService } from "../../common/services/session-settings.service";
 import { OffersService } from "./offers.service";
-import { MailService } from "src/mail/mail.service";
-import { Paper } from "src/papers/entities/paper.entity";
-import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { MailService } from "../../mail/mail.service";
+import { Paper } from "../../papers/entities/paper.entity";
+import { RequiredDocumentsService } from "../../papers/services/required-documents.service";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class ApplicationsService {

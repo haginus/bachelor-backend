@@ -4,10 +4,10 @@ import { DocumentReuploadRequest } from "../entities/document-reupload-request.e
 import { DataSource, In, Repository } from "typeorm";
 import { DocumentReuploadRequestBulkCreateDto } from "../dto/reupload-request-bulk-create.dto";
 import { PapersService } from "./papers.service";
-import { MailService } from "src/mail/mail.service";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
-import { User } from "src/users/entities/user.entity";
+import { MailService } from "../../mail/mail.service";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
+import { User } from "../../users/entities/user.entity";
 
 @Injectable()
 export class DocumentReuploadRequestsService {

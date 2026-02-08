@@ -2,20 +2,20 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm";
 import { Student, User } from "../entities/user.entity";
 import { DataSource, FindOptionsRelations, In, Repository } from "typeorm";
-import { Paginated } from "src/lib/interfaces/paginated.interface";
+import { Paginated } from "../../lib/interfaces/paginated.interface";
 import { StudentFilterDto } from "../dto/student-filter.dto";
 import { StudentDto } from "../dto/student.dto";
 import { UsersService } from "./users.service";
 import { SpecializationsService } from "./specializations.service";
-import { RequiredDocumentsService } from "src/papers/services/required-documents.service";
-import { DocumentsService } from "src/papers/services/documents.service";
-import { ImportResult } from "src/lib/interfaces/import-result.interface";
-import { CsvParserService } from "src/csv/csv-parser.service";
+import { RequiredDocumentsService } from "../../papers/services/required-documents.service";
+import { DocumentsService } from "../../papers/services/documents.service";
+import { ImportResult } from "../../lib/interfaces/import-result.interface";
+import { CsvParserService } from "../../csv/csv-parser.service";
 import { StudentCsvDto } from "../dto/student-csv.dto";
-import { UserType } from "src/lib/enums/user-type.enum";
-import { indexArray } from "src/lib/utils";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { UserType } from "../../lib/enums/user-type.enum";
+import { indexArray } from "../../lib/utils";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class StudentsService {

@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional } from "class-validator";
-import { Bool } from "src/lib/decorators/bool.decorator";
+import { Bool } from "../../lib/decorators/bool.decorator";
 
 export class TopicQueryDto {
   @IsOptional()

@@ -1,7 +1,7 @@
 import { isArray, isEqual, isObject, transform } from 'lodash';
 import fs from 'fs';
 import path from 'path';
-import { CommitteeMember } from 'src/grading/entities/committee-member.entity';
+import { CommitteeMember } from '../grading/entities/committee-member.entity';
 
 export function stripTime(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

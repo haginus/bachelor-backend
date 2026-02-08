@@ -1,4 +1,4 @@
-import { IsIntId } from "src/lib/decorators/is-int-id.decorator";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 import { PaperDto } from "./paper.dto";
 
 export class CreatePaperDto extends PaperDto {

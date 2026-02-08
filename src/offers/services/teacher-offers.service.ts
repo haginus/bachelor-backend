@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Student, Teacher } from "src/users/entities/user.entity";
+import { Student, Teacher } from "../../users/entities/user.entity";
 import { DataSource } from "typeorm";
 import { TeacherOffersQueryDto } from "../dto/teacher-offers-query.dto";
 import { plainToInstance } from "class-transformer";

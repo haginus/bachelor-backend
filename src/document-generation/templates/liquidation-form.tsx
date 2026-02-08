@@ -6,7 +6,7 @@ import { DOMAIN_TYPES, PAPER_TYPES } from '../constants';
 import { DateAndSignature } from '../components/date-and-signature';
 import { GdprPage } from '../components/gdpr-page';
 import { PageCount } from '../components/page-count';
-import { StudentDocumentGenerationProps } from 'src/lib/interfaces/student-document-generation-props.interface';
+import { StudentDocumentGenerationProps } from '../../lib/interfaces/student-document-generation-props.interface';
 
 const styles = StyleSheet.create({
   footerNote: {

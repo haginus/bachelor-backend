@@ -6,7 +6,7 @@ import { ProfileDto } from "../dto/profile.dto";
 import { UsersService } from "./users.service";
 import sharp from "sharp";
 import fs from "fs";
-import { safePath } from "src/lib/utils";
+import { safePath } from "../../lib/utils";
 import { v4 } from "uuid";
 
 @Injectable()

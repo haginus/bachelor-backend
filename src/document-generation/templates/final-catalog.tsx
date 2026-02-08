@@ -4,9 +4,9 @@ import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/tab
 import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
 import { flattenStyles } from "../utils";
-import { Paper } from "src/papers/entities/paper.entity";
-import { SessionSettings } from "src/common/entities/session-settings.entity";
-import { filterFalsy } from "src/lib/utils";
+import { Paper } from "../../papers/entities/paper.entity";
+import { SessionSettings } from "../../common/entities/session-settings.entity";
+import { filterFalsy } from "../../lib/utils";
 import { PeopleSignatureFooter } from "../components/people-signature-footer";
 
 const styles = StyleSheet.create({

@@ -3,20 +3,20 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsRelations, In, Repository, DataSource } from "typeorm";
 import { Committee } from "../entities/committee.entity";
 import { CommitteeDto } from "../dto/committee.dto";
-import { DomainsService } from "src/users/services/domains.service";
-import { CommitteeMemberRole } from "src/lib/enums/committee-member-role.enum";
-import { TeachersService } from "src/users/services/teachers.service";
+import { DomainsService } from "../../users/services/domains.service";
+import { CommitteeMemberRole } from "../../lib/enums/committee-member-role.enum";
+import { TeachersService } from "../../users/services/teachers.service";
 import { CommitteeMember } from "../entities/committee-member.entity";
-import { inclusiveDate, indexArray } from "src/lib/utils";
-import { Paper } from "src/papers/entities/paper.entity";
+import { inclusiveDate, indexArray } from "../../lib/utils";
+import { Paper } from "../../papers/entities/paper.entity";
 import { PaperGrade } from "../entities/paper-grade.entity";
-import { User } from "src/users/entities/user.entity";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { User } from "../../users/entities/user.entity";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { GradePaperDto } from "../dto/grade-paper.dto";
-import { DocumentGenerationService } from "src/document-generation/services/document-generation.service";
+import { DocumentGenerationService } from "../../document-generation/services/document-generation.service";
 import { SchedulePapersDto } from "../dto/schedule-papers.dto";
-import { LoggerService } from "src/common/services/logger.service";
-import { LogName } from "src/lib/enums/log-name.enum";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class CommitteesService {

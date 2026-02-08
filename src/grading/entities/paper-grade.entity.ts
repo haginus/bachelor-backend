@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
 import { CommitteeMember } from "./committee-member.entity";
-import { Paper } from "src/papers/entities/paper.entity";
+import { Paper } from "../../papers/entities/paper.entity";
 import { Exclude } from "class-transformer";
 
 @Entity()

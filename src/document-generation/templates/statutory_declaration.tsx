@@ -2,7 +2,7 @@ import React from 'react';
 import { Page, Text, Document, StyleSheet } from '@react-pdf/renderer';
 import { PAPER_TYPES } from '../constants';
 import { DateAndSignature } from '../components/date-and-signature';
-import { StudentDocumentGenerationProps } from 'src/lib/interfaces/student-document-generation-props.interface';
+import { StudentDocumentGenerationProps } from '../../lib/interfaces/student-document-generation-props.interface';
 
 const styles = StyleSheet.create({
   page: {

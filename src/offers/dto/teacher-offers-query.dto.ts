@@ -1,7 +1,7 @@
 import { Transform, Type } from "class-transformer";
 import { IsArray, IsBoolean, IsInt, IsOptional, IsString } from "class-validator";
-import { Bool } from "src/lib/decorators/bool.decorator";
-import { QueryArray } from "src/lib/decorators/query-array.decorator";
+import { Bool } from "../../lib/decorators/bool.decorator";
+import { QueryArray } from "../../lib/decorators/query-array.decorator";
 
 export class TeacherOffersQueryDto {
 

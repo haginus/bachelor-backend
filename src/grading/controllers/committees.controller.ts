@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, ParseArrayPipe, ParseBoolPipe, ParseIntPipe, Patch, Post, Put, StreamableFile, UseInterceptors } from "@nestjs/common";
 import { CommitteesService } from "../services/committees.service";
-import { UserTypes } from "src/auth/decorators/user-types.decorator";
-import { UserType } from "src/lib/enums/user-type.enum";
+import { UserTypes } from "../../auth/decorators/user-types.decorator";
+import { UserType } from "../../lib/enums/user-type.enum";
 import { CommitteeDto } from "../dto/committee.dto";
-import { CurrentUser } from "src/auth/decorators/current-user.decorator";
-import { User } from "src/users/entities/user.entity";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
+import { User } from "../../users/entities/user.entity";
 import { GradePaperDto } from "../dto/grade-paper.dto";
-import { PaperInterceptor } from "src/auth/interceptors/paper-serializer.interceptor";
+import { PaperInterceptor } from "../../auth/interceptors/paper-serializer.interceptor";
 import { SchedulePapersDto } from "../dto/schedule-papers.dto";
 import { PaperAutoAssignService } from "../services/paper-auto-assign.service";
 

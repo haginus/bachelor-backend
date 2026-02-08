@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { DataSource, EntityManager } from "typeorm";
 import { Log } from "../entities/log.entity";
-import { JwtPayload } from "src/lib/interfaces/jwt-payload.interface";
-import { User } from "src/users/entities/user.entity";
-import { LogSeverity } from "src/lib/enums/log-severity.enum";
+import { JwtPayload } from "../../lib/interfaces/jwt-payload.interface";
+import { User } from "../../users/entities/user.entity";
+import { LogSeverity } from "../../lib/enums/log-severity.enum";
 
 @Injectable()
 export class LoggerService {

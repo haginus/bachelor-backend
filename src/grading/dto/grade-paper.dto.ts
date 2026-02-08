@@ -1,5 +1,5 @@
 import { IsInt, Max, Min } from "class-validator";
-import { IsIntId } from "src/lib/decorators/is-int-id.decorator";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 
 export class GradePaperDto {
 
