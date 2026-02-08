@@ -1,4 +1,4 @@
-
+import './load-env';
 import Sentry from "@sentry/nestjs";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 

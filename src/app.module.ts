@@ -24,6 +24,7 @@ import { ReportsModule } from './reports/reports.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { SentryUserInterceptor } from './auth/interceptors/sentry-user.interceptor';
+import { databaseConfig } from './database.config';
 
 @Module({
   imports: [
@@ -49,20 +50,11 @@ import { SentryUserInterceptor } from './auth/interceptors/sentry-user.intercept
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        database: configService.get('DATABASE_NAME'),
-        username: configService.get('DATABASE_USERNAME'),
-        password: configService.get('DATABASE_PASSWORD'),
-        autoLoadEntities: true,
-        subscribers: [ApplicationSubscriber],
-        synchronize: true,
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      ...databaseConfig,
+      autoLoadEntities: true,
+      subscribers: [ApplicationSubscriber],
+      synchronize: true,
     }),
     CommonModule,
     MailModule,
