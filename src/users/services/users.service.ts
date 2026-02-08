@@ -100,7 +100,7 @@ export class UsersService {
     }
     return this.dataSource.transaction(async manager => {
       await this.loggerService.log({ name: LogName.UserValidated, userId: user.id }, { user, manager });
-      return this.usersRepository.save(user);
+      return manager.save(user);
     });
   }
 
@@ -134,7 +134,7 @@ export class UsersService {
     const existingExtraData = await this.findExtraDataByUserId(userId);
     const extraData = this.userExtraDataRepository.create({ ...dto, user, userId: user.id });
     await this.dataSource.transaction(async manager => {
-      await this.userExtraDataRepository.save(extraData);
+      await manager.save(extraData);
       await this.loggerService.log(
         { 
           name: existingExtraData ? LogName.UserExtraDataUpdated : LogName.UserExtraDataCreated,
