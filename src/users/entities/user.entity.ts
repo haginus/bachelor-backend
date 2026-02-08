@@ -50,7 +50,7 @@ export class User {
   @Column({ default: false })
   validated: boolean;
 
-  @OneToOne(() => Profile, (profile) => profile.user, { cascade: true, eager: true, nullable: true })
+  @OneToOne(() => Profile, (profile) => profile.user, { cascade: ['insert', 'update', 'remove'], eager: true, nullable: true })
   profile: Profile;
 
   // For students
