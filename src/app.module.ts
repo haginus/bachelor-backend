@@ -54,7 +54,7 @@ import { databaseConfig } from './database.config';
       ...databaseConfig,
       autoLoadEntities: true,
       subscribers: [ApplicationSubscriber],
-      synchronize: true,
+      synchronize: false,
     }),
     CommonModule,
     MailModule,
