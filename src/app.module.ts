@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from './auth/guards/user-types.guard';
 import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.interceptor';
@@ -22,9 +22,12 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { GoogleRecaptchaModule, GoogleRecaptchaNetwork } from '@nestlab/google-recaptcha';
 import { ReportsModule } from './reports/reports.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+import { SentryUserInterceptor } from './auth/interceptors/sentry-user.interceptor';
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: safePath(process.cwd(), 'static'),
       serveRoot: '/static/',
@@ -81,6 +84,8 @@ import { FeedbackModule } from './feedback/feedback.module';
     { provide: APP_GUARD, useClass: SudoGuard },
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: UserHydrationInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: SentryUserInterceptor },
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
   ],
 })
 export class AppModule {}

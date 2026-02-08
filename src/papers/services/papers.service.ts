@@ -21,6 +21,7 @@ import { RequiredDocumentsService } from "./required-documents.service";
 import { Application } from "src/offers/entities/application.entity";
 import { LoggerService } from "src/common/services/logger.service";
 import { LogName } from "src/lib/enums/log-name.enum";
+import { captureException } from "@sentry/nestjs";
 
 @Injectable()
 export class PapersService {
@@ -231,8 +232,8 @@ export class PapersService {
           creationMode: 'manual',
         },
       }, { user, manager });
-      await this.mailService.sendPaperCreatedEmail(savedPaper).catch(() => {
-        // TODO: sentry log
+      await this.mailService.sendPaperCreatedEmail(savedPaper).catch((e) => {
+        captureException(e);
       });
       return savedPaper;
     });
@@ -400,8 +401,8 @@ export class PapersService {
         accepted: false,
       });
     });
-    await this.mailService.sendPaperRemovedEmail(paper.student, paper.teacher).catch(() => {
-      // TODO: sentry log
+    await this.mailService.sendPaperRemovedEmail(paper.student, paper.teacher).catch((e) => {
+      captureException(e);
     });
   }
 }
