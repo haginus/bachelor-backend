@@ -31,6 +31,16 @@ export class MailService {
       context: { user, token },
     });
   }
+
+  async sendResetPasswordEmail(user: User, token: string) {
+    const url = `${this.frontendUrl}/login/token/${token}`;
+    return this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Resetați parola contului dvs.',
+      template: './reset-password',
+      context: { user, url },
+    });
+  }
   
   async sendFeedbackEmail(report: FeedbackDto) {
     return this.mailerService.sendMail({

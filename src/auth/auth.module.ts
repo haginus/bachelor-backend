@@ -7,9 +7,11 @@ import { JwtStrategy } from './strategies/jwt.stategy';
 import { UsersModule } from '../users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
+    MailModule,
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({

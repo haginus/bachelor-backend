@@ -17,6 +17,15 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Recaptcha()
+  @Post('request-password-reset')
+  async requestPasswordReset(
+    @Body('email') email: string,
+  ) {
+    return this.authService.requestPasswordReset(email);
+  }
+
+  @Public()
   @Post('check-activation-token')
   async checkActivationToken(
     @Body('token') token: string,

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/services/users.service';
 import { compareSync, hashSync } from 'bcrypt';
@@ -6,9 +6,11 @@ import { User } from '../users/entities/user.entity';
 import { instanceToPlain } from 'class-transformer';
 import { AuthResponse } from '../lib/interfaces/auth-response.interface';
 import { JwtPayload } from '../lib/interfaces/jwt-payload.interface';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { ActivationToken } from '../users/entities/activation-token.entity';
 import { ChangePasswordWithActivationTokenDto } from './dto/change-password-with-activation-token.dto';
+import { randomBytes } from 'crypto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +19,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -85,6 +88,35 @@ export class AuthService {
       email: activationToken.user.email,
       firstName: activationToken.user.firstName 
     };
+  }
+
+  async requestPasswordReset(email: string, manager?: EntityManager) {
+    manager = manager || this.dataSource.manager;
+    const user = await this.usersService.findOneByEmailNullable(email, manager);
+    if(!user) {
+      throw new BadRequestException('Contul nu există.');
+    }
+    const lastTokens = await manager.find(ActivationToken, { 
+      where: { user: { id: user.id }, used: false },
+      order: { createdAt: 'DESC' },
+      take: 3,
+    });
+    if(lastTokens.length >= 3 && lastTokens[0].createdAt.getTime() + 60 * 60 * 1000 > Date.now()) {
+      throw new BadRequestException('Ați trimis prea multe cereri de resetare a parolei. Încercați din nou mai târziu.');
+    }
+    const activationToken = manager.create(ActivationToken, {
+      token: randomBytes(64).toString('hex'),
+      user,
+    });
+    try {
+      await manager.save(activationToken);
+      await this.mailService.sendResetPasswordEmail(user, activationToken.token).catch(() => {
+        throw new InternalServerErrorException('Eroare la trimiterea e-mailului de resetare a parolei.');
+      });
+    } catch (error) {
+      await manager.remove(activationToken).catch(() => {});
+      throw error;
+    }
   }
 
   async changePasswordWithActivationToken({ token, newPassword }: ChangePasswordWithActivationTokenDto): Promise<AuthResponse> {

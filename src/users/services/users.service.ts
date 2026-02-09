@@ -54,13 +54,14 @@ export class UsersService {
     return user;
   }
 
-  async findOneByEmailNullable(email: string): Promise<User | null> {
-    const users = await this.findAllByEmail(email);
+  async findOneByEmailNullable(email: string, manager?: EntityManager): Promise<User | null> {
+    const users = await this.findAllByEmail(email, manager);
     return users.find(u => u.password !== null) || users[0] || null;
   }
 
-  async findAllByEmail(email: string): Promise<User[]> {
-    return this.usersRepository.find({ 
+  async findAllByEmail(email: string, manager?: EntityManager): Promise<User[]> {
+    manager = manager || this.dataSource.manager;
+    return manager.find(User, { 
       where: { email },
       relations: this.defaultRelations
     });
