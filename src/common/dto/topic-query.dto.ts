@@ -3,8 +3,8 @@ import { Bool } from "../../lib/decorators/bool.decorator";
 
 export class TopicQueryDto {
   @IsOptional()
-  @IsEnum(['name', 'id'])
-  sortBy: 'name' | 'id' = 'id';
+  @IsEnum(['id', 'name', 'offerCount', 'paperCount', 'studentCount'])
+  sortBy: 'id' | 'name' | 'offerCount' | 'paperCount' | 'studentCount' = 'id';
 
   @IsOptional()
   @IsEnum(['asc', 'desc'])

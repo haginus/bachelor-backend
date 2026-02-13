@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { IsEnum, IsIn, IsInt, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsInt, IsOptional, IsString } from "class-validator";
 import { Bool } from "../../lib/decorators/bool.decorator";
 import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
 import { PaperType } from "../../lib/enums/paper-type.enum";
@@ -8,8 +8,8 @@ import { TrimString } from "../../lib/transformers/trim-string.transformer";
 export class PaperQueryDto extends PaginatedQueryDto {
 
   @IsOptional()
-  @IsEnum(['id', 'title', 'committee'])
-  sortBy: 'id' | 'title' | 'committee' = 'id';
+  @IsEnum(['id', 'title', 'type', 'committee'])
+  sortBy: 'id' | 'title' | 'type' | 'committee' = 'id';
 
   @IsOptional()
   @IsEnum(['asc', 'desc'])

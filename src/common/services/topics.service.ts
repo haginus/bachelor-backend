@@ -14,6 +14,9 @@ export class TopicsService {
   ) {}
 
   async findAll(query: TopicQueryDto): Promise<Topic[]> {
+    if((query.sortBy === 'offerCount' || query.sortBy === 'paperCount' || query.sortBy === 'studentCount') && !query.detailed) {
+      throw new BadRequestException(`Sortarea după '${query.sortBy}' necesită detalierea răspunsului.`);
+    }
     return this.topicsRepository.find({
       select: query.detailed ? ['id', 'name', 'offerCount', 'paperCount', 'studentCount'] : ['id', 'name'],
       order: {
