@@ -19,6 +19,7 @@ export class DomainsService {
         name: true,
         type: true,
         paperType: true,
+        hasWrittenExam: true,
         studentCount: detailed,
         offerCount: detailed,
         specializations: {

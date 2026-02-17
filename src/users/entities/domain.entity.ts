@@ -18,6 +18,9 @@ export class Domain {
   @Column({ type: "enum", enum: PaperType })
   paperType: PaperType;
 
+  @Column()
+  hasWrittenExam: boolean;
+
   @OneToMany(() => Specialization, (specialization) => specialization.domain, { cascade: true })
   specializations: Specialization[];
 

@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsEnum, IsNotEmpty, IsString } from "class-validator";
 import { DomainType } from "../../lib/enums/domain-type.enum";
 import { PaperType } from "../../lib/enums/paper-type.enum";
 import { SpecializationDto } from "./specialization.dto";
@@ -15,6 +15,9 @@ export class DomainDto {
 
   @IsEnum(PaperType)
   paperType: PaperType;
+
+  @IsBoolean()
+  hasWrittenExam: boolean;
 
   @IsArray()
   @IsNotEmpty()
