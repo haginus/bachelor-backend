@@ -48,7 +48,9 @@ export class PaperAutoAssignService {
       });
       const papers = await queryRunner.manager.find(Paper, {
         where: {
-          submissionId: Not(IsNull()),
+          student: {
+            submission: { isSubmitted: true },
+          },
           committeeId: IsNull(),
           isValid: Or(IsNull(), Equal(true)),
           type: In(['bachelor', 'diploma']),
@@ -57,7 +59,8 @@ export class PaperAutoAssignService {
           topics: true,
           teacher: true,
           student: {
-            specialization: { domain: true }
+            specialization: { domain: true },
+            submission: true,
           }
         }
       });

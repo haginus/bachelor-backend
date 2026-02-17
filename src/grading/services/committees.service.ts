@@ -66,9 +66,10 @@ export class CommitteesService {
           specializations: true,
         },
         papers: {
-          student: true,
+          student: {
+            submission: true,
+          },
           teacher: true,
-          submission: true,
           documents: true,
           grades: {
             committeeMember: {
@@ -202,15 +203,14 @@ export class CommitteesService {
     const papers = await this.dataSource.getRepository(Paper).find({
       where: { id: In(paperIds) },
       relations: {
-        submission: true,
         committee: true,
-        student: { specialization: { domain: true } },
+        student: { specialization: { domain: true }, submission: true },
       }
     });
     if(papers.length !== paperIds.length) {
       throw new NotFoundException('Unele lucrări specificate nu există.');
     }
-    if(papers.some(paper => !paper.submission)) {
+    if(papers.some(paper => !paper.student.submission?.isSubmitted)) {
       throw new BadRequestException('Una sau mai multe lucrări nu sunt înscrise.');
     }
     if(papers.some(paper => !domainSet.has(paper.student.specialization.domain.id))) {

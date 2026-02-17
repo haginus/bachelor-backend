@@ -7,7 +7,6 @@ import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
 import { Expose, plainToInstance } from "class-transformer";
 import { PaperGrade } from "../../grading/entities/paper-grade.entity";
 import { Committee } from "../../grading/entities/committee.entity";
-import { Submission } from "./submission.entity";
 import { groupBy } from "../../lib/utils";
 import { DocumentReuploadRequest } from "./document-reupload-request.entity";
 
@@ -41,13 +40,6 @@ export class Paper {
 
   @Column('int', { nullable: true })
   committeeId: number;
-
-  @Column('int', { nullable: true })
-  submissionId: number;
-
-  @OneToOne(() => Submission, (submission) => submission.paper, { cascade: true, nullable: true })
-  @JoinColumn({ name: 'submissionId' })
-  submission: Submission | null;
 
   @ManyToMany(() => Topic, { onDelete: 'CASCADE' })
   @JoinTable({ name: 'paper_topics' })

@@ -10,6 +10,7 @@ import { UsersModule } from '../users/users.module';
 import { DocumentGenerationModule } from '../document-generation/document-generation.module';
 import { CommonModule } from '../common/common.module';
 import { PaperAutoAssignService } from './services/paper-auto-assign.service';
+import { Submission } from './entities/submission.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PaperAutoAssignService } from './services/paper-auto-assign.service';
     UsersModule,
     DocumentGenerationModule,
     TypeOrmModule.forFeature([
+      Submission,
       Committee,
       CommitteeMember,
       CommitteeActivityDay,

@@ -14,6 +14,7 @@ import { Paper } from "../../papers/entities/paper.entity";
 import { RequiredDocumentsService } from "../../papers/services/required-documents.service";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
+import { Submission } from "../../grading/entities/submission.entity";
 
 @Injectable()
 export class ApplicationsService {
@@ -163,6 +164,10 @@ export class ApplicationsService {
       requiredDocuments: [],
     });
     paper.requiredDocuments = await this.requiredDocumentsService.getRequiredDocumentsForPaper(paper);
+    const submission = this.dataSource.getRepository(Submission).create({
+      isSubmitted: false,
+      student: application.student,
+    });
     await this.dataSource.transaction(async manager => {
       await manager.save(application);
       // Remove other pending applications of the student
@@ -180,6 +185,7 @@ export class ApplicationsService {
         }
       }, { user, manager });
       await manager.save(paper);
+      await manager.save(submission);
       await this.mailService.sendAcceptedApplicationEmail(application.student, application.offer.teacher, application);
     });
     return application;

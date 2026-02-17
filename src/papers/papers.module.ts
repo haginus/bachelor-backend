@@ -9,7 +9,6 @@ import { RequiredDocumentsService } from './services/required-documents.service'
 import { DocumentsService } from './services/documents.service';
 import { DocumentsController } from './controllers/documents.controller';
 import { DocumentGenerationModule } from '../document-generation/document-generation.module';
-import { Submission } from './entities/submission.entity';
 import { MailModule } from '../mail/mail.module';
 import { DocumentReuploadRequest } from './entities/document-reupload-request.entity';
 import { DocumentReuploadRequestsService } from './services/document-reupload-requests.service';
@@ -24,7 +23,6 @@ import { DocumentReuploadRequestsController } from './controllers/document-reupl
       Paper,
       Document,
       DocumentReuploadRequest,
-      Submission,
     ]),
   ],
   controllers: [

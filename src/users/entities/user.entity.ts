@@ -10,6 +10,7 @@ import { Application } from "../../offers/entities/application.entity";
 import { Paper } from "../../papers/entities/paper.entity";
 import { UserExtraData } from "./user-extra-data.entity";
 import { CommitteeMember } from "../../grading/entities/committee-member.entity";
+import { Submission } from "../../grading/entities/submission.entity";
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: "type" } })
@@ -121,6 +122,9 @@ export class Student extends User {
 
   @OneToOne(() => Paper, (paper) => paper.student, { nullable: true })
   paper: Paper;
+
+  @OneToOne(() => Submission, (submission) => submission.student, { cascade: true, nullable: true })
+  submission: Submission;
 
   @VirtualColumn({
     query: (alias) => `

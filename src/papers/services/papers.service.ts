@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, NotImplementedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Paper } from "../entities/paper.entity";
 import { FindOptionsRelations, Repository, DataSource, IsNull } from "typeorm";
@@ -12,7 +12,6 @@ import { SessionSettingsService } from "../../common/services/session-settings.s
 import { deepDiff, inclusiveDate } from "../../lib/utils";
 import { TopicsService } from "../../common/services/topics.service";
 import { DocumentsService } from "./documents.service";
-import { Submission } from "../entities/submission.entity";
 import { ValidatePaperDto } from "../dto/validate-paper.dto";
 import { DocumentGenerationService } from "../../document-generation/services/document-generation.service";
 import { CreatePaperDto } from "../dto/create-paper.dto";
@@ -22,13 +21,13 @@ import { Application } from "../../offers/entities/application.entity";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { captureException } from "@sentry/nestjs";
+import { Submission } from "../../grading/entities/submission.entity";
 
 @Injectable()
 export class PapersService {
   
   constructor(
     @InjectRepository(Paper) private readonly papersRepository: Repository<Paper>,
-    @InjectRepository(Submission) private readonly submissionsRepository: Repository<Submission>,
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly topicsService: TopicsService,
     private readonly documentsService: DocumentsService,
@@ -40,13 +39,14 @@ export class PapersService {
   ) {}
 
   defaultRelations: FindOptionsRelations<Paper> = {
-    student: true,
+    student: {
+      submission: true,
+    },
     teacher: true,
     documents: true,
     documentReuploadRequests: true,
     topics: true,
     committee: true,
-    submission: true,
   };
 
   private mergeRelations(relations: FindOptionsRelations<Paper>): FindOptionsRelations<Paper> {
@@ -224,6 +224,11 @@ export class PapersService {
         student: { id: student.id },
         accepted: IsNull(),
       });
+      const submission = manager.getRepository(Submission).create({
+        isSubmitted: false,
+        student: student,
+      });
+      await manager.save(submission);
       await this.loggerService.log({ 
         name: LogName.PaperCreated,
         paperId: savedPaper.id,
@@ -276,40 +281,16 @@ export class PapersService {
   }
 
   async submit(paperId: number, user?: User): Promise<Paper> {
-    const paper = await this.findOne(paperId, user);
-    if(paper.submission) {
-      throw new BadRequestException('Înscrierea există deja.');
-    }
-    paper.submission = this.submissionsRepository.create({ submittedAt: new Date() });
-    return this.dataSource.transaction(async manager => {
-      const savedPaper = await manager.save(paper);
-      await this.loggerService.log({ name: LogName.PaperSubmitted, paperId: paper.id }, { user, manager });
-      return savedPaper;
-    });
+    throw new NotImplementedException();
   }
 
   async unsubmit(paperId: number, user?: User): Promise<Paper> {
-    const paper = await this.findOne(paperId, user);
-    if(!paper.submission) {
-      throw new BadRequestException('Înscrierea nu există.');
-    }
-    
-    return this.dataSource.transaction(async manager => {
-      paper.submission = null;
-      await this.loggerService.log({ name: LogName.PaperUnsubmitted, paperId: paper.id }, { user, manager });
-      if(paper.committee) {
-        await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
-        paper.committee = null;
-        paper.scheduledGrading = null;
-      }
-      const savedPaper = await manager.save(paper);
-      return savedPaper;
-    });
+    throw new NotImplementedException();
   }
 
   async validate(dto: ValidatePaperDto, user?: User): Promise<Paper> {
     const paper = await this.findOne(dto.paperId);
-    if(!paper.submission) {
+    if(!paper.student.submission?.isSubmitted) {
       throw new BadRequestException('Lucrarea nu a fost înscrisă.');
     }
     if(paper.isValid !== null) {
@@ -382,10 +363,7 @@ export class PapersService {
     }
     await this.dataSource.transaction(async manager => {
       await this.loggerService.log({ name: LogName.PaperDeleted, paperId: paper.id }, { user, manager });
-      if(paper.submission) {
-        paper.submission = null;
-        await this.loggerService.log({ name: LogName.PaperUnsubmitted, paperId: paper.id }, { user, manager });
-      }
+      await manager.delete(Submission, { student: { id: paper.studentId } });
       if(paper.committee) {
         await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
         paper.committee = null;

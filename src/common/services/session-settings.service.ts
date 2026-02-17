@@ -14,7 +14,7 @@ import { Student } from "../../users/entities/user.entity";
 import { PaperGrade } from "../../grading/entities/paper-grade.entity";
 import { UserExtraData } from "../../users/entities/user-extra-data.entity";
 import { Paper } from "../../papers/entities/paper.entity";
-import { Submission } from "../../papers/entities/submission.entity";
+import { Submission } from "../../grading/entities/submission.entity";
 import { rm } from "fs/promises";
 
 @Injectable()
@@ -87,7 +87,7 @@ export class SessionSettingsService {
           await queryRunner.manager.remove(student.paper);
         }
       }
-      await queryRunner.manager.updateAll(Paper, { isValid: null, submission: null, scheduledGrading: null });
+      await queryRunner.manager.updateAll(Paper, { isValid: null, scheduledGrading: null });
       await queryRunner.manager.deleteAll(Submission);
       await queryRunner.manager.deleteAll(UserExtraData);
       await queryRunner.manager.deleteAll(Application);

@@ -246,7 +246,11 @@ export class DocumentGenerationService {
       },
       where: {
         committeeId: Not(IsNull()),
-        submissionId: Not(IsNull()),
+        student: {
+          submission: {
+            isSubmitted: true,
+          }
+        }
       }
     });
     if(mode === 'centralizing') {
@@ -446,7 +450,11 @@ export class DocumentGenerationService {
       where.teacher = { id: teacherId };
     }
     if(onlySubmitted) {
-      where.submissionId = Not(IsNull());
+      where.student = {
+        submission: {
+          isSubmitted: true,
+        }
+      };
     }
     const papers = await this.dataSource.manager.getRepository(Paper).find({
       relations: {
@@ -454,10 +462,10 @@ export class DocumentGenerationService {
           specialization: { domain: true },
           extraData: true,
           profile: false,
+          submission: true,
         },
         teacher: { profile: false },
         committee: true,
-        submission: true,
       },
       where,
     });
@@ -505,7 +513,7 @@ export class DocumentGenerationService {
         student.promotion,
         paper.isValid === null ? 'N/A' : (paper.isValid ? 'Validată' : 'Invalidată'),
         fullStudent && (student.generalAverage?.toFixed(2) || 'N/A'),
-        paper.submissionId ? 'Da' : 'Nu',
+        paper.student.submission?.isSubmitted ? 'Da' : 'Nu',
       ]);
     });
     const workbook = new ExcelJS.Workbook();

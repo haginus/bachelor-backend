@@ -37,8 +37,8 @@ export class StatisticsService {
       usersRepo.countBy({ type: 'teacher' }),
       usersRepo.countBy({ type: 'teacher', validated: true }),
       signUpRequestsRepo.count(),
-      papersRepo.countBy({ submissionId: Not(IsNull()) }),
-      papersRepo.countBy({ submissionId: Not(IsNull()), committeeId: Not(IsNull()) }),
+      papersRepo.countBy({ student: { submission: { isSubmitted: true } } }),
+      papersRepo.countBy({ student: { submission: { isSubmitted: true } }, committeeId: Not(IsNull()) }),
       committeesRepo.count(),
     ]);
     return [
