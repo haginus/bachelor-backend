@@ -107,7 +107,7 @@ export class PapersService {
       .leftJoinAndSelect('paper.teacher', 'teacher')
       .leftJoinAndSelect('paper.topics', 'topics')
       .leftJoinAndSelect('paper.committee', 'committee')
-      .leftJoinAndSelect('paper.submission', 'submission');
+      .leftJoinAndSelect('student.submission', 'submission');
     
     if(query.minified !== true) {
       qb.leftJoinAndSelect('paper.documents', 'documents')
@@ -133,7 +133,7 @@ export class PapersService {
       qb.andWhere('paper.type = :type', { type: query.type });
     }
     if(query.submitted !== undefined) {
-      qb.andWhere(`paper.submissionId IS ${query.submitted ? 'NOT' : ''} NULL`);
+      qb.andWhere(`submission.isSubmitted = :isSubmitted`, { isSubmitted: query.submitted });
     }
     if(query.assigned !== undefined && !query.assignedTo) {
       qb.andWhere(`paper.committeeId IS ${query.assigned ? 'NOT' : ''} NULL`);
