@@ -142,6 +142,10 @@ export class SessionSettingsService {
       fileSubmissionEndDate: currentDate,
       paperSubmissionEndDate: currentDate,
       allowPaperGrading: false,
+      writtenExamDate: null,
+      writtenExamDisputeEndDate: null,
+      writtenExamGradesPublic: false,
+      writtenExamDisputedGradesPublic: false,
     });
   }
 
