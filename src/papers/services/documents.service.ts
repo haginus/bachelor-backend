@@ -342,7 +342,7 @@ export class DocumentsService {
       paper.isValid && 
       (
         (requiredDocument.uploadBy !== DocumentUploadPerspective.Teacher && requiredDocument.uploadBy !== DocumentUploadPerspective.Committee) ||
-        (requiredDocument.uploadBy === DocumentUploadPerspective.Teacher && (await this.sessionSettingsService.getSettings()).allowGrading && user?.type !== UserType.Admin && user?.type !== UserType.Secretary)
+        (requiredDocument.uploadBy === DocumentUploadPerspective.Teacher && (await this.sessionSettingsService.getSettings()).allowPaperGrading && user?.type !== UserType.Admin && user?.type !== UserType.Secretary)
       )
     ) {
       throw new BadRequestException('Perioada de încărcare a documentelor a expirat.');

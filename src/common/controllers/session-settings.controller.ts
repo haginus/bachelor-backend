@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post } from "@nestjs/common";
 import { SessionSettingsService } from "../services/session-settings.service";
 import { Public } from "../../auth/decorators/public.decorator";
 import { UserTypes } from "../../auth/decorators/user-types.decorator";
@@ -20,7 +20,7 @@ export class SessionSettingsController {
 
   @UserTypes(UserType.Admin)
   @Sudo()
-  @Put()
+  @Patch()
   async updateSettings(@Body() dto: SessionSettingsDto) {
     return this.sessionSettingsService.updateSettings(dto);
   }

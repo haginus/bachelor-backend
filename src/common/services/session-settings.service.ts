@@ -51,21 +51,39 @@ export class SessionSettingsService {
     return settings.canUploadPaperFiles();
   }
 
-  async updateSettings(dto: SessionSettingsDto) {
-    if(dto.applyEndDate < dto.applyStartDate) {
+  async updateSettings(partialDto: SessionSettingsDto) {
+    const currentSettings = await this.getSettings();
+    const updatedSettings = this.sessionSettingsRepository.create(currentSettings);
+    this.sessionSettingsRepository.merge(updatedSettings, partialDto);
+    if(updatedSettings.applyEndDate < updatedSettings.applyStartDate) {
       throw new BadRequestException('Data încheierii sesiunii de cereri nu poate fi mai devreme de cea a începerii!');
     }
-    if(dto.fileSubmissionStartDate < dto.applyStartDate) {
+    if(updatedSettings.fileSubmissionStartDate < updatedSettings.applyStartDate) {
       throw new BadRequestException('Data începerii depunerilor de documente nu poate fi mai devreme de cea a începerii sesiunii de cereri!');
     }
-    if(dto.fileSubmissionEndDate < dto.fileSubmissionStartDate) {
+    if(updatedSettings.fileSubmissionEndDate < updatedSettings.fileSubmissionStartDate) {
       throw new BadRequestException('Data încheierii depunerilor de documente nu poate fi mai devreme de cea a începerii depunerilor!');
     }
-    if(dto.paperSubmissionEndDate < dto.fileSubmissionStartDate) {
+    if(updatedSettings.paperSubmissionEndDate < updatedSettings.fileSubmissionStartDate) {
       throw new BadRequestException('Data încheierii depunerilor lucrărilor nu poate fi mai devreme de cea a începerii depunerilor!');
     }
-    const currentSettings = await this.getSettings();
-    const updatedSettings = this.sessionSettingsRepository.merge(currentSettings, dto);
+    if(updatedSettings.writtenExamDate) {
+      if(updatedSettings.writtenExamDate < updatedSettings.fileSubmissionStartDate) {
+        throw new BadRequestException('Data probei scrise nu poate fi mai devreme de cea a începerii depunerilor de documente!');
+      }
+    } else {
+      if(updatedSettings.writtenExamGradesPublic || updatedSettings.writtenExamDisputedGradesPublic) {
+        throw new BadRequestException('Nu puteți face notele probei scrise publice înainte de a seta data probei scrise!');
+      }
+      if(updatedSettings.writtenExamDisputeEndDate) {
+        throw new BadRequestException('Nu puteți seta data încheierii contestațiilor probei scrise înainte de a seta data probei scrise!');
+      }
+    }
+    if(updatedSettings.writtenExamDisputeEndDate && updatedSettings.writtenExamDate) {
+      if(updatedSettings.writtenExamDisputeEndDate < updatedSettings.writtenExamDate) {
+        throw new BadRequestException('Data încheierii contestațiilor probei scrise nu poate fi mai devreme de cea a probei scrise!');
+      }
+    }
     const savedSettings = await this.sessionSettingsRepository.save(updatedSettings);
     this.settingsCache = savedSettings;
     return savedSettings;
@@ -123,7 +141,7 @@ export class SessionSettingsService {
       fileSubmissionStartDate: currentDate,
       fileSubmissionEndDate: currentDate,
       paperSubmissionEndDate: currentDate,
-      allowGrading: false,
+      allowPaperGrading: false,
     });
   }
 

@@ -31,7 +31,19 @@ export class SessionSettings {
   paperSubmissionEndDate: Date;
 
   @Column()
-  allowGrading: boolean;
+  allowPaperGrading: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  writtenExamDate: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  writtenExamDisputeEndDate: Date | null;
+
+  @Column({ default: false })
+  writtenExamGradesPublic: boolean;
+
+  @Column({ default: false })
+  writtenExamDisputedGradesPublic: boolean;
 
   canApply() {
     return isDateInInclusiveRange(new Date(), this.applyStartDate, this.applyEndDate);

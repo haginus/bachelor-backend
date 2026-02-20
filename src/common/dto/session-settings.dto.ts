@@ -1,37 +1,65 @@
 import { Transform } from "class-transformer";
-import { IsBoolean, IsDate, IsNotEmpty, IsNumberString, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsNotEmpty, IsNumberString, IsOptional, IsString, ValidateIf } from "class-validator";
 import { stripTime } from "../../lib/utils";
 
 export class SessionSettingsDto {
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  sessionName: string;
+  sessionName?: string;
 
+  @IsOptional()
   @IsNumberString()
   @IsNotEmpty()
-  currentPromotion: string;
+  currentPromotion?: string;
 
+  @IsOptional()
   @IsDate()
-  @Transform(({ value }) => stripTime(new Date(value)))
-  applyStartDate: Date;
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  applyStartDate?: Date;
 
+  @IsOptional()
   @IsDate()
-  @Transform(({ value }) => stripTime(new Date(value)))
-  applyEndDate: Date;
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  applyEndDate?: Date;
 
+  @IsOptional()
   @IsDate()
-  @Transform(({ value }) => stripTime(new Date(value)))
-  fileSubmissionStartDate: Date;
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  fileSubmissionStartDate?: Date;
 
+  @IsOptional()
   @IsDate()
-  @Transform(({ value }) => stripTime(new Date(value)))
-  fileSubmissionEndDate: Date;
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  fileSubmissionEndDate?: Date;
 
+  @IsOptional()
   @IsDate()
-  @Transform(({ value }) => stripTime(new Date(value)))
-  paperSubmissionEndDate: Date;
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  paperSubmissionEndDate?: Date;
 
+  @IsOptional()
   @IsBoolean()
-  allowGrading: boolean;
+  allowPaperGrading?: boolean;
+
+  @IsOptional()
+  @IsDate()
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  @ValidateIf((_, v) => v !== null)
+  writtenExamDate?: Date | null;
+
+  @IsOptional()
+  @IsDate()
+  @Transform(({ value }) => value && stripTime(new Date(value)))
+  @ValidateIf((_, v) => v !== null)
+  writtenExamDisputeEndDate?: Date | null;
+
+  @IsOptional()
+  @IsBoolean()
+  writtenExamGradesPublic?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  writtenExamDisputedGradesPublic?: boolean;
 }
