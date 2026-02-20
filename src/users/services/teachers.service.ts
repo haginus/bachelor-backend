@@ -139,7 +139,7 @@ export class TeachersService {
     };
     results.forEach((result, index) => {
       if(result.status === 'fulfilled') {
-        bulkResult.summary.created++;
+        bulkResult.summary.created!++;
         bulkResult.rows.push({
           rowIndex: index + 1,
           result: 'created',

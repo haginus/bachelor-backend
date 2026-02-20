@@ -190,7 +190,7 @@ export class StudentsService {
           ? await this._update(studentEntity, requestUser)
           : await this._create(studentEntity, false, requestUser);
         if(!existingUser) {
-          bulkResult.summary.created++;
+          bulkResult.summary.created!++;
         } else {
           bulkResult.summary.updated!++;
         }

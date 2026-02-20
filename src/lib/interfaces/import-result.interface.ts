@@ -1,7 +1,7 @@
 export interface ImportResult<RowType, EntityType> {
   summary: {
     proccessed: number;
-    created: number;
+    created?: number;
     updated?: number;
     failed: number;
   };
