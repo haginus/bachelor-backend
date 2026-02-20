@@ -180,7 +180,9 @@ export class Teacher extends User {
     query: (alias) => `
       SELECT COUNT(paper.id)
       FROM paper
-      WHERE paper.teacherId = ${alias}.id AND paper.submissionId IS NOT NULL AND paper.deletedAt IS NULL
+      INNER JOIN user ON user.id = paper.studentId
+      INNER JOIN submission ON submission.studentId = user.id
+      WHERE paper.teacherId = ${alias}.id AND submission.isSubmitted = 1 AND paper.deletedAt IS NULL
     `,
     select: false,
   })
@@ -189,12 +191,14 @@ export class Teacher extends User {
   @VirtualColumn({
     query: (alias) => `
       SELECT COUNT(document.id)
-      FROM document, paper
+      FROM document, paper, user student, submission
       WHERE 
         paper.teacherId = ${alias}.id AND 
+        paper.studentId = student.id AND
+        submission.studentId = student.id AND
+        submission.isSubmitted = 1 AND
         document.paperId = paper.id AND 
         document.name = 'plagiarism_report' AND
-        paper.submissionId IS NOT NULL AND
         paper.deletedAt IS NULL AND
         document.deletedAt IS NULL
     `,

@@ -42,16 +42,20 @@ export class TeachersService {
         (
           SELECT COUNT(paper.id)
           FROM paper
-          WHERE paper.teacherId = teacher.id AND paper.submissionId IS NOT NULL AND paper.deletedAt IS NULL
+          INNER JOIN user ON user.id = paper.studentId
+          INNER JOIN submission ON submission.studentId = user.id
+          WHERE paper.teacherId = teacher.id AND submission.isSubmitted = 1 AND paper.deletedAt IS NULL
         ) >
         (
           SELECT COUNT(document.id)
-          FROM document, paper
+          FROM document, paper, user student, submission
           WHERE 
             paper.teacherId = teacher.id AND 
+            paper.studentId = student.id AND
+            submission.studentId = student.id AND
+            submission.isSubmitted = 1 AND
             document.paperId = paper.id AND 
             document.name = 'plagiarism_report' AND
-            paper.submissionId IS NOT NULL AND
             paper.deletedAt IS NULL AND
             document.deletedAt IS NULL
         )
