@@ -17,6 +17,11 @@ export class SubmissionsController {
     return this.submissionsService.findAll(query);
   }
 
+  @Get('stats')
+  getStats() {
+    return this.submissionsService.getStats();
+  }
+
   @Get('export/csv')
   async exportCsv() {
     const buffer = await this.submissionsService.exportCsv();

@@ -108,4 +108,23 @@ export class SubmissionsService {
     return Buffer.from(csvContent, 'utf-8');
   }
 
+  async getStats(): Promise<{ totalWithWrittenExam: number; notGraded: number; initiallyGraded: number; disputed: number; disputeGraded: number; }> {
+    const qb = this.submissionsRepository.createQueryBuilder('submission')
+      .leftJoin('submission.student', 'student')
+      .leftJoin('student.specialization', 'specialization')
+      .leftJoin('specialization.domain', 'domain')
+      .leftJoin('student.paper', 'paper')
+      .leftJoin('submission.writtenExamGrade', 'writtenExamGrade')
+      .where('submission.isSubmitted = :isSubmitted', { isSubmitted: true })
+      .andWhere('domain.hasWrittenExam = 1')
+      .select('sum(domain.hasWrittenExam)', 'totalWithWrittenExam')
+      .addSelect('sum(CASE WHEN writtenExamGrade.submissionId IS NULL THEN 1 ELSE 0 END)', 'notGraded')
+      .addSelect('sum(CASE WHEN writtenExamGrade.submissionId IS NOT NULL THEN 1 ELSE 0 END)', 'initiallyGraded')
+      .addSelect('sum(CASE WHEN writtenExamGrade.isDisputed = 1 THEN 1 ELSE 0 END)', 'disputed')
+      .addSelect('sum(CASE WHEN writtenExamGrade.isDisputed = 1 AND writtenExamGrade.disputeGrade IS NOT NULL THEN 1 ELSE 0 END)', 'disputeGraded')
+    const stats = await qb.getRawOne();
+    Object.keys(stats).forEach(key => stats[key] = parseInt(stats[key], 10));
+    return stats;
+  }
+
 }
