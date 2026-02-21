@@ -19,13 +19,15 @@ export class SubmissionsService {
       .leftJoinAndSelect('specialization.domain', 'domain')
       .leftJoinAndSelect('student.paper', 'paper')
       .leftJoinAndSelect('submission.writtenExamGrade', 'writtenExamGrade')
-      .where('submission.isSubmitted = :isSubmitted', { isSubmitted: true });
   }
 
   async findAll(query: SubmissionQueryDto): Promise<Paginated<Submission>> {
     const qb = this.getQueryBuilder();
-    if(query.hasWrittenExam) {
-      qb.andWhere('domain.hasWrittenExam = :hasWrittenExam', { hasWrittenExam: true });
+    if(query.isSubmitted !== undefined) {
+      qb.andWhere('submission.isSubmitted = :isSubmitted', { isSubmitted: query.isSubmitted });
+    }
+    if(query.hasWrittenExam !== undefined) {
+      qb.andWhere('domain.hasWrittenExam = :hasWrittenExam', { hasWrittenExam: query.hasWrittenExam });
     }
     if(query.writtenExamState) {
       if(query.writtenExamState === 'graded') {
@@ -93,6 +95,7 @@ export class SubmissionsService {
 
   async exportCsv(): Promise<Buffer> {
     const qb = this.getQueryBuilder();
+    qb.andWhere('submission.isSubmitted = 1');
     qb.andWhere('domain.hasWrittenExam = 1');
     qb.addOrderBy('domain.name', 'ASC').addOrderBy('student.lastName', 'ASC').addOrderBy('student.firstName', 'ASC');
     const submissions = await qb.getMany();

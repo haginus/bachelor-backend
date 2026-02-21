@@ -15,6 +15,9 @@ export class SubmissionQueryDto extends PaginatedQueryDto {
   sortDirection: 'asc' | 'desc' = 'asc';
 
   @Bool({ optional: true })
+  isSubmitted: boolean = true;
+
+  @Bool({ optional: true })
   hasWrittenExam?: boolean;
 
   @IsOptional()

@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Student } from "../../users/entities/user.entity";
 import { WrittenExamGrade } from "./written-exam-grade.entity";
+import { Expose } from "class-transformer";
 
 @Entity()
 export class Submission {
@@ -18,6 +19,7 @@ export class Submission {
   @JoinColumn({ name: 'studentId' })
   student: Student;
 
+  @Expose({ groups: ['writtenExamGradesPublic'] })
   @OneToOne(() => WrittenExamGrade, grade => grade.submission)
   writtenExamGrade: WrittenExamGrade;
 
