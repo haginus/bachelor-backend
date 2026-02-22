@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseIntPipe, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Param, ParseIntPipe, Post, SerializeOptions, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { WrittenExamGradesService } from "../services/written-exam-grades.service";
 import { GradeWrittenExamDto } from "../dto/grade-written-exam.dto";
 import { UserTypes } from "../../auth/decorators/user-types.decorator";
@@ -20,6 +20,7 @@ export class WrittenExamController {
   @Sudo()
   @Post('grades/import')
   @UseInterceptors(FileInterceptor('file'))
+  @SerializeOptions({ groups: ['writtenExamGradesPublic', 'writtenExamDisputedGradesPublic'] })
   async import(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: User,
@@ -31,11 +32,13 @@ export class WrittenExamController {
   @UserTypes(UserType.Admin)
   @Sudo()
   @Post('grades/:submissionId')
+  @SerializeOptions({ groups: ['writtenExamGradesPublic', 'writtenExamDisputedGradesPublic'] })
   async gradeSubmission(
     @Param('submissionId', ParseIntPipe) submissionId: number,
     @Body() dto: GradeWrittenExamDto,
+    @CurrentUser() user: User,
   ) {
-    return this.writtenExamGradesService.gradeSubmission(submissionId, dto);
+    return this.writtenExamGradesService.gradeSubmission(submissionId, dto, user);
   }
 
 }
