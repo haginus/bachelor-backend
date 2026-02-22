@@ -41,4 +41,14 @@ export class WrittenExamController {
     return this.writtenExamGradesService.gradeSubmission(submissionId, dto, user);
   }
 
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])
+  @Post('grades/:submissionId/dispute')
+  @SerializeOptions({ groups: ['writtenExamGradesPublic'] })
+  async disputeGrade(
+    @Param('submissionId', ParseIntPipe) submissionId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.writtenExamGradesService.disputeGrade(submissionId, user);
+  }
+
 }

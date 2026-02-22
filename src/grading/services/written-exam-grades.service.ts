@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { WrittenExamGrade } from "../entities/written-exam-grade.entity";
 import { DataSource, FindOptionsRelations, Repository } from "typeorm";
@@ -11,6 +11,7 @@ import { CsvParserService } from "../../csv/csv-parser.service";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { SessionSettingsService } from "../../common/services/session-settings.service";
+import { UserType } from "../../lib/enums/user-type.enum";
 
 @Injectable()
 export class WrittenExamGradesService {
@@ -140,4 +141,40 @@ export class WrittenExamGradesService {
     });
     return bulkResult;
   }
+
+  async disputeGrade(submissionId: number, user: User): Promise<WrittenExamGrade> {
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    if(!sessionSettings.writtenExamDate || (!sessionSettings.writtenExamDisputeEndDate && user.type === UserType.Student)) {
+      throw new BadRequestException('Nu se acceptă contestații.');
+    }
+    const now = Date.now();
+    if(
+      !sessionSettings.writtenExamGradesPublic || 
+      now < sessionSettings.writtenExamDate.getTime() || 
+      (sessionSettings.writtenExamDisputeEndDate && now > sessionSettings.writtenExamDisputeEndDate.getTime())
+    ) {
+      throw new BadRequestException('Nu se acceptă contestații momentan.');
+    }
+    const grade = await this.findOneBySubmissionId(submissionId);
+    if(user.type == UserType.Student && grade.submission.student.id !== user.id) {
+      throw new ForbiddenException();
+    }
+    if(grade.isDisputed) {
+      throw new BadRequestException('Ați depus deja o contestație pentru această înscriere.');
+    }
+    if(grade.initialGrade === 0) {
+      throw new BadRequestException('Nu puteți depune o contestație pentru un student absent.');
+    }
+    grade.isDisputed = true;
+    return this.dataSource.transaction(async manager => {
+      const savedGrade = await manager.save(grade);
+      await this.loggerService.log({
+        name: LogName.WrittenExamGradeDisputed,
+        userId: grade.submission.student.id,
+        submissionId,
+      }, { user, manager });
+      return savedGrade;
+    });
+  }
+
 }
