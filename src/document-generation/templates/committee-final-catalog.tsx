@@ -78,7 +78,7 @@ export function CommitteeFinalCatalog({ committee, paperPromotionGroups, session
                   >
                     <Text>Sesiunea {sessionSettings.sessionName.toLocaleUpperCase()}</Text>
                     <Text style={{ maxWidth: 180, textAlign: 'right' }}>
-                      Proba: Prezentarea și susținerea lucrării de {paperTypeString} - Credite 10
+                      Proba: Prezentarea și susținerea lucrării de {paperTypeString} - Credite {referenceDomain.hasWrittenExam ? 5 : 10}
                     </Text>
                   </View>
               </View>

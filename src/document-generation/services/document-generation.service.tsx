@@ -242,6 +242,9 @@ export class DocumentGenerationService {
           profile: false,
           extraData: true,
           specialization: { domain: true },
+          submission: {
+            writtenExamGrade: true,
+          },
         }
       },
       where: {
@@ -254,7 +257,14 @@ export class DocumentGenerationService {
       }
     });
     if(mode === 'centralizing') {
-      papers = papers.filter(paper => paper.gradeAverage && paper.gradeAverage >= 6);
+      papers = papers.filter(paper => {
+        if(!paper.student.specialization.domain.hasWrittenExam) {
+          return paper.gradeAverage && paper.gradeAverage >= 6;
+        }
+        const writtenExamGrade = paper.student.submission.writtenExamGrade?.finalGrade || 0;
+        const grades = [writtenExamGrade, paper.gradeAverage || 0];
+        return grades.every(grade => grade >= 5) && grades.reduce((a, b) => a + b, 0) / grades.length >= 6;
+      });
     }
     sortArray(papers, this.getPaperSortCriteria());
     const paperGroups = Object.values(

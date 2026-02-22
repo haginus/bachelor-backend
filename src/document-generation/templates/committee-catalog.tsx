@@ -87,7 +87,7 @@ export function CommitteeCatalog({ committee, paperGroups, sessionSettings }: Co
                 >
                   <Text>Examen de {paperTypeString}</Text>
                   <Text>Sesiunea {sessionSettings.sessionName.toLocaleUpperCase()}</Text>
-                  <Text>Credite {paperTypeString} - 10</Text>
+                  <Text>Nr. credite: {referenceStudent.specialization.domain.hasWrittenExam ? 5 : 10}</Text>
                 </View>
               </View>
               <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>

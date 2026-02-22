@@ -3,7 +3,7 @@ import React from "react";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
-import { flattenStyles } from "../utils";
+import { flattenStyles, getSubmissionGrade, getWrittenExamGrade } from "../utils";
 import { Paper } from "../../papers/entities/paper.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
 import { filterFalsy } from "../../lib/utils";
@@ -49,12 +49,6 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
         style={[globalStyles.page, { paddingHorizontal: '1cm', paddingBottom: pagePaddingBottom }]}
       >
         {paperPromotionGroups.map((pageGroup, index) => {
-          const rowWidth = 535;
-          const numberingColumnWidth = 35;
-          const matriculationYearColumnWidth = 110;
-          const averageColumnWidth = 140;
-          const leftSpace = rowWidth - numberingColumnWidth - matriculationYearColumnWidth - averageColumnWidth;
-
           const referencePromotion = pageGroup[0];
           const referencePaper = referencePromotion[0];
           const referenceStudent = referencePaper.student;
@@ -62,6 +56,15 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
           const referenceDomain = referenceSpecialization.domain;
           const studyYears = referenceSpecialization.studyYears;
           const paperTypeString = PAPER_TYPES[referencePaper.type];
+
+          const rowWidth = 535;
+          const numberingColumnWidth = 35;
+          const matriculationYearColumnWidth = referenceDomain.hasWrittenExam ? 90 : 110;
+          const examPart1ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
+          const examPart2ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
+          const averageColumnWidth = referenceDomain.hasWrittenExam ? 80 : 140;
+          const leftSpace = rowWidth - numberingColumnWidth - matriculationYearColumnWidth - examPart1ColumnWidth - examPart2ColumnWidth - averageColumnWidth;
+        
           return (
             <View key={index} break={index > 0}>
               <View style={[globalStyles.section, { fontWeight: 'bold', marginBottom: 16 }]}>
@@ -84,7 +87,11 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                   >
                     <Text>Sesiunea {sessionSettings.sessionName.toLocaleUpperCase()}</Text>
                     <Text style={{ maxWidth: 180, textAlign: 'right' }}>
-                      Proba: Prezentarea și susținerea lucrării de {paperTypeString} - Credite 10
+                      {
+                        referenceDomain.hasWrittenExam
+                          ? `Proba 1: Cunoștințe fundamentale și de specialitate - Credite 5\nProba 2: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 5\nTotal credite: 10`
+                          : `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`
+                      }
                     </Text>
                   </View>
               </View>
@@ -101,7 +108,15 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                     <HeaderCell value="Nr. crt." width={numberingColumnWidth} borderLeft />
                     <HeaderCell value="Numele, inițiala tatălui și prenumele absolventului" width={leftSpace} />
                     <HeaderCell value="Anul înmatriculării" width={matriculationYearColumnWidth} />
-                    <HeaderCell value={`Media examenului de ${paperTypeString}`} width={averageColumnWidth} />
+                    {referenceDomain.hasWrittenExam ? (
+                      <>
+                        <HeaderCell value="Proba 1" width={examPart1ColumnWidth} />
+                        <HeaderCell value="Proba 2" width={examPart2ColumnWidth} />
+                        <HeaderCell value="Media finală" width={averageColumnWidth} />
+                      </>
+                    ) : (
+                      <HeaderCell value={`Media examenului de ${paperTypeString}`} width={averageColumnWidth} />
+                    )}
                   </Row>
                   {promotionGroup.map((paper, index) => (
                     <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
@@ -113,7 +128,13 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                         textStyle={{ textAlign: 'left' }}
                       />
                       <Cell value={paper.student.matriculationYear} width={matriculationYearColumnWidth} />
-                      <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />
+                      {referenceDomain.hasWrittenExam && (
+                        <>
+                          <Cell value={getWrittenExamGrade(paper.student.submission)?.toFixed(2) || 'ABSENT'} width={examPart1ColumnWidth} />
+                          <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={examPart2ColumnWidth} />
+                        </>
+                      )}
+                      <Cell value={getSubmissionGrade(paper)?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />
                     </Row>
                   ))}
                 </View>

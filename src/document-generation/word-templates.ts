@@ -3,7 +3,7 @@ import { DOMAIN_TYPES, PAPER_TYPES } from "./constants";
 import { Committee } from "../grading/entities/committee.entity";
 import { Paper } from "../papers/entities/paper.entity";
 import { SessionSettings } from "../common/entities/session-settings.entity";
-import { gradeAverageString } from "./utils";
+import { getSubmissionGrade, getWrittenExamGrade, gradeAverageString } from "./utils";
 import { filterFalsy } from "../lib/utils";
 
 interface TableCellOptions {
@@ -127,7 +127,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
                         children: [
                           new Word.TextRun({ text: `Examen de ${paperTypeString}`, bold: true }),
                           new Word.TextRun({ text: `Sesiunea ${sessionSettings.sessionName.toUpperCase()}`, bold: true, break: 1 }),
-                          new Word.TextRun({ text: `Credite ${paperTypeString} - 10`, bold: true, break: 1 }),
+                          new Word.TextRun({ text: `Nr. credite: ${referencePaper.student.specialization.domain.hasWrittenExam ? 5 : 10}`, bold: true, break: 1 }),
                         ],
                       }),
                     ],
@@ -319,10 +319,12 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
                     children: [
                       new Word.Paragraph({
                         alignment: Word.AlignmentType.RIGHT,
-                        children: [
+                        children: filterFalsy([
                           new Word.TextRun({ text: `Sesiunea ${sessionSettings.sessionName.toLocaleUpperCase()}`, bold: true, break: 1, size }),
-                          new Word.TextRun({ text: `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`, bold: true, break: 1, size }),
-                        ],
+                          referenceDomain.hasWrittenExam && new Word.TextRun({ text: `Proba 1: Cunoștințe fundamentale și de specialitate - Credite 5`, bold: true, break: 1, size }),
+                          referenceDomain.hasWrittenExam && new Word.TextRun({ text: `Proba 2: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 5`, bold: true, break: 1, size }),
+                          !referenceDomain.hasWrittenExam && new Word.TextRun({ text: `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`, bold: true, break: 1, size }),
+                        ]),
                       }),
                     ],
                   }),
@@ -358,20 +360,25 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
               rows: [
                 new Word.TableRow({
                   tableHeader: true,
-                  children: [
+                  children: filterFalsy([
                     TableCell({ text: 'Nr. crt.', bold: true, fill: '#bdbdbd', size }),
                     TableCell({ text: 'Numele, inițiala tatălui și prenumele absolventului', bold: true, fill: '#bdbdbd', size }),
                     TableCell({ text: 'Anul înmatriculării', bold: true, fill: '#bdbdbd', size }),
-                    TableCell({ text: `Media examenului de ${paperTypeString}`, bold: true, fill: '#bdbdbd', size }),
-                  ],
+                    referenceDomain.hasWrittenExam && TableCell({ text: 'Proba 1', bold: true, fill: '#bdbdbd', size, width: Percent(12) }),
+                    referenceDomain.hasWrittenExam && TableCell({ text: 'Proba 2', bold: true, fill: '#bdbdbd', size, width: Percent(12) }),
+                    referenceDomain.hasWrittenExam && TableCell({ text: 'Media finală', bold: true, fill: '#bdbdbd', size, width: Percent(14) }),
+                    !referenceDomain.hasWrittenExam && TableCell({ text: `Media examenului de ${paperTypeString}`, bold: true, fill: '#bdbdbd', size }),
+                  ]),
                 }),
                 ...promotionGroup.map((paper, i) => new Word.TableRow({
-                  children: [
+                  children: filterFalsy([
                     TableCell({ text: `${i + 1}.`, size }),
                     TableCell({ text: filterFalsy([paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName]).join(' ').toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
                     TableCell({ text: paper.student.matriculationYear, size }),
-                    TableCell({ text: paper.gradeAverage?.toFixed(2) || 'ABSENT', size })
-                  ]
+                    referenceDomain.hasWrittenExam && TableCell({ text: getWrittenExamGrade(paper.student.submission)?.toFixed(2) || 'ABSENT', size }),
+                    referenceDomain.hasWrittenExam && TableCell({ text: paper.gradeAverage?.toFixed(2) || 'ABSENT', size }),
+                    TableCell({ text: getSubmissionGrade(paper)?.toFixed(2) || 'ABSENT', size })
+                  ])
                 }))
               ]
             }),
