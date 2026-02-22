@@ -39,7 +39,7 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
 
   const catalogName = {
     final: 'Catalog final',
-    centralizing: 'Catalag centralizator'
+    centralizing: 'Catalog centralizator'
   }[mode];
 
   return (

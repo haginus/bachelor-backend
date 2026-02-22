@@ -383,7 +383,7 @@ export async function WrittenExamCatalog({ submissionGroups, sessionSettings }: 
 export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: { mode: 'final' | 'centralizing'; paperPromotionGroups: Paper[][][]; sessionSettings: SessionSettings }) {
   const catalogName = {
     final: 'Catalog final',
-    centralizing: 'Catalag centralizator'
+    centralizing: 'Catalog centralizator'
   }[mode];
   const document = new Word.Document({
     ...getDefaultDocumentProperties(),
