@@ -43,6 +43,10 @@ export function PaperInterceptor(
       }
       if(user.type === UserType.Student) {
         paper.grades = undefined;
+        if(!paper.committee?.finalGrades) {
+          // @ts-ignore
+          paper.gradeAverage = undefined;
+        }
       }
       return paper;
     }

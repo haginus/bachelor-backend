@@ -10,8 +10,8 @@ export function flattenStyles(style: React.ComponentProps<typeof View | typeof T
   return style;
 }
 
-export function gradeAverageString(committee: Committee, grade: number | undefined) {
-  if(grade === undefined) {
+export function gradeAverageString(committee: Committee, grade: number | null | undefined) {
+  if(grade === undefined || grade === null) {
     return committee.finalGrades ? 'ABSENT' : '';
   }
   const gradeString = grade.toFixed(2).replace('.', ',');

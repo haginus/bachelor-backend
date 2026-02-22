@@ -69,12 +69,12 @@ export class Paper {
   grades: PaperGrade[];
 
   @Expose()
-  get gradeAverage(): number | undefined {
+  get gradeAverage(): number | null | undefined {
     if(!this.grades) {
       return undefined;
     }
     const sum = this.grades.reduce((acc, { forPaper, forPresentation }) => acc + (forPaper + forPresentation) / 2, 0);
-    return this.grades.length > 0 ? sum / this.grades.length : undefined;
+    return this.grades.length > 0 ? sum / this.grades.length : null;
   }
 
   @Column({ 
