@@ -1,3 +1,4 @@
+import { Submission } from "../../grading/entities/submission.entity";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { LogSeverity } from "../../lib/enums/log-severity.enum";
 import { DocumentReuploadRequest } from "../../papers/entities/document-reupload-request.entity";
@@ -38,6 +39,9 @@ export class Log {
   userExtraDataId: number | null;
 
   @Column('int', { nullable: true })
+  submissionId: number | null;
+
+  @Column('int', { nullable: true })
   paperId: number | null;
 
   @Column('int', { nullable: true })
@@ -61,6 +65,10 @@ export class Log {
   @ManyToOne(() => UserExtraData, { nullable: true, eager: true })
   @JoinColumn({ name: 'userExtraDataId' })
   userExtraData: UserExtraData | null;
+
+  @ManyToOne(() => Submission, { nullable: true, eager: true })
+  @JoinColumn({ name: 'submissionId' })
+  submission: Submission | null;
 
   @ManyToOne(() => Paper, { nullable: true, eager: true })
   @JoinColumn({ name: 'paperId' })

@@ -1,15 +1,21 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Submission } from "../entities/submission.entity";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { SubmissionQueryDto } from "../dto/submission-query.dto";
 import { Paginated } from "../../lib/interfaces/paginated.interface";
+import { User } from "../../users/entities/user.entity";
+import { UserType } from "../../lib/enums/user-type.enum";
+import { LoggerService } from "../../common/services/logger.service";
+import { LogName } from "../../lib/enums/log-name.enum";
 
 @Injectable()
 export class SubmissionsService {
  
   constructor(
-    @InjectRepository(Submission) private readonly submissionsRepository: Repository<Submission>
+    @InjectRepository(Submission) private readonly submissionsRepository: Repository<Submission>,
+    private readonly dataSource: DataSource,
+    private readonly loggerService: LoggerService,
   ) {}
 
   private getQueryBuilder() {
@@ -73,12 +79,18 @@ export class SubmissionsService {
     return { count, rows };
   }
 
-  async findOne(id: number): Promise<Submission> {
+  async findOne(id: number, user?: User): Promise<Submission> {
     const qb = this.getQueryBuilder();
     qb.andWhere('submission.id = :id', { id });
     const submission = await qb.getOne();
     if(!submission) {
       throw new NotFoundException();
+    }
+    if(user?.type === UserType.Student && submission.student.id !== user.id) {
+      throw new ForbiddenException();
+    }
+    if(user?.type === UserType.Teacher && submission.student.paper.teacherId !== user.id) {
+      throw new ForbiddenException();
     }
     return submission;
   }
@@ -128,6 +140,43 @@ export class SubmissionsService {
     const stats = await qb.getRawOne();
     Object.keys(stats).forEach(key => stats[key] = parseInt(stats[key], 10));
     return stats;
+  }
+
+  async submit(id: number, user?: User): Promise<Submission> {
+    if(user?.type === UserType.Teacher) {
+      throw new ForbiddenException();
+    }
+    const submission = await this.findOne(id, user);
+    if(submission.isSubmitted) {
+      throw new BadRequestException('Înscrierea s-a făcut deja.');
+    }
+    submission.isSubmitted = true;
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(submission);
+      await this.loggerService.log({
+        name: LogName.SubmissionSubmitted,
+        userId: submission.student.id,
+        submissionId: submission.id,
+      }, { user, manager });
+      return result;
+    });
+  }
+
+  async unsubmit(id: number, user?: User): Promise<Submission> {
+    const submission = await this.findOne(id, user);
+    if(!submission.isSubmitted) {
+      throw new BadRequestException('Înscrierea nu s-a făcut.');
+    }
+    submission.isSubmitted = false;
+    return this.dataSource.transaction(async manager => {
+      const result = await manager.save(submission);
+      await this.loggerService.log({
+        name: LogName.SubmissionUnsubmitted,
+        userId: submission.student.id,
+        submissionId: submission.id,
+      }, { user, manager });
+      return result;
+    });
   }
 
 }

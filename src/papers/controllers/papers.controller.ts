@@ -86,25 +86,6 @@ export class PapersController {
     return this.papersService.update(id, dto, user);
   }
 
-  @Post(':id/submit')
-  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])
-  @UseInterceptors(PaperInterceptor())
-  async submit(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
-    return this.papersService.submit(id, user);
-  }
-
-  @Post(':id/unsubmit')
-  @UseInterceptors(PaperInterceptor())
-  async unsubmit(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
-    return this.papersService.unsubmit(id, user);
-  }
-
   @UserTypes([UserType.Admin, UserType.Secretary])
   @Post(':id/validate')
   async validate(

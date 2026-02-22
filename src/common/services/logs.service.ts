@@ -28,7 +28,7 @@ export class LogsService {
 
   private buildWhereClause(query: LogQueryDto) {
     const where: FindOptionsWhere<Log> = {};
-    (['name', 'severity', 'byUserId', 'impersonatedByUserId', 'userId', 'userExtraDataId', 'paperId', 'documentId', 'documentReuploadRequestId'] as const).forEach(field => {
+    (['name', 'severity', 'byUserId', 'impersonatedByUserId', 'userId', 'userExtraDataId', 'submissionId', 'paperId', 'documentId', 'documentReuploadRequestId'] as const).forEach(field => {
       if (query[field] !== undefined) {
         const valueContainers = query[field] as ValueContainer[];
         let inValues: any[] = [], notInValues: any[] = [];

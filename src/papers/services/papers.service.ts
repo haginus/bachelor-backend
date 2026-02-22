@@ -229,6 +229,11 @@ export class PapersService {
         student: student,
       });
       await manager.save(submission);
+      await this.loggerService.log({
+        name: LogName.SubmissionCreated,
+        userId: student.id,
+        submissionId: submission.id,
+      }, { user, manager });
       await this.loggerService.log({ 
         name: LogName.PaperCreated,
         paperId: savedPaper.id,
@@ -280,14 +285,6 @@ export class PapersService {
     };
   }
 
-  async submit(paperId: number, user?: User): Promise<Paper> {
-    throw new NotImplementedException();
-  }
-
-  async unsubmit(paperId: number, user?: User): Promise<Paper> {
-    throw new NotImplementedException();
-  }
-
   async validate(dto: ValidatePaperDto, user?: User): Promise<Paper> {
     const paper = await this.findOne(dto.paperId);
     if(!paper.student.submission?.isSubmitted) {
@@ -337,6 +334,15 @@ export class PapersService {
         if(paper.committee) {
           await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
           paper.committee = null;
+        }
+        if(paper.student.submission) {
+          paper.student.submission.isSubmitted = false;
+          await manager.save(paper.student.submission);
+          await this.loggerService.log({
+            name: LogName.SubmissionUnsubmitted,
+            userId: paper.student.id,
+            submissionId: paper.student.submission.id,
+          }, { user, manager });
         }
         await this.loggerService.log({ name: LogName.PaperInvalidated, paperId: paper.id }, { user, manager });
         return manager.save(paper);

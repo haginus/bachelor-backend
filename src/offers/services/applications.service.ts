@@ -175,6 +175,8 @@ export class ApplicationsService {
         student: { id: application.student.id },
         accepted: IsNull(),
       });
+      await manager.save(paper);
+      await manager.save(submission);
       await this.loggerService.log({
         name: LogName.PaperCreated,
         paperId: paper.id,
@@ -184,8 +186,11 @@ export class ApplicationsService {
           payload: paperPayload,
         }
       }, { user, manager });
-      await manager.save(paper);
-      await manager.save(submission);
+      await this.loggerService.log({
+        name: LogName.SubmissionCreated,
+        userId: application.student.id,
+        submissionId: submission.id,
+      }, { user, manager });
       await this.mailService.sendAcceptedApplicationEmail(application.student, application.offer.teacher, application);
     });
     return application;
