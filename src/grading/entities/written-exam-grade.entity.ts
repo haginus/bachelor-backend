@@ -12,18 +12,18 @@ export class WrittenExamGrade {
   @JoinColumn({ name: 'submissionId' })
   submission: Submission;
 
-  @Expose({ groups: ['writtenExamGradesPublic'] })
+  @Expose({ groups: ['writtenExamGradesPublic', 'logs'] })
   @Column('int')
   initialGrade: number;
 
   @Column({ default: false })
   isDisputed: boolean;
 
-  @Expose({ groups: ['writtenExamDisputedGradesPublic'] })
+  @Expose({ groups: ['writtenExamDisputedGradesPublic', 'logs'] })
   @Column('int', { nullable: true })
   disputeGrade: number;
 
-  @Expose({ groups: ['writtenExamDisputedGradesPublic'] })
+  @Expose({ groups: ['writtenExamDisputedGradesPublic', 'logs'] })
   get finalGrade(): number {
     return Math.max(this.initialGrade, this.disputeGrade || 0);
   }

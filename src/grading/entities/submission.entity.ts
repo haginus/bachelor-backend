@@ -19,7 +19,7 @@ export class Submission {
   @JoinColumn({ name: 'studentId' })
   student: Student;
 
-  @Expose({ groups: ['writtenExamGradesPublic'] })
+  @Expose({ groups: ['writtenExamGradesPublic', 'logs'] })
   @OneToOne(() => WrittenExamGrade, grade => grade.submission)
   writtenExamGrade: WrittenExamGrade;
 
