@@ -17,7 +17,7 @@ export class LogsService {
       order: { id: "DESC" },
       relations: {
         paper: { student: true, teacher: true },
-        submission: { writtenExamGrade: true },
+        submission: { writtenExamGrade: true, student: true },
       },
       where: this.buildWhereClause(query),
       withDeleted: true,

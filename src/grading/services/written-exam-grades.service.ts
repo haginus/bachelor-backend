@@ -82,6 +82,7 @@ export class WrittenExamGradesService {
       const savedGrade = await manager.save(grade);
       await this.loggerService.log({
         name: LogName.WrittenExamGradeGiven,
+        userId: submission.student.id,
         submissionId,
         meta: {
           payload: {
