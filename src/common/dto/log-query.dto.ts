@@ -53,6 +53,9 @@ export class LogQueryDto extends PaginatedQueryDto {
   userId?: ValueContainer<number | null>[];
 
   @IsClause(withNumbersOrNull)
+  submissionId?: ValueContainer<number | null>[];
+
+  @IsClause(withNumbersOrNull)
   userExtraDataId?: ValueContainer<number | null>[];
 
   @IsClause(withNumbersOrNull)
