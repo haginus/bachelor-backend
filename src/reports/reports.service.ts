@@ -49,6 +49,10 @@ export class ReportsService {
 
   async generateReportFile(fileName: string): Promise<Buffer> {
     switch(fileName) {
+      case 'written_exam_catalog_pdf':
+        return this.documentGenerationService.generateWrittenExamCatalogPdf();
+      case 'written_exam_catalog_docx':
+        return this.documentGenerationService.generateWrittenExamCatalogDocx();
       case 'final_catalog_pdf':
         return this.documentGenerationService.generateFinalCatalogPdf();
       case 'final_catalog_docx':

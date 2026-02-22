@@ -17,7 +17,7 @@ import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "../../grading/entities/committee.entity";
 import { CommitteeCatalog as CommitteeCatalogPdf } from "../templates/committee-catalog";
-import { CommitteeCatalog as CommitteeCatalogDocx, FinalCatalog as FinalCatalogDocx } from "../word-templates";
+import { CommitteeCatalog as CommitteeCatalogDocx, FinalCatalog as FinalCatalogDocx, WrittenExamCatalog as WrittenExamCatalogDocx } from "../word-templates";
 import { CommitteeFinalCatalog as CommitteeFinalCatalogPdf } from "../templates/committee-final-catalog";
 import { requiredDocumentSpecs } from "../../lib/required-document-specs";
 import archiver from "archiver";
@@ -26,6 +26,7 @@ import { mimeTypeExtensions } from "../../lib/mimes";
 import { createReadStream, createWriteStream } from "fs";
 import { CommitteeStudentAssignation as CommitteeStudentAssignationPdf } from "../templates/committee-student-assignation";
 import { CommitteeCompositions as CommitteeCompositionsPdf } from "../templates/committee-compositions";
+import { WrittenExamCatalog as WrittenExamCatalogPdf } from "../templates/written-exam-catalog";
 import { FinalCatalog as FinalCatalogPdf } from "../templates/final-catalog";
 import { Observable, Subscriber } from "rxjs";
 import { FileGenerationStatus } from "../../lib/interfaces/file-generation-status.interface";
@@ -36,6 +37,7 @@ import { instanceToPlain } from "class-transformer";
 import { render } from "@react-email/render";
 import { StudentList } from "../templates-html/student-list";
 import { Log } from "../../common/entities/log.entity";
+import { Submission } from "../../grading/entities/submission.entity";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -232,6 +234,55 @@ export class DocumentGenerationService {
   async generateCommitteeFinalCatalogPdf(committeeId: number): Promise<Buffer> {
     const props = await this.getCommitteeFinalCatalogGenerationProps(committeeId);
     return this._generateCommitteeFinalCatalogPdf(props);
+  }
+
+  private async getWrittenExamCatalogGenerationProps(): Promise<WrittenExamCatalogGenerationProps> {
+    const submissions = await this.dataSource.manager.getRepository(Submission).find({
+      relations: {
+        student: {
+          extraData: true,
+          specialization: { domain: true },
+        },
+        writtenExamGrade: true,
+      },
+      where: {
+        isSubmitted: true,
+        student: {
+          specialization: {
+            domain: { hasWrittenExam: true },
+          }
+        }
+      }
+    });
+    const sessionSettings = await this.sessionSettingsService.getSettings();
+    const submissionGroups = Object.values(
+      groupBy(
+        submissions,
+        submission => [submission.student.promotion, submission.student.specialization.id].toString()
+      )
+    );
+    return {
+      submissionGroups,
+      sessionSettings,
+    };
+  }
+
+  async _generateWrittenExamCatalogPdf(props: WrittenExamCatalogGenerationProps): Promise<Buffer> {
+    return renderToBuffer(<WrittenExamCatalogPdf {...props} />);
+  }
+
+  async generateWrittenExamCatalogPdf(): Promise<Buffer> {
+    const props = await this.getWrittenExamCatalogGenerationProps();
+    return this._generateWrittenExamCatalogPdf(props);
+  }
+
+  async _generateWrittenExamCatalogDocx(props: WrittenExamCatalogGenerationProps): Promise<Buffer> {
+    return WrittenExamCatalogDocx(props);
+  }
+
+  async generateWrittenExamCatalogDocx(): Promise<Buffer> {
+    const props = await this.getWrittenExamCatalogGenerationProps();
+    return this._generateWrittenExamCatalogDocx(props);
   }
 
   private async getFinalCatalogGenerationProps(mode: 'final' | 'centralizing' = 'final') {
@@ -807,6 +858,11 @@ interface CommitteeCatalogGenerationProps {
 interface CommitteeFinalCatalogGenerationProps {
   committee: Committee;
   paperPromotionGroups: Paper[][][];
+  sessionSettings: SessionSettings;
+}
+
+interface WrittenExamCatalogGenerationProps {
+  submissionGroups: Submission[][];
   sessionSettings: SessionSettings;
 }
 
