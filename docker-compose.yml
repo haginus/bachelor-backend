@@ -1,0 +1,42 @@
+services:
+  bachelor-backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - bachelor-db
+    volumes:
+      - .env:/usr/src/bachelor-backend/.env
+      - .env.local:/usr/src/bachelor-backend/.env.local
+      - app_profile:/usr/src/bachelor-backend/static/profile
+      - app_storage:/usr/src/bachelor-backend/storage
+    ports:
+      - 3000:3000
+    environment: 
+      PORT: 3000
+      DATABASE_HOST: bachelor-db
+      DATABASE_PORT: 3306
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: 12345678
+      DATABASE_NAME: bachelor
+
+  bachelor-db:
+    image: mysql
+    restart: unless-stopped
+    expose:
+      - 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: bachelor
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+  app_storage:
+  app_profile:
+
+networks:
+  default:
+    name: bachelor
