@@ -13,7 +13,7 @@ export function flattenStyles(style: React.ComponentProps<typeof View | typeof T
 }
 
 export function getWrittenExamGrade(submission: Submission) {
-  const grade = submission?.writtenExamGrade.finalGrade;
+  const grade = submission?.writtenExamGrade?.finalGrade;
   return !!grade ? grade : null;
 }
 
