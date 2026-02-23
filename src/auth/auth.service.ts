@@ -11,6 +11,7 @@ import { ActivationToken } from '../users/entities/activation-token.entity';
 import { ChangePasswordWithActivationTokenDto } from './dto/change-password-with-activation-token.dto';
 import { randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
+import { captureException } from '@sentry/nestjs';
 
 @Injectable()
 export class AuthService {
@@ -110,7 +111,8 @@ export class AuthService {
     });
     try {
       await manager.save(activationToken);
-      await this.mailService.sendResetPasswordEmail(user, activationToken.token).catch(() => {
+      await this.mailService.sendResetPasswordEmail(user, activationToken.token).catch((err) => {
+        captureException(err);
         throw new InternalServerErrorException('Eroare la trimiterea e-mailului de resetare a parolei.');
       });
     } catch (error) {

@@ -17,6 +17,7 @@ import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { deepDiff } from "../../lib/utils";
 import { instanceToPlain } from "class-transformer";
+import { captureException } from "@sentry/nestjs";
 
 @Injectable()
 export class UsersService {
@@ -83,6 +84,7 @@ export class UsersService {
     });
     await activationTokenRepository.save(activationToken);
     await this.mailService.sendWelcomeEmail(user, activationToken.token).catch(err => {
+      captureException(err);
       throw new InternalServerErrorException('Eroare la trimiterea email-ului de activare.');
     });
   }
