@@ -183,7 +183,7 @@ export class CommitteesService {
 
   async markGradesFinal(id: number, finalGrades = true, user?: User): Promise<Committee> {
     const committee = await this._findOneMin(id);
-    if(user) {
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
       this.checkCommitteeMembership(committee, user, ['canMarkGradesFinal']);
       if(user.type === UserType.Teacher && finalGrades === false) {
         throw new ForbiddenException('Profesorii nu pot demarca finalizarea notelor. Contactați administratorul sau secretariatul.');
