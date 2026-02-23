@@ -85,7 +85,7 @@ export class MailService {
   }
 
   async sendAcceptedApplicationEmail(studentUser: User, teacherUser: User, application: Application) {
-    const url = `${this.frontendUrl}/student/paper`;
+    const url = `${this.frontendUrl}/student/submission`;
     return this.mailerService.sendMail({
       to: studentUser.email,
       subject: 'Cerere de asociere acceptată',
@@ -95,7 +95,7 @@ export class MailService {
   }
 
   async sendPaperCreatedEmail(paper: Paper) {
-    const url = `${this.frontendUrl}/student/paper`;
+    const url = `${this.frontendUrl}/student/submission`;
     return this.mailerService.sendMail({
       to: paper.student.email,
       subject: `Asocierea dvs. cu ${paper.teacher.firstName} ${paper.teacher.lastName}`,
@@ -115,7 +115,7 @@ export class MailService {
   }
 
   async sendDocumentReuploadRequestNoticeEmail(user: User, requests: DocumentReuploadRequest[]) {
-    const url = `${this.frontendUrl}/student/paper`;
+    const url = `${this.frontendUrl}/student/submission`;
     return this.mailerService.sendMail({
       to: user.email,
       subject: 'Solicitare de reîncărcare a documentelor',
