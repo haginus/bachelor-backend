@@ -12,6 +12,7 @@ import { ChangePasswordWithActivationTokenDto } from './dto/change-password-with
 import { randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { captureException } from '@sentry/nestjs';
+import { RefreshTokensService } from './refresh-tokens.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly refreshTokensService: RefreshTokensService,
     private readonly dataSource: DataSource,
     private readonly mailService: MailService,
   ) {}
@@ -41,6 +43,22 @@ export class AuthService {
     return this.createAuthResponse(user);
   }
 
+  async refreshTokens(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
+    if(!token) {
+      throw new BadRequestException('Prezentați un refresh token.');
+    }
+    const refreshToken = await this.refreshTokensService.rotate(token);
+    const user = await this.usersService.findOne(refreshToken.userId);
+    return {
+      accessToken: this.signAccessToken(refreshToken.id, user, refreshToken.additionalPayload || undefined),
+      refreshToken: refreshToken.token,
+    };
+  }
+
+  async signOut(user: JwtPayload) {
+    await this.refreshTokensService.revoke(user.rti);
+  }
+
   async findAlternativeIdentities(userId: number, email: string): Promise<User[]> {
     const users = await this.usersService.findAllByEmail(email);
     return users.filter(u => u.id !== userId);
@@ -51,7 +69,12 @@ export class AuthService {
     if(currentUser.email !== user.email) {
       throw new UnauthorizedException('Nu aveți permisiunea de a comuta la acest cont.');
     }
-    return this.createAuthResponse(user, currentUser._impersonatedBy);
+    const additionalPayload: Partial<JwtPayload> = {};
+    if(currentUser._impersonatedBy) {
+      additionalPayload._impersonatedBy = currentUser._impersonatedBy;
+    }
+    await this.refreshTokensService.revoke(currentUser.rti);
+    return this.createAuthResponse(user, additionalPayload);
   }
 
   async validateSudoPassword(sudoPassword: string, user: JwtPayload): Promise<boolean> {
@@ -60,7 +83,8 @@ export class AuthService {
 
   async impersonate(userId: number, impersonator: JwtPayload) {
     const user = await this.usersService.findOne(userId);
-    return this.createAuthResponse(user, impersonator.id);
+    await this.refreshTokensService.revoke(impersonator.rti);
+    return this.createAuthResponse(user, { _impersonatedBy: impersonator.id });
   }
 
   async releaseImpersonation(user: JwtPayload) {
@@ -68,6 +92,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     const impersonator = await this.usersService.findOne(user._impersonatedBy);
+    await this.refreshTokensService.revoke(user.rti);
     return this.createAuthResponse(impersonator);
   }
 
@@ -133,15 +158,20 @@ export class AuthService {
     });
   }
 
-  private async createAuthResponse(user: User, impersonatedBy?: number): Promise<AuthResponse> {
-    let payload: JwtPayload = { id: user.id, email: user.email, type: user.type, _impersonatedBy: impersonatedBy };
-    if(impersonatedBy) {
-      user._impersonatedBy = impersonatedBy;
+  private signAccessToken(rti: number, user: User, additionalPayload?: Partial<JwtPayload>): string {
+    const payload: JwtPayload = { rti, id: user.id, email: user.email, type: user.type, ...additionalPayload };
+    return this.jwtService.sign(payload);
+  }
+
+  private async createAuthResponse(user: User, additionalPayload?: Partial<JwtPayload>): Promise<AuthResponse> {
+    if(additionalPayload?._impersonatedBy) {
+      user._impersonatedBy = additionalPayload._impersonatedBy;
     }
     const alternativeIdentities = await this.findAlternativeIdentities(user.id, user.email);
+    const refreshToken = await this.refreshTokensService.create(user.id, additionalPayload);
     return {
-      accessToken: this.jwtService.sign(payload),
-      refreshToken: '',
+      accessToken: this.signAccessToken(refreshToken.id, user, additionalPayload),
+      refreshToken: refreshToken.token,
       user: instanceToPlain(user, { groups: ['full'] }) as User,
       alternativeIdentities: instanceToPlain(alternativeIdentities, { groups: ['full'] }) as User[],
     };

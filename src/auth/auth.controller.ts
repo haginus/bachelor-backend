@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, SerializeOptions, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Req, SerializeOptions, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { Public } from "./decorators/public.decorator";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
@@ -39,6 +39,18 @@ export class AuthController {
     @Body() dto: ChangePasswordWithActivationTokenDto,
   ) {
     return this.authService.changePasswordWithActivationToken(dto);
+  }
+
+  @Public()
+  @Post('refresh')
+  async refreshTokens(@Body("refreshToken") refreshToken: string) {
+    return this.authService.refreshTokens(refreshToken);
+  }
+
+  @Post('sign-out')
+  @HttpCode(204)
+  async signOut(@CurrentUser() user: any) {
+    return this.authService.signOut(user);
   }
 
   @Public()
