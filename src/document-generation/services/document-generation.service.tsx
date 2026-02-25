@@ -237,7 +237,7 @@ export class DocumentGenerationService {
     return this._generateCommitteeFinalCatalogPdf(props);
   }
 
-  private async getWrittenExamCatalogGenerationProps(): Promise<WrittenExamCatalogGenerationProps> {
+  private async getWrittenExamCatalogGenerationProps({ isAfterDisputes = false }: { isAfterDisputes: boolean }): Promise<WrittenExamCatalogGenerationProps> {
     const submissions = await this.dataSource.manager.getRepository(Submission).find({
       relations: {
         student: {
@@ -252,7 +252,10 @@ export class DocumentGenerationService {
           specialization: {
             domain: { hasWrittenExam: true },
           }
-        }
+        },
+        writtenExamGrade: isAfterDisputes
+          ? { isDisputed: true, disputeGrade: Not(IsNull()) }
+          : undefined,
       }
     });
     const sessionSettings = await this.sessionSettingsService.getSettings();
@@ -276,6 +279,7 @@ export class DocumentGenerationService {
       );
     });
     return {
+      isAfterDisputes,
       submissionPromotionGroups,
       sessionSettings,
     };
@@ -285,8 +289,8 @@ export class DocumentGenerationService {
     return renderToBuffer(<WrittenExamCatalogPdf {...props} />);
   }
 
-  async generateWrittenExamCatalogPdf(): Promise<Buffer> {
-    const props = await this.getWrittenExamCatalogGenerationProps();
+  async generateWrittenExamCatalogPdf(isAfterDisputes: boolean = false): Promise<Buffer> {
+    const props = await this.getWrittenExamCatalogGenerationProps({ isAfterDisputes });
     return this._generateWrittenExamCatalogPdf(props);
   }
 
@@ -294,8 +298,8 @@ export class DocumentGenerationService {
     return WrittenExamCatalogDocx(props);
   }
 
-  async generateWrittenExamCatalogDocx(): Promise<Buffer> {
-    const props = await this.getWrittenExamCatalogGenerationProps();
+  async generateWrittenExamCatalogDocx(isAfterDisputes: boolean = false): Promise<Buffer> {
+    const props = await this.getWrittenExamCatalogGenerationProps({ isAfterDisputes });
     return this._generateWrittenExamCatalogDocx(props);
   }
 
@@ -879,6 +883,7 @@ interface CommitteeFinalCatalogGenerationProps {
 }
 
 interface WrittenExamCatalogGenerationProps {
+  isAfterDisputes: boolean;
   submissionPromotionGroups: Submission[][][];
   sessionSettings: SessionSettings;
 }

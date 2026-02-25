@@ -249,7 +249,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
   return Buffer.from(buffer);
 }
 
-export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings }: { submissionPromotionGroups: Submission[][][]; sessionSettings: SessionSettings }) {
+export async function WrittenExamCatalog({ isAfterDisputes = false, submissionPromotionGroups, sessionSettings }: { isAfterDisputes?: boolean; submissionPromotionGroups: Submission[][][]; sessionSettings: SessionSettings }) {
   const document = new Word.Document({
     ...getDefaultDocumentProperties(),
     title: `Catalog proba 1 - Sesiunea ${sessionSettings.sessionName}`,
@@ -259,6 +259,14 @@ export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSet
       const studyYears = referenceStudent.specialization.studyYears;
       const paperTypeString = PAPER_TYPES[referenceStudent.specialization.domain.paperType];
       const size = 24;
+
+      const stringifySubmissionGrade = (submission: Submission) => {
+        const grade = isAfterDisputes 
+          ? getWrittenExamGrade(submission)
+          : submission?.writtenExamGrade?.initialGrade || null;
+        const areGradesFinal = sessionSettings.writtenExamGradesPublic;
+        return grade?.toFixed(2) || (areGradesFinal ? 'ABSENT' : '');
+      }
 
       return {
         properties: {
@@ -331,10 +339,11 @@ export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSet
               before: 500,
               after: 0,
             },
-            children: [
+            children: filterFalsy([
               new Word.TextRun({ text: `CATALOG EXAMEN DE ${paperTypeString.toLocaleUpperCase()}`, bold: true, size: 36 }),
               new Word.TextRun({ text: `Proba 1 – Cunoștințe fundamentale și de specialitate`, bold: true, size: 36, break: 1 }),
-            ],
+              isAfterDisputes && new Word.TextRun({ text: `– după soluționarea contestațiilor –`, bold: true, size: 36, break: 1 }),
+            ]),
           }),
           ...pageGroup.flatMap((promotionGroup) => [
             new Word.Paragraph({
@@ -365,7 +374,7 @@ export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSet
                     TableCell({ text: `${index + 1}.`, size }),
                     TableCell({ text: filterFalsy([submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName]).join(' ').toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
                     TableCell({ text: submission.student.matriculationYear, size }),
-                    TableCell({ text: getWrittenExamGrade(submission)?.toFixed(2) || (sessionSettings.writtenExamGradesPublic ? 'ABSENT' : ''), size }),
+                    TableCell({ text: stringifySubmissionGrade(submission), size }),
                   ],
                 }))
               ],

@@ -10,6 +10,7 @@ import { flattenStyles, getWrittenExamGrade } from "../utils";
 import { PeopleSignatureFooter } from "../components/people-signature-footer";
 
 interface WrittenExamCatalogProps {
+  isAfterDisputes?: boolean;
   submissionPromotionGroups: Submission[][][];
   sessionSettings: SessionSettings;
 }
@@ -30,7 +31,7 @@ function Cell({ style, ...props }: React.ComponentProps<typeof _Cell>) {
   return <_Cell {...props} style={[{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center' }, flattenStyles(style)]} />
 }
 
-export function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings }: WrittenExamCatalogProps) {
+export function WrittenExamCatalog({ isAfterDisputes = false, submissionPromotionGroups, sessionSettings }: WrittenExamCatalogProps) {
 
   const footerMarginBottom = 40;
   const footerMarginTop = 30;
@@ -52,7 +53,9 @@ export function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings 
         const paperTypeString = PAPER_TYPES[referenceStudent.specialization.domain.paperType];
 
         const stringifySubmissionGrade = (submission: Submission) => {
-          const grade = getWrittenExamGrade(submission);
+          const grade = isAfterDisputes 
+            ? getWrittenExamGrade(submission)
+            : submission?.writtenExamGrade?.initialGrade || null;
           const areGradesFinal = sessionSettings.writtenExamGradesPublic;
           return grade?.toFixed(2) || (areGradesFinal ? 'ABSENT' : '');
         }
@@ -86,6 +89,7 @@ export function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings 
             <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
               CATALOG EXAMEN DE {paperTypeString.toUpperCase()}
               {'\n'}Proba 1 – Cunoștințe fundamentale și de specialitate
+              {isAfterDisputes && '\n– după soluționarea contestațiilor –'}
             </Text>
             {pageGroup.map((promotionGroup, index) => (
               <View key={index} style={{ marginBottom: 10 }}>

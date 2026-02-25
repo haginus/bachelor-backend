@@ -53,6 +53,10 @@ export class ReportsService {
         return this.documentGenerationService.generateWrittenExamCatalogPdf();
       case 'written_exam_catalog_docx':
         return this.documentGenerationService.generateWrittenExamCatalogDocx();
+      case 'written_exam_after_disputes_catalog_pdf':
+        return this.documentGenerationService.generateWrittenExamCatalogPdf(true);
+      case 'written_exam_after_disputes_catalog_docx':
+        return this.documentGenerationService.generateWrittenExamCatalogDocx(true);
       case 'final_catalog_pdf':
         return this.documentGenerationService.generateFinalCatalogPdf();
       case 'final_catalog_docx':
