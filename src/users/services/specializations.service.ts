@@ -15,9 +15,11 @@ export class SpecializationsService {
       relations: { domain: detailed },
       select: {
         id: true,
+        catalogName: detailed,
         name: true,
         studyYears: true,
         studyForm: true,
+        secretary: detailed,
         studentCount: detailed,
       }
     }

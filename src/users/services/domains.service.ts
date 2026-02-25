@@ -3,17 +3,26 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { FindManyOptions, In, Repository } from "typeorm";
 import { Domain } from "../entities/domain.entity";
 import { DomainDto } from "../dto/domain.dto";
+import { Specialization } from "../entities/specialization.entity";
+import { SpecializationDto } from "../dto/specialization.dto";
+import { AdminsService } from "./admins.service";
 
 @Injectable()
 export class DomainsService {
 
   constructor(
     @InjectRepository(Domain) private domainsRepository: Repository<Domain>,
+    @InjectRepository(Specialization) private specializationsRepository: Repository<Specialization>,
+    private readonly adminsService: AdminsService,
   ) {}
 
   private getFindOptions(detailed: boolean): FindManyOptions<Domain> {
     return {
-      relations: { specializations: true },
+      relations: {
+        specializations: {
+          secretary: detailed,
+        },
+      },
       select: {
         id: true,
         name: true,
@@ -24,10 +33,12 @@ export class DomainsService {
         offerCount: detailed,
         specializations: {
           id: true,
+          catalogName: detailed,
           name: true,
           studyYears: true,
           studyForm: true,
           studentCount: detailed,
+          secretary: detailed,
         }
       }
     }
@@ -56,8 +67,23 @@ export class DomainsService {
     return domain;
   }
 
+  private async mapSpecializations(specializations: SpecializationDto[]): Promise<Specialization[]> {
+    return Promise.all(
+      specializations.map(async (dto) => {
+        const specialization = this.specializationsRepository.create(dto);
+        if(dto.secretaryId) {
+          specialization.secretary = await this.adminsService.findOneSecretary(dto.secretaryId);
+        } else {
+          specialization.secretary = null;
+        }
+        return specialization;
+      })
+    );
+  }
+
   async create(dto: DomainDto): Promise<Domain> {
     const domain = this.domainsRepository.create(dto);
+    domain.specializations = await this.mapSpecializations(dto.specializations);
     await this.domainsRepository.save(domain);
     return this.findOne(domain.id);
   }
@@ -65,6 +91,7 @@ export class DomainsService {
   async update(id: number, dto: DomainDto): Promise<Domain> {
     const domain = await this.findOne(id);
     const updatedDomain = this.domainsRepository.merge(domain, dto);
+    updatedDomain.specializations = await this.mapSpecializations(dto.specializations);
     await this.domainsRepository.save(updatedDomain);
     return this.findOne(id);
   }

@@ -1,6 +1,8 @@
 import { StudyForm } from "../../lib/enums/study-form.enum";
 import { Domain } from "./domain.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
+import { Secretary } from "./user.entity";
+import { Expose } from "class-transformer";
 
 @Entity()
 export class Specialization {
@@ -10,6 +12,9 @@ export class Specialization {
   @Column()
   name: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  catalogName: string | null;
+
   @Column()
   studyYears: number;
 
@@ -18,6 +23,10 @@ export class Specialization {
 
   @ManyToOne(() => Domain, (domain) => domain.specializations, { onDelete: 'CASCADE' })
   domain: Domain;
+
+  @ManyToOne(() => Secretary, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'secretaryId' })
+  secretary: Secretary | null;
 
   @VirtualColumn({
     query: (alias) => `

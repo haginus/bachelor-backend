@@ -1,5 +1,6 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from "class-validator";
 import { StudyForm } from "../../lib/enums/study-form.enum";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class SpecializationDto {
 
@@ -9,7 +10,13 @@ export class SpecializationDto {
 
   @IsString()
   @IsNotEmpty()
+  @TrimString()
   name: string;
+
+  @IsOptional()
+  @IsString()
+  @TrimString()
+  catalogName?: string;
 
   @IsInt()
   @Min(1)
@@ -17,5 +24,9 @@ export class SpecializationDto {
 
   @IsEnum(StudyForm)
   studyForm: StudyForm;
+
+  @IsInt()
+  @ValidateIf((_, v) => v !== null)
+  secretaryId: number | null;
 
 }

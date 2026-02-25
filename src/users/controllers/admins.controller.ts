@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, SerializeOptions } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, SerializeOptions } from "@nestjs/common";
 import { UserType } from "../../lib/enums/user-type.enum";
 import { UserTypes } from "../../auth/decorators/user-types.decorator";
 import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../entities/user.entity";
 import { AdminsService } from "../services/admins.service";
 import { AdminDto } from "../dto/admin.dto";
+import { AdminQueryDto } from "../dto/admin-query.dto";
 
 @Controller('admins')
 @UserTypes([UserType.Admin])
@@ -14,8 +15,8 @@ export class AdminsController {
   constructor(private readonly adminsService: AdminsService) {}
 
   @Get()
-  async findAll() {
-    return this.adminsService.findAll();
+  async findAll(@Query() query: AdminQueryDto) {
+    return this.adminsService.findAll(query);
   }
 
   @Post()
