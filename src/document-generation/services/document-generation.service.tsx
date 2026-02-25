@@ -162,6 +162,7 @@ export class DocumentGenerationService {
 
   private getPaperSortCriteria() {
     return [
+      ({ student: { specialization }}: Paper) => [specialization.domain.type, specialization.name, specialization.studyForm].toString(),
       (paper: Paper) => paper.student.promotion,
       (paper: Paper) => [paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName].filter(Boolean).join(' '),
     ];
@@ -255,14 +256,27 @@ export class DocumentGenerationService {
       }
     });
     const sessionSettings = await this.sessionSettingsService.getSettings();
+    sortArray(submissions, [
+      ({ student: { specialization } }) => [specialization.domain.type, specialization.name, specialization.studyForm].toString(),
+      (submission) => submission.student.promotion,
+      (submission) => [submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName].filter(Boolean).join(' '),
+    ]);
     const submissionGroups = Object.values(
       groupBy(
         submissions,
-        submission => [submission.student.promotion, submission.student.specialization.id].toString()
+        submission => submission.student.specialization.id,
       )
     );
+    const submissionPromotionGroups = submissionGroups.map(submissions => {
+      return Object.values(
+        groupBy(
+          submissions,
+          submission => submission.student.promotion,
+        )
+      );
+    });
     return {
-      submissionGroups,
+      submissionPromotionGroups,
       sessionSettings,
     };
   }
@@ -862,7 +876,7 @@ interface CommitteeFinalCatalogGenerationProps {
 }
 
 interface WrittenExamCatalogGenerationProps {
-  submissionGroups: Submission[][];
+  submissionPromotionGroups: Submission[][][];
   sessionSettings: SessionSettings;
 }
 

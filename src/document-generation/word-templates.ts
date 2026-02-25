@@ -128,7 +128,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
                         children: [
                           new Word.TextRun({ text: `Examen de ${paperTypeString}`, bold: true }),
                           new Word.TextRun({ text: `Sesiunea ${sessionSettings.sessionName.toUpperCase()}`, bold: true, break: 1 }),
-                          new Word.TextRun({ text: `Nr. credite: ${referencePaper.student.specialization.domain.hasWrittenExam ? 5 : 10}`, bold: true, break: 1 }),
+                          new Word.TextRun({ text: `Nr. credite: ${domain.hasWrittenExam ? 5 : 10}`, bold: true, break: 1 }),
                         ],
                       }),
                     ],
@@ -145,7 +145,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
             },
             children: [
               new Word.TextRun({ text: `CATALOG EXAMEN DE LICENȚĂ`, bold: true, size: 36 }),
-              new Word.TextRun({ text: `Prezentarea și susținerea lucrării de licență`, bold: true, size: 36, break: 1 }),
+              new Word.TextRun({ text: `${domain.hasWrittenExam ? 'Proba 2 – ' : ''}Prezentarea și susținerea lucrării de licență`, bold: true, size: 36, break: 1 }),
             ],
           }),
           new Word.Table({
@@ -249,12 +249,12 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
   return Buffer.from(buffer);
 }
 
-export async function WrittenExamCatalog({ submissionGroups, sessionSettings }: { submissionGroups: Submission[][]; sessionSettings: SessionSettings }) {
+export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings }: { submissionPromotionGroups: Submission[][][]; sessionSettings: SessionSettings }) {
   const document = new Word.Document({
     ...getDefaultDocumentProperties(),
     title: `Catalog proba 1 - Sesiunea ${sessionSettings.sessionName}`,
-    sections: submissionGroups.map((submissions) => {
-      const referenceSubmission = submissions[0];
+    sections: submissionPromotionGroups.map((pageGroup) => {
+      const referenceSubmission = pageGroup[0][0];
       const referenceStudent = referenceSubmission.student;
       const studyYears = referenceStudent.specialization.studyYears;
       const paperTypeString = PAPER_TYPES[referenceStudent.specialization.domain.paperType];
@@ -300,7 +300,6 @@ export async function WrittenExamCatalog({ submissionGroups, sessionSettings }: 
                           new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Forma de învățământ: ${referenceStudent.specialization.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
-                          new Word.TextRun({ text: `Promoția: ${referenceStudent.promotion}`, bold: true, break: 1, size }),
                         ],
                       }),
                     ],
@@ -330,38 +329,48 @@ export async function WrittenExamCatalog({ submissionGroups, sessionSettings }: 
             alignment: Word.AlignmentType.CENTER,
             spacing: {
               before: 500,
-              after: 400,
+              after: 0,
             },
             children: [
               new Word.TextRun({ text: `CATALOG EXAMEN DE ${paperTypeString.toLocaleUpperCase()}`, bold: true, size: 36 }),
-              new Word.TextRun({ text: `Cunoștințe fundamentale și de specialitate`, bold: true, size: 36, break: 1 }),
+              new Word.TextRun({ text: `Proba 1 – Cunoștințe fundamentale și de specialitate`, bold: true, size: 36, break: 1 }),
             ],
           }),
-          new Word.Table({
-            width: {
-              size: 100,
-              type: Word.WidthType.PERCENTAGE,
-            },
-            rows: [
-              new Word.TableRow({
-                tableHeader: true,
-                children: [
-                  TableCell({ text: 'Nr. crt.', bold: true, fill: '#bdbdbd', size }),
-                  TableCell({ text: 'Numele, inițiala tatălui și prenumele absolventului', bold: true, fill: '#bdbdbd', size }),
-                  TableCell({ text: 'Anul înmatriculării', bold: true, fill: '#bdbdbd', width: Percent(19), size }),
-                  TableCell({ text: 'Nota Proba 1', bold: true, fill: '#bdbdbd', width: Percent(26), size }),
-                ],
-              }),
-              ...submissions.map((submission, index) => new Word.TableRow({
-                children: [
-                  TableCell({ text: `${index + 1}.`, size }),
-                  TableCell({ text: filterFalsy([submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName]).join(' ').toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
-                  TableCell({ text: submission.student.matriculationYear, size }),
-                  TableCell({ text: getWrittenExamGrade(submission)?.toFixed(2) || (sessionSettings.writtenExamGradesPublic ? 'ABSENT' : ''), size }),
-                ],
-              }))
-            ],
-          }),
+          ...pageGroup.flatMap((promotionGroup) => [
+            new Word.Paragraph({
+              spacing: {
+                after: 100,
+              },
+              children: [
+                new Word.TextRun({ text: `Promoția ${promotionGroup[0].student.promotion}`, bold: true, break: 1, size }),
+              ],
+            }),
+            new Word.Table({
+              width: {
+                size: 100,
+                type: Word.WidthType.PERCENTAGE,
+              },
+              rows: [
+                new Word.TableRow({
+                  tableHeader: true,
+                  children: [
+                    TableCell({ text: 'Nr. crt.', bold: true, fill: '#bdbdbd', size }),
+                    TableCell({ text: 'Numele, inițiala tatălui și prenumele absolventului', bold: true, fill: '#bdbdbd', size }),
+                    TableCell({ text: 'Anul înmatriculării', bold: true, fill: '#bdbdbd', width: Percent(19), size }),
+                    TableCell({ text: 'Nota Proba 1', bold: true, fill: '#bdbdbd', width: Percent(26), size }),
+                  ],
+                }),
+                ...promotionGroup.map((submission, index) => new Word.TableRow({
+                  children: [
+                    TableCell({ text: `${index + 1}.`, size }),
+                    TableCell({ text: filterFalsy([submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName]).join(' ').toLocaleUpperCase(), alignment: Word.AlignmentType.LEFT, size }),
+                    TableCell({ text: submission.student.matriculationYear, size }),
+                    TableCell({ text: getWrittenExamGrade(submission)?.toFixed(2) || (sessionSettings.writtenExamGradesPublic ? 'ABSENT' : ''), size }),
+                  ],
+                }))
+              ],
+            }),
+          ]),
         ],
         footers: {
           default: new Word.Footer({

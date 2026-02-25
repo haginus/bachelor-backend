@@ -10,7 +10,7 @@ import { flattenStyles, getWrittenExamGrade } from "../utils";
 import { PeopleSignatureFooter } from "../components/people-signature-footer";
 
 interface WrittenExamCatalogProps {
-  submissionGroups: Submission[][];
+  submissionPromotionGroups: Submission[][][];
   sessionSettings: SessionSettings;
 }
 
@@ -30,7 +30,7 @@ function Cell({ style, ...props }: React.ComponentProps<typeof _Cell>) {
   return <_Cell {...props} style={[{ paddingHorizontal: 3, paddingVertical: 1, justifyContent: 'center' }, flattenStyles(style)]} />
 }
 
-export function WrittenExamCatalog({ submissionGroups, sessionSettings }: WrittenExamCatalogProps) {
+export function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings }: WrittenExamCatalogProps) {
 
   const footerMarginBottom = 40;
   const footerMarginTop = 30;
@@ -39,14 +39,14 @@ export function WrittenExamCatalog({ submissionGroups, sessionSettings }: Writte
 
   return (
     <Document title={`Catalog proba 1 - Sesiunea ${sessionSettings.sessionName}`}>
-      {submissionGroups.map((submissions, index) => {
+      {submissionPromotionGroups.map((pageGroup, index) => {
         const rowWidth = 535;
         const numberingColumnWidth = 35;
         const matriculationYearColumnWidth = 110;
         const gradeColumnWidth = 130;
         const leftSpace = rowWidth - numberingColumnWidth - matriculationYearColumnWidth - gradeColumnWidth;
 
-        const referenceSubmission = submissions[0];
+        const referenceSubmission = pageGroup[0][0];
         const referenceStudent = referenceSubmission.student;
         const studyYears = referenceStudent.specialization.studyYears;
         const paperTypeString = PAPER_TYPES[referenceStudent.specialization.domain.paperType];
@@ -71,7 +71,6 @@ export function WrittenExamCatalog({ submissionGroups, sessionSettings }: Writte
                 <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
                 <Text>Număr credite: {60 * studyYears}</Text>
                 <Text>Forma de învățământ: {referenceStudent.specialization.studyForm.toLocaleUpperCase()}</Text>
-                <Text>Promoția: {referenceStudent.promotion}</Text>
               </View>
               <View 
                 style={[
@@ -86,26 +85,33 @@ export function WrittenExamCatalog({ submissionGroups, sessionSettings }: Writte
             </View>
             <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
               CATALOG EXAMEN DE {paperTypeString.toUpperCase()}
-              {'\n'}Cunoștințe fundamentale și de specialitate
+              {'\n'}Proba 1 – Cunoștințe fundamentale și de specialitate
             </Text>
-            <Row width={rowWidth} borderBottom>
-              <HeaderCell value="Nr. crt." width={numberingColumnWidth} borderLeft />
-              <HeaderCell value="Numele, inițiala tatălui și prenumele absolventului" width={leftSpace} />
-              <HeaderCell value="Anul înmatriculării" width={matriculationYearColumnWidth} />
-              <HeaderCell value="Nota Proba 1" width={gradeColumnWidth} />
-            </Row>
-            {submissions.map((submission, index) => (
-              <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
-                <Cell value={(index + 1) + '.'} width={numberingColumnWidth} borderLeft />
-                <Cell 
-                  value={filterFalsy([submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName]).join(' ')}
-                  width={leftSpace}
-                  style={{ justifyContent: 'flex-start' }}
-                  textStyle={{ textAlign: 'left' }}
-                />
-                <Cell value={submission.student.matriculationYear} width={matriculationYearColumnWidth} />
-                <Cell value={stringifySubmissionGrade(submission)} width={gradeColumnWidth} />
-              </Row>
+            {pageGroup.map((promotionGroup, index) => (
+              <View key={index} style={{ marginBottom: 10 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
+                  Promoția {promotionGroup[0].student.promotion}
+                </Text>
+                <Row width={rowWidth} borderBottom>
+                  <HeaderCell value="Nr. crt." width={numberingColumnWidth} borderLeft />
+                  <HeaderCell value="Numele, inițiala tatălui și prenumele absolventului" width={leftSpace} />
+                  <HeaderCell value="Anul înmatriculării" width={matriculationYearColumnWidth} />
+                  <HeaderCell value="Nota Proba 1" width={gradeColumnWidth} />
+                </Row>
+                {promotionGroup.map((submission, index) => (
+                  <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
+                    <Cell value={(index + 1) + '.'} width={numberingColumnWidth} borderLeft />
+                    <Cell 
+                      value={filterFalsy([submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName]).join(' ')}
+                      width={leftSpace}
+                      style={{ justifyContent: 'flex-start' }}
+                      textStyle={{ textAlign: 'left' }}
+                    />
+                    <Cell value={submission.student.matriculationYear} width={matriculationYearColumnWidth} />
+                    <Cell value={stringifySubmissionGrade(submission)} width={gradeColumnWidth} />
+                  </Row>
+                ))}
+              </View>
             ))}
             <View fixed style={[styles.footer, { bottom: footerMarginBottom }]}>
               <PeopleSignatureFooter

@@ -92,7 +92,8 @@ export function CommitteeCatalog({ committee, paperGroups, sessionSettings }: Co
               </View>
               <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
                 CATALOG EXAMEN DE {paperTypeString.toUpperCase()}
-                {'\n'}Prezentarea și susținerea lucrării de {paperTypeString}
+                {'\n'}{referenceStudent.specialization.domain.hasWrittenExam ? 'Proba 2 – ' : ''}
+                Prezentarea și susținerea lucrării de {paperTypeString}
               </Text>
               <View style={{ fontSize: 10 }}>
                 <Row width={rowWidth} borderBottom>
