@@ -3,7 +3,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
 import { Submission } from "../../grading/entities/submission.entity";
 import { globalStyles } from "../global-styles";
-import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
+import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_WRITTEN_EXAM_SECRETARY_NAME, PAPER_TYPES } from "../constants";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { filterFalsy } from "../../lib/utils";
 import { flattenStyles, getWrittenExamGrade } from "../utils";
@@ -116,8 +116,8 @@ export function WrittenExamCatalog({ submissionPromotionGroups, sessionSettings 
             <View fixed style={[styles.footer, { bottom: footerMarginBottom }]}>
               <PeopleSignatureFooter
                 people={[
-                  { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: ' ' },
-                  { column: 'right', position: `Secretar comisie examen de ${paperTypeString}`, name: ' ' },
+                  { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: 'Decan – ' + FACULTY_DEAN_NAME },
+                  { column: 'right', position: `Secretar comisie examen de ${paperTypeString}`, name: FACULTY_WRITTEN_EXAM_SECRETARY_NAME },
                 ]}
               />
             </View>

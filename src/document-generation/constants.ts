@@ -54,3 +54,7 @@ export const NUMBERS = {
   9: "nouă",
   10: "zece",
 }
+
+export const FACULTY_DEAN_NAME = process.env['FACULTY_DEAN_NAME'] || 'Conf. Dr. Cătălin Gherghe';
+export const FACULTY_SECRETARY_CHIEF_NAME = process.env['FACULTY_SECRETARY_CHIEF_NAME'] || 'Evelina Coteneanu';
+export const FACULTY_WRITTEN_EXAM_SECRETARY_NAME = process.env['FACULTY_WRITTEN_EXAM_SECRETARY_NAME'] || '';

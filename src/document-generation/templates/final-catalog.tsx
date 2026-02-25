@@ -2,7 +2,7 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import React from "react";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { globalStyles } from "../global-styles";
-import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
+import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_SECRETARY_CHIEF_NAME, PAPER_TYPES } from "../constants";
 import { flattenStyles, getSubmissionGrade, getWrittenExamGrade } from "../utils";
 import { Paper } from "../../papers/entities/paper.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
@@ -44,114 +44,114 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
 
   return (
     <Document title={`${catalogName} - Sesiunea ${sessionSettings.sessionName}`}>
-      <Page 
-        size="A4" 
-        style={[globalStyles.page, { paddingHorizontal: '1cm', paddingBottom: pagePaddingBottom }]}
-      >
-        {paperPromotionGroups.map((pageGroup, index) => {
-          const referencePromotion = pageGroup[0];
-          const referencePaper = referencePromotion[0];
-          const referenceStudent = referencePaper.student;
-          const referenceSpecialization = referenceStudent.specialization;
-          const referenceDomain = referenceSpecialization.domain;
-          const studyYears = referenceSpecialization.studyYears;
-          const paperTypeString = PAPER_TYPES[referencePaper.type];
+      {paperPromotionGroups.map((pageGroup, index) => {
+        const referencePromotion = pageGroup[0];
+        const referencePaper = referencePromotion[0];
+        const referenceStudent = referencePaper.student;
+        const referenceSpecialization = referenceStudent.specialization;
+        const referenceDomain = referenceSpecialization.domain;
+        const studyYears = referenceSpecialization.studyYears;
+        const paperTypeString = PAPER_TYPES[referencePaper.type];
+        const secretary = referenceSpecialization.secretary;
 
-          const rowWidth = 535;
-          const numberingColumnWidth = 35;
-          const matriculationYearColumnWidth = referenceDomain.hasWrittenExam ? 90 : 110;
-          const examPart1ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
-          const examPart2ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
-          const averageColumnWidth = referenceDomain.hasWrittenExam ? 80 : 140;
-          const leftSpace = rowWidth - numberingColumnWidth - matriculationYearColumnWidth - examPart1ColumnWidth - examPart2ColumnWidth - averageColumnWidth;
-        
-          return (
-            <View key={index} break={index > 0}>
-              <View style={[globalStyles.section, { fontWeight: 'bold', marginBottom: 16 }]}>
-                <View style={globalStyles.sectionColumn}>
-                  <Text>ROMÂNIA</Text>
-                  <Text>MINISTERUL EDUCAȚIEI</Text>
-                  <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
-                  <Text>Facultatea de Matematică și Informatică</Text>
-                  <Text>Domeniul de {DOMAIN_TYPES[referenceDomain.type]}: {referenceDomain.name}</Text>
-                  <Text>Programul de studii/specializarea: {referenceSpecialization.name}</Text>
-                  <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
-                  <Text>Număr credite: {60 * studyYears}</Text>
-                  <Text>Forma de învățământ: {referenceSpecialization.studyForm.toLocaleUpperCase()}</Text>
-                </View>
-                <View 
-                    style={[
-                      globalStyles.sectionColumn, 
-                      { flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-end' }
-                    ]}
-                  >
-                    <Text>Sesiunea {sessionSettings.sessionName.toLocaleUpperCase()}</Text>
-                    <Text style={{ maxWidth: 180, textAlign: 'right' }}>
-                      {
-                        referenceDomain.hasWrittenExam
-                          ? `Proba 1: Cunoștințe fundamentale și de specialitate - Credite 5\nProba 2: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 5\nTotal credite: 10`
-                          : `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`
-                      }
-                    </Text>
-                  </View>
+        const rowWidth = 535;
+        const numberingColumnWidth = 35;
+        const matriculationYearColumnWidth = referenceDomain.hasWrittenExam ? 90 : 110;
+        const examPart1ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
+        const examPart2ColumnWidth = referenceDomain.hasWrittenExam ? 65 : 0;
+        const averageColumnWidth = referenceDomain.hasWrittenExam ? 80 : 140;
+        const leftSpace = rowWidth - numberingColumnWidth - matriculationYearColumnWidth - examPart1ColumnWidth - examPart2ColumnWidth - averageColumnWidth;
+      
+        return (
+          <Page 
+            key={index}
+            size="A4" 
+            style={[globalStyles.page, { paddingHorizontal: '1cm', paddingBottom: pagePaddingBottom }]}
+          >
+            <View style={[globalStyles.section, { fontWeight: 'bold', marginBottom: 16 }]}>
+              <View style={[globalStyles.sectionColumn, { width: '60%' }]}>
+                <Text>ROMÂNIA</Text>
+                <Text>MINISTERUL EDUCAȚIEI</Text>
+                <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
+                <Text>Facultatea de Matematică și Informatică</Text>
+                <Text>Domeniul de {DOMAIN_TYPES[referenceDomain.type]}: {referenceDomain.name}</Text>
+                <Text>Programul de studii/specializarea: {referenceSpecialization.name} {referenceSpecialization.catalogName && `/ ${referenceSpecialization.catalogName}`}</Text>
+                <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
+                <Text>Număr credite: {60 * studyYears}</Text>
+                <Text>Forma de învățământ: {referenceSpecialization.studyForm.toLocaleUpperCase()}</Text>
               </View>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
-                {catalogName.toLocaleUpperCase()}{'\n'}
-                EXAMEN DE {paperTypeString.toLocaleUpperCase()}
-              </Text>
-              {pageGroup.map((promotionGroup, index) => (
-                <View key={index} style={{ marginBottom: 10 }}>
-                  <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
-                    Promoția {promotionGroup[0].student.promotion}
+              <View 
+                  style={[
+                    globalStyles.sectionColumn, 
+                    { flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-end' }
+                  ]}
+                >
+                  <Text>Sesiunea {sessionSettings.sessionName.toLocaleUpperCase()}</Text>
+                  <Text style={{ maxWidth: 180, textAlign: 'right' }}>
+                    {
+                      referenceDomain.hasWrittenExam
+                        ? `Proba 1: Cunoștințe fundamentale și de specialitate - Credite 5\nProba 2: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 5\nTotal credite: 10`
+                        : `Proba: Prezentarea și susținerea lucrării de ${paperTypeString} - Credite 10`
+                    }
                   </Text>
-                  <Row width={rowWidth} borderBottom>
-                    <HeaderCell value="Nr. crt." width={numberingColumnWidth} borderLeft />
-                    <HeaderCell value="Numele, inițiala tatălui și prenumele absolventului" width={leftSpace} />
-                    <HeaderCell value="Anul înmatriculării" width={matriculationYearColumnWidth} />
-                    {referenceDomain.hasWrittenExam ? (
-                      <>
-                        <HeaderCell value="Proba 1" width={examPart1ColumnWidth} />
-                        <HeaderCell value="Proba 2" width={examPart2ColumnWidth} />
-                        <HeaderCell value="Media finală" width={averageColumnWidth} />
-                      </>
-                    ) : (
-                      <HeaderCell value={`Media examenului de ${paperTypeString}`} width={averageColumnWidth} />
-                    )}
-                  </Row>
-                  {promotionGroup.map((paper, index) => (
-                    <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
-                      <Cell value={index + 1 + '.'} width={numberingColumnWidth} borderLeft />
-                      <Cell 
-                        value={filterFalsy([paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName]).join(' ')}
-                        width={leftSpace}
-                        style={{ justifyContent: 'flex-start' }}
-                        textStyle={{ textAlign: 'left' }}
-                      />
-                      <Cell value={paper.student.matriculationYear} width={matriculationYearColumnWidth} />
-                      {referenceDomain.hasWrittenExam && (
-                        <>
-                          <Cell value={getWrittenExamGrade(paper.student.submission)?.toFixed(2) || 'ABSENT'} width={examPart1ColumnWidth} />
-                          <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={examPart2ColumnWidth} />
-                        </>
-                      )}
-                      <Cell value={getSubmissionGrade(paper)?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />
-                    </Row>
-                  ))}
                 </View>
-              ))}
             </View>
-          );
-        })}
-        <View fixed style={[styles.footer, { bottom: footerMarginBottom }]}>
-          <PeopleSignatureFooter
-            people={[
-              { column: 'left', position: 'DECAN', name: 'Conf. Dr. Cătălin Gherghe', stamp: true },
-              { column: 'right', position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
-              { column: 'right', position: 'Întocmit', name: '' }
-            ]}
-          />
-        </View>
-      </Page>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 }}>
+              {catalogName.toLocaleUpperCase()}{'\n'}
+              EXAMEN DE {paperTypeString.toLocaleUpperCase()}
+            </Text>
+            {pageGroup.map((promotionGroup, index) => (
+              <View key={index} style={{ marginBottom: 10 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
+                  Promoția {promotionGroup[0].student.promotion}
+                </Text>
+                <Row width={rowWidth} borderBottom>
+                  <HeaderCell value="Nr. crt." width={numberingColumnWidth} borderLeft />
+                  <HeaderCell value="Numele, inițiala tatălui și prenumele absolventului" width={leftSpace} />
+                  <HeaderCell value="Anul înmatriculării" width={matriculationYearColumnWidth} />
+                  {referenceDomain.hasWrittenExam ? (
+                    <>
+                      <HeaderCell value="Proba 1" width={examPart1ColumnWidth} />
+                      <HeaderCell value="Proba 2" width={examPart2ColumnWidth} />
+                      <HeaderCell value="Media finală" width={averageColumnWidth} />
+                    </>
+                  ) : (
+                    <HeaderCell value={`Media examenului de ${paperTypeString}`} width={averageColumnWidth} />
+                  )}
+                </Row>
+                {promotionGroup.map((paper, index) => (
+                  <Row key={index} width={rowWidth} borderBottom style={{ marginTop: -1 }}>
+                    <Cell value={index + 1 + '.'} width={numberingColumnWidth} borderLeft />
+                    <Cell 
+                      value={filterFalsy([paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName]).join(' ')}
+                      width={leftSpace}
+                      style={{ justifyContent: 'flex-start' }}
+                      textStyle={{ textAlign: 'left' }}
+                    />
+                    <Cell value={paper.student.matriculationYear} width={matriculationYearColumnWidth} />
+                    {referenceDomain.hasWrittenExam && (
+                      <>
+                        <Cell value={getWrittenExamGrade(paper.student.submission)?.toFixed(2) || 'ABSENT'} width={examPart1ColumnWidth} />
+                        <Cell value={paper.gradeAverage?.toFixed(2) || 'ABSENT'} width={examPart2ColumnWidth} />
+                      </>
+                    )}
+                    <Cell value={getSubmissionGrade(paper)?.toFixed(2) || 'ABSENT'} width={averageColumnWidth} />
+                  </Row>
+                ))}
+              </View>
+            ))}
+            <View fixed style={[styles.footer, { bottom: footerMarginBottom }]}>
+              <PeopleSignatureFooter
+                people={[
+                  { column: 'left', position: 'DECAN', name: FACULTY_DEAN_NAME, stamp: true },
+                  { column: 'right', position: 'SECRETAR ȘEF', name: FACULTY_SECRETARY_CHIEF_NAME },
+                  { column: 'right', position: 'Întocmit', name: secretary ? [secretary.firstName, secretary.lastName].join(' ') : '' },
+                ]}
+              />
+            </View>
+          </Page>
+        );
+      })}
     </Document>
   );
 }

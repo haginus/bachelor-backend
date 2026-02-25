@@ -1,5 +1,5 @@
 import * as Word from "docx";
-import { DOMAIN_TYPES, PAPER_TYPES } from "./constants";
+import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_SECRETARY_CHIEF_NAME, FACULTY_WRITTEN_EXAM_SECRETARY_NAME, PAPER_TYPES } from "./constants";
 import { Committee } from "../grading/entities/committee.entity";
 import { Paper } from "../papers/entities/paper.entity";
 import { SessionSettings } from "../common/entities/session-settings.entity";
@@ -376,8 +376,8 @@ export async function WrittenExamCatalog({ submissionPromotionGroups, sessionSet
           default: new Word.Footer({
             children: [
               PeopleSignatureFooter([
-                { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: '' },
-                { column: 'right', position: `Secretar comisie examen de ${paperTypeString}`, name: '' },
+                { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: `Decan – ${FACULTY_DEAN_NAME}` },
+                { column: 'right', position: `Secretar comisie examen de ${paperTypeString}`, name: FACULTY_WRITTEN_EXAM_SECRETARY_NAME },
               ]),
             ],
           }),
@@ -405,6 +405,7 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
       const referenceDomain = referenceSpecialization.domain;
       const studyYears = referenceStudent.specialization.studyYears;
       const paperTypeString = PAPER_TYPES[referencePaper.type];
+      const secretary = referenceSpecialization.secretary;
       const size = 24;
 
       return {
@@ -443,7 +444,7 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
                           new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true, break: 1, size }),
                           new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Domeniul de ${DOMAIN_TYPES[referenceDomain.type]}: ${referenceDomain.name}`, bold: true, break: 1, size }),
-                          new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceSpecialization.name}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceSpecialization.name}${referenceSpecialization.catalogName ? ` / ${referenceSpecialization.catalogName}` : ''}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Forma de învățământ: ${referenceSpecialization.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
@@ -529,9 +530,9 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
           default: new Word.Footer({
             children: [
               PeopleSignatureFooter([
-                { column: 'left', position: 'DECAN', name: 'Conf. Dr. Cătălin Gherghe', stamp: true },
-                { column: 'right', position: 'SECRETAR ȘEF', name: 'Evelina Coteneanu' },
-                { column: 'right', position: 'Întocmit', name: ''}
+                { column: 'left', position: 'DECAN', name: FACULTY_DEAN_NAME, stamp: true },
+                { column: 'right', position: 'SECRETAR ȘEF', name: FACULTY_SECRETARY_CHIEF_NAME },
+                { column: 'right', position: 'Întocmit', name: secretary ? [secretary.firstName, secretary.lastName].join(' ') : '' }
               ])
             ],
           }),

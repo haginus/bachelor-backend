@@ -306,7 +306,10 @@ export class DocumentGenerationService {
         student: {
           profile: false,
           extraData: true,
-          specialization: { domain: true },
+          specialization: { 
+            domain: true,
+            secretary: true,
+          },
           submission: {
             writtenExamGrade: true,
           },
