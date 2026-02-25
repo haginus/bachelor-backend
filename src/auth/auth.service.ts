@@ -149,13 +149,13 @@ export class AuthService {
   async changePasswordWithActivationToken({ token, newPassword }: ChangePasswordWithActivationTokenDto): Promise<AuthResponse> {
     const activationToken = await this._findActivationToken(token);
     const user = activationToken.user;
-    return this.dataSource.transaction(async manager => {
+    await this.dataSource.transaction(async manager => {
       activationToken.used = true;
       user.password = hashSync(newPassword, 10);
       await manager.save(activationToken);
       await manager.save(user);
-      return this.createAuthResponse(await this.usersService.findOne(user.id));
     });
+    return this.createAuthResponse(await this.usersService.findOne(user.id));
   }
 
   private signAccessToken(rti: number, user: User, additionalPayload?: Partial<JwtPayload>): string {
