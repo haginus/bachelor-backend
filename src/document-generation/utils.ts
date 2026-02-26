@@ -4,12 +4,17 @@ import { Committee } from "../grading/entities/committee.entity";
 import { NUMBERS } from "./constants";
 import { Paper } from "../papers/entities/paper.entity";
 import { Submission } from "../grading/entities/submission.entity";
+import { Specialization } from "../users/entities/specialization.entity";
 
 export function flattenStyles(style: React.ComponentProps<typeof View | typeof Text>['style']) {
   if(Array.isArray(style)) {
     return style.reduce((acc, val) => ({ ...acc, ...flattenStyles(val) }), {});
   }
   return style;
+}
+
+export function getSpecializationName(specialization: Specialization) {
+  return [specialization.catalogName, specialization.name].filter(Boolean).join(' / ');
 }
 
 export function getWrittenExamGrade(submission: Submission) {

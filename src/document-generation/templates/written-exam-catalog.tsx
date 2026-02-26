@@ -6,7 +6,7 @@ import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_WRITTEN_EXAM_SECRETARY_NAME, PAPER_TYPES } from "../constants";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { filterFalsy } from "../../lib/utils";
-import { flattenStyles, getWrittenExamGrade } from "../utils";
+import { flattenStyles, getSpecializationName, getWrittenExamGrade } from "../utils";
 import { PeopleSignatureFooter } from "../components/people-signature-footer";
 
 interface WrittenExamCatalogProps {
@@ -70,7 +70,7 @@ export function WrittenExamCatalog({ isAfterDisputes = false, submissionPromotio
                 <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
                 <Text>Facultatea de Matematică și Informatică</Text>
                 <Text>Domeniul de {DOMAIN_TYPES[referenceStudent.specialization.domain.type]}: {referenceStudent.specialization.domain.name}</Text>
-                <Text>Programul de studii/specializarea: {referenceStudent.specialization.name}</Text>
+                <Text>Programul de studii/specializarea: {getSpecializationName(referenceStudent.specialization)}</Text>
                 <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
                 <Text>Număr credite: {60 * studyYears}</Text>
                 <Text>Forma de învățământ: {referenceStudent.specialization.studyForm.toLocaleUpperCase()}</Text>

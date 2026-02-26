@@ -4,7 +4,7 @@ import { globalStyles } from "../global-styles";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { DOMAIN_TYPES, PAPER_TYPES } from "../constants";
 import { CommitteeCatalogFooter } from "../components/committee-catalog-footer";
-import { flattenStyles, gradeAverageString } from "../utils";
+import { flattenStyles, getSpecializationName, gradeAverageString } from "../utils";
 import { Committee } from "../../grading/entities/committee.entity";
 import { Paper } from "../../papers/entities/paper.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
@@ -73,7 +73,7 @@ export function CommitteeCatalog({ committee, paperGroups, sessionSettings }: Co
                   <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
                   <Text>Facultatea de Matematică și Informatică</Text>
                   <Text>Domeniul de {DOMAIN_TYPES[referenceStudent.specialization.domain.type]}: {referenceStudent.specialization.domain.name}</Text>
-                  <Text>Programul de studii/specializarea: {referenceStudent.specialization.name}</Text>
+                  <Text>Programul de studii/specializarea: {getSpecializationName(referenceStudent.specialization)}</Text>
                   <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
                   <Text>Număr credite: {60 * studyYears}</Text>
                   <Text>Forma de învățământ: {referenceStudent.specialization.studyForm.toLocaleUpperCase()}</Text>

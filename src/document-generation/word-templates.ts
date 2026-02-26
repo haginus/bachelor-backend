@@ -3,7 +3,7 @@ import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_SECRETARY_CHIEF_NAME, FACULTY_
 import { Committee } from "../grading/entities/committee.entity";
 import { Paper } from "../papers/entities/paper.entity";
 import { SessionSettings } from "../common/entities/session-settings.entity";
-import { getSubmissionGrade, getWrittenExamGrade, gradeAverageString } from "./utils";
+import { getSpecializationName, getSubmissionGrade, getWrittenExamGrade, gradeAverageString } from "./utils";
 import { filterFalsy } from "../lib/utils";
 import { Submission } from "../grading/entities/submission.entity";
 
@@ -107,7 +107,7 @@ export async function CommitteeCatalog({ committee, paperGroups, sessionSettings
                           new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true }),
                           new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1 }),
                           new Word.TextRun({ text: `Domeniul de ${domainTypeString}: ${domain.name}`, bold: true, break: 1 }),
-                          new Word.TextRun({ text: `Programul de studii/specializarea: ${specialization.name}`, bold: true, break: 1 }),
+                          new Word.TextRun({ text: `Programul de studii/specializarea: ${getSpecializationName(specialization)}`, bold: true, break: 1 }),
                           new Word.TextRun({ text: `Durata studiilor: ${studyDurationString}`, bold: true, break: 1 }),
                           new Word.TextRun({ text: `Număr credite: ${creditNumber}`, bold: true, break: 1 }),
                           new Word.TextRun({ text: `Forma de învățământ: ${specialization.studyForm.toUpperCase()}`, bold: true, break: 1 }),
@@ -300,11 +300,11 @@ export async function WrittenExamCatalog({ isAfterDisputes = false, submissionPr
                       new Word.Paragraph({
                         children: [
                           new Word.TextRun({ text: 'ROMÂNIA', bold: true, size }),
-                          new Word.TextRun({ text: 'MINISTERUL EDUCAȚIEI', bold: true, break: 1, size }),
+                          new Word.TextRun({ text: 'MINISTERUL EDUCAȚIEI ȘI CERCETĂRII', bold: true, break: 1, size }),
                           new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true, break: 1, size }),
                           new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Domeniul de ${DOMAIN_TYPES[referenceStudent.specialization.domain.type]}: ${referenceStudent.specialization.domain.name}`, bold: true, break: 1, size }),
-                          new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceStudent.specialization.name}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Programul de studii/specializarea: ${getSpecializationName(referenceStudent.specialization)}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Forma de învățământ: ${referenceStudent.specialization.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
@@ -385,7 +385,7 @@ export async function WrittenExamCatalog({ isAfterDisputes = false, submissionPr
           default: new Word.Footer({
             children: [
               PeopleSignatureFooter([
-                { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: `Decan – ${FACULTY_DEAN_NAME}` },
+                { column: 'left', position: `Președinte comisie examen de ${paperTypeString}`, name: `Decan, ${FACULTY_DEAN_NAME}` },
                 { column: 'right', position: `Secretar comisie examen de ${paperTypeString}`, name: FACULTY_WRITTEN_EXAM_SECRETARY_NAME },
               ]),
             ],
@@ -412,7 +412,7 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
       const referenceStudent = referencePaper.student;
       const referenceSpecialization = referenceStudent.specialization;
       const referenceDomain = referenceSpecialization.domain;
-      const studyYears = referenceStudent.specialization.studyYears;
+      const studyYears = referenceSpecialization.studyYears;
       const paperTypeString = PAPER_TYPES[referencePaper.type];
       const secretary = referenceSpecialization.secretary;
       const size = 24;
@@ -448,12 +448,10 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
                     children: [
                       new Word.Paragraph({
                         children: [
-                          new Word.TextRun({ text: 'ROMÂNIA', bold: true, size }),
-                          new Word.TextRun({ text: 'MINISTERUL EDUCAȚIEI', bold: true, break: 1, size }),
                           new Word.TextRun({ text: 'UNIVERSITATEA DIN BUCUREȘTI', bold: true, break: 1, size }),
                           new Word.TextRun({ text: 'Facultatea de Matematică și Informatică', bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Domeniul de ${DOMAIN_TYPES[referenceDomain.type]}: ${referenceDomain.name}`, bold: true, break: 1, size }),
-                          new Word.TextRun({ text: `Programul de studii/specializarea: ${referenceSpecialization.name}${referenceSpecialization.catalogName ? ` / ${referenceSpecialization.catalogName}` : ''}`, bold: true, break: 1, size }),
+                          new Word.TextRun({ text: `Programul de studii/specializarea: ${getSpecializationName(referenceSpecialization)}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Durata studiilor: ${studyYears} ani (${studyYears * 2} semestre)`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Număr credite: ${60 * studyYears}`, bold: true, break: 1, size }),
                           new Word.TextRun({ text: `Forma de învățământ: ${referenceSpecialization.studyForm.toLocaleUpperCase()}`, bold: true, break: 1, size }),
@@ -541,7 +539,7 @@ export async function FinalCatalog({ mode, paperPromotionGroups, sessionSettings
               PeopleSignatureFooter([
                 { column: 'left', position: 'DECAN', name: FACULTY_DEAN_NAME, stamp: true },
                 { column: 'right', position: 'SECRETAR ȘEF', name: FACULTY_SECRETARY_CHIEF_NAME },
-                { column: 'right', position: 'Întocmit', name: secretary ? [secretary.firstName, secretary.lastName].join(' ') : '' }
+                { column: 'right', position: 'Întocmit', name: secretary ? ['Secretar,', secretary.firstName, secretary.lastName].join(' ') : '' }
               ])
             ],
           }),

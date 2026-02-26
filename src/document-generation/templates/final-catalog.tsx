@@ -3,7 +3,7 @@ import React from "react";
 import { Cell as _Cell, HeaderCell as _HeaderCell, Row } from "../components/table";
 import { globalStyles } from "../global-styles";
 import { DOMAIN_TYPES, FACULTY_DEAN_NAME, FACULTY_SECRETARY_CHIEF_NAME, PAPER_TYPES } from "../constants";
-import { flattenStyles, getSubmissionGrade, getWrittenExamGrade } from "../utils";
+import { flattenStyles, getSpecializationName, getSubmissionGrade, getWrittenExamGrade } from "../utils";
 import { Paper } from "../../papers/entities/paper.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
 import { filterFalsy } from "../../lib/utils";
@@ -71,11 +71,11 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
             <View style={[globalStyles.section, { fontWeight: 'bold', marginBottom: 16 }]}>
               <View style={[globalStyles.sectionColumn, { width: '60%' }]}>
                 <Text>ROMÂNIA</Text>
-                <Text>MINISTERUL EDUCAȚIEI</Text>
+                <Text>MINISTERUL EDUCAȚIEI ȘI CERCETĂRII</Text>
                 <Text>UNIVERSITATEA DIN BUCUREȘTI</Text>
                 <Text>Facultatea de Matematică și Informatică</Text>
                 <Text>Domeniul de {DOMAIN_TYPES[referenceDomain.type]}: {referenceDomain.name}</Text>
-                <Text>Programul de studii/specializarea: {referenceSpecialization.name} {referenceSpecialization.catalogName && `/ ${referenceSpecialization.catalogName}`}</Text>
+                <Text>Programul de studii/specializarea: {getSpecializationName(referenceSpecialization)}</Text>
                 <Text>Durata studiilor: {studyYears} ani ({studyYears * 2} semestre)</Text>
                 <Text>Număr credite: {60 * studyYears}</Text>
                 <Text>Forma de învățământ: {referenceSpecialization.studyForm.toLocaleUpperCase()}</Text>
@@ -145,7 +145,7 @@ export function FinalCatalog({ mode, paperPromotionGroups, sessionSettings }: Fi
                 people={[
                   { column: 'left', position: 'DECAN', name: FACULTY_DEAN_NAME, stamp: true },
                   { column: 'right', position: 'SECRETAR ȘEF', name: FACULTY_SECRETARY_CHIEF_NAME },
-                  { column: 'right', position: 'Întocmit', name: secretary ? [secretary.firstName, secretary.lastName].join(' ') : '' },
+                  { column: 'right', position: 'Întocmit', name: secretary ? ['Secretar,', secretary.firstName, secretary.lastName].join(' ') : '' },
                 ]}
               />
             </View>
