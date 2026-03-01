@@ -259,7 +259,7 @@ export class PapersService {
       const sessionSettings = await this.sessionSettingsService.getSettings();
       const now = Date.now();
       const endDateSecretary = inclusiveDate(sessionSettings.fileSubmissionEndDate);
-      if(!sessionSettings.canUploadSecretaryFiles()) {
+      if(now > endDateSecretary.getTime()) {
         throw new BadRequestException('Nu se pot face modificări asupra lucrării după data limită de depunere a lucrărilor.');
       }
       if(paper.createdAt.getTime() + SEVEN_DAYS_MS > now && !(now + SEVEN_DAYS_MS >= endDateSecretary.getTime())) {
@@ -281,7 +281,7 @@ export class PapersService {
         }, { user, manager });
         return updatedPaper;
       }),
-      documentsGenerated: (await this.documentsService.generatePaperDocuments(newPaper.id)).length > 0,
+      documentsGenerated: newPaper.title != paper.title && (await this.documentsService.generatePaperDocuments(newPaper.id)).length > 0,
     };
   }
 
