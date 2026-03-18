@@ -368,8 +368,9 @@ export class PapersService {
       throw new ForbiddenException();
     }
     await this.dataSource.transaction(async manager => {
+      await this.loggerService.log({ name: LogName.SubmissionDeleted, userId: paper.student.id, submissionId: paper.student.submission!.id }, { user, manager });
       await this.loggerService.log({ name: LogName.PaperDeleted, paperId: paper.id }, { user, manager });
-      await manager.delete(Submission, { student: { id: paper.studentId } });
+      await manager.softDelete(Submission, { student: { id: paper.studentId } });
       if(paper.committee) {
         await this.loggerService.log({ name: LogName.PaperUnassigned, paperId: paper.id, meta: { fromCommitteeId: paper.committee.id } }, { user, manager });
         paper.committee = null;

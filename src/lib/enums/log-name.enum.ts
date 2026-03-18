@@ -9,6 +9,7 @@ export enum LogName {
   SubmissionCreated = 'submission.created',
   SubmissionSubmitted = 'submission.submitted',
   SubmissionUnsubmitted = 'submission.unsubmitted',
+  SubmissionDeleted = 'submission.deleted',
   WrittenExamGradeGiven = 'writtenExamGrade.given',
   WrittenExamGradeDisputed = 'writtenExamGrade.disputed',
   PaperCreated = 'paper.created',

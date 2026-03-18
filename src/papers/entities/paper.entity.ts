@@ -45,10 +45,8 @@ export class Paper {
   @JoinTable({ name: 'paper_topics' })
   topics: Topic[];
 
-  // We disable foreign key constraints here because papers can be soft-deleted, so a student
-  // with a deleted paper should still be able to have a new paper.
-  @OneToOne(() => Student, (student) => student.paper, { onDelete: 'CASCADE', createForeignKeyConstraints: false })
-  @JoinColumn({ name: 'studentId' })
+  // This is actually a OneToOne relation, but because of soft delete, we need to allow multiple papers to be linked to the same student
+  @ManyToOne(() => Student, (student) => student.paper, { onDelete: 'CASCADE', orphanedRowAction: 'soft-delete' })
   student: Student;
 
   @ManyToOne(() => Teacher, (teacher) => teacher.papers, { onDelete: 'SET NULL', nullable: true })
