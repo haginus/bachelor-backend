@@ -106,7 +106,7 @@ export class PapersController {
     return this.papersService.undoValidation(id, user);
   }
 
-  @UserTypes([UserType.Teacher])
+  @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
   @Delete(':id')
   async delete(
     @Param('id', ParseIntPipe) id: number,

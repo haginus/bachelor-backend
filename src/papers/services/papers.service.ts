@@ -364,7 +364,7 @@ export class PapersService {
 
   async delete(paperId: number, user: User): Promise<void> {
     const paper = await this.findOne(paperId, user);
-    if(paper.teacherId !== user.id) {
+    if(user.type !== 'admin' && user.type !== 'secretary' && paper.teacherId !== user.id) {
       throw new ForbiddenException();
     }
     await this.dataSource.transaction(async manager => {
