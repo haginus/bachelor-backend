@@ -37,6 +37,16 @@ export class TeachersService {
         qb.andWhere(`teacher.${field} LIKE :${field}`, { [field]: `%${dto[field]}%` });
       }
     });
+    if(dto.search) {
+      qb.andWhere(
+        `(
+          CONCAT(teacher.firstName, ' ', teacher.lastName) LIKE :search OR
+          CONCAT(teacher.lastName, ' ', teacher.firstName) LIKE :search OR
+          teacher.email LIKE :search
+        )`,
+        { search: `%${dto.search}%` },
+      );
+    }
     if(dto.onlyMissingPlagiarismReports) {
       qb.andWhere(`
         (

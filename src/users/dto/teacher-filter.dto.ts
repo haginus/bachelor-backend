@@ -16,17 +16,22 @@ export class TeacherFilterDto extends PaginatedQueryDto {
   @IsOptional()
   @IsString()
   @TrimString()
-  lastName: string;
+  search?: string;
 
   @IsOptional()
   @IsString()
   @TrimString()
-  firstName: string;
+  lastName?: string;
 
   @IsOptional()
   @IsString()
   @TrimString()
-  email: string;
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @TrimString()
+  email?: string;
 
   @IsOptional()
   @Bool()

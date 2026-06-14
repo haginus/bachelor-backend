@@ -4,8 +4,9 @@ import { PaperDto } from "./paper.dto";
 export class CreatePaperDto extends PaperDto {
 
   @IsIntId()
-  studentId: number;
+  studentId!: number;
 
   @IsIntId()
-  teacherId: number;
+  teacherId!: number;
+  
 }

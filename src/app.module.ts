@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from './auth/guards/user-types.guard';
 import { UserHydrationInterceptor } from './auth/interceptors/user-hydration.interceptor';
@@ -25,6 +25,7 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { SentryUserInterceptor } from './auth/interceptors/sentry-user.interceptor';
 import { databaseConfig } from './database.config';
+import { AppValidationPipe } from './common/pipes/app-validation.pipe';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { databaseConfig } from './database.config';
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: UserHydrationInterceptor },
     { provide: APP_INTERCEPTOR, useClass: SentryUserInterceptor },
+    { provide: APP_PIPE, useClass: AppValidationPipe },
     { provide: APP_FILTER, useClass: SentryGlobalFilter },
   ],
 })

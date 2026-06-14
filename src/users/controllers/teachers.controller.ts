@@ -20,6 +20,11 @@ export class TeachersController {
     return this.teachersService.findAll(dto);
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: number) {
+    return this.teachersService.findOne(id);
+  }
+
   @Post()
   async create(
     @Body() dto: UserDto,

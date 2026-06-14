@@ -5,7 +5,6 @@ import { FindOptionsRelations, Repository, DataSource, IsNull } from "typeorm";
 import { merge } from "lodash";
 import { PaperQueryDto } from "../dto/paper-query.dto";
 import { Paginated } from "../../lib/interfaces/paginated.interface";
-import { PaperDto } from "../dto/paper.dto";
 import { Student, Teacher, User } from "../../users/entities/user.entity";
 import { UserType } from "../../lib/enums/user-type.enum";
 import { SessionSettingsService } from "../../common/services/session-settings.service";
@@ -22,6 +21,7 @@ import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { captureException } from "@sentry/nestjs";
 import { Submission } from "../../grading/entities/submission.entity";
+import { UpdatePaperDto } from "../dto/update-paper.dto";
 
 @Injectable()
 export class PapersService {
@@ -249,7 +249,7 @@ export class PapersService {
     });
   }
 
-  async update(paperId: number, dto: PaperDto, user?: User): Promise<{ result: Paper; documentsGenerated?: boolean; }> {
+  async update(paperId: number, dto: UpdatePaperDto, user?: User): Promise<{ result: Paper; documentsGenerated?: boolean; }> {
     const paper = await this.findOne(paperId, user);
     if(paper.isValid !== null) {
       throw new BadRequestException('Nu se pot face modificări asupra unei lucrări deja validate.');
@@ -267,7 +267,17 @@ export class PapersService {
       }
     }
     const topics = await this.topicsService.findByIds(dto.topicIds);
-    const newPaper = this.papersRepository.create({ ...paper, ...dto, topics });
+    const teacher = dto.teacherId && dto.teacherId !== paper.teacherId 
+      ? await this.dataSource.getRepository(Teacher).findOneBy({ id: dto.teacherId }).catch(() => {
+          throw new BadRequestException('Profesorul specificat nu există.');
+        })
+      : null;
+    const newPaper = this.papersRepository.create({ 
+      ...paper, 
+      ...dto,
+      topics,
+      ...(teacher ? { teacher } : {}),
+    });
     return {
       result: await this.dataSource.transaction(async manager => {
         const updatedPaper = await manager.save(newPaper);
@@ -281,7 +291,7 @@ export class PapersService {
         }, { user, manager });
         return updatedPaper;
       }),
-      documentsGenerated: newPaper.title != paper.title && (await this.documentsService.generatePaperDocuments(newPaper.id)).length > 0,
+      documentsGenerated: (newPaper.title != paper.title || !!teacher) && (await this.documentsService.generatePaperDocuments(newPaper.id)).length > 0,
     };
   }
 
