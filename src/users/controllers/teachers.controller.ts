@@ -15,11 +15,13 @@ export class TeachersController {
 
   constructor(private readonly teachersService: TeachersService) {}
 
+  @UserTypes([UserType.Admin, UserType.Secretary])
   @Get()
   async findAll(@Query() dto: TeacherFilterDto) {
     return this.teachersService.findAll(dto);
   }
 
+  @UserTypes([UserType.Admin, UserType.Secretary])
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return this.teachersService.findOne(id);
