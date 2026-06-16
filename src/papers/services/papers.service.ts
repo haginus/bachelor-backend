@@ -333,7 +333,7 @@ export class PapersService {
         if(signUpForm) {
           const generationProps = await this.documentGenerationService.getStudentDocumentGenerationProps(paper.id, paper.studentId, manager);
           const documentContent = await this.documentGenerationService.generatePaperDocument('sign_up_form', generationProps);
-          await this.documentsService.updateDocumentContent(signUpForm, documentContent);
+          await this.documentsService.updateDocumentContent(signUpForm, documentContent, manager);
         }
         return paper;
       });

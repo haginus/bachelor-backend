@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, StreamableFile } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Document } from "../entities/document.entity";
-import { Repository, DataSource, In } from "typeorm";
+import { Repository, DataSource, In, EntityManager } from "typeorm";
 import { User } from "../../users/entities/user.entity";
 import { UploadDocumentDto } from "../dto/upload-document.dto";
 import { UserType } from "../../lib/enums/user-type.enum";
@@ -209,14 +209,13 @@ export class DocumentsService {
     return document;
   }
 
-  async updateDocumentContent(document: Document, newContent: Buffer): Promise<Document> {
+  async updateDocumentContent(document: Document, newContent: Buffer, manager?: EntityManager): Promise<Document> {
     const fileExtension = mimeTypeExtensions[document.mimeType];
     const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
-    return this.dataSource.transaction(async manager => {
-      await writeFile(storagePath, newContent);
-      await this.loggerService.log({ name: LogName.DocumentContentUpdated, documentId: document.id, paperId: document.paperId }, { manager });
-      return document;
-    });
+    manager = manager || this.dataSource.manager;
+    await writeFile(storagePath, newContent);
+    await this.loggerService.log({ name: LogName.DocumentContentUpdated, documentId: document.id, paperId: document.paperId }, { manager });
+    return document;
   }
 
   private async _userIsInCommittee(committeeId: number, userId: number): Promise<boolean> {
