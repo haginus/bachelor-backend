@@ -112,7 +112,7 @@ export class UsersService {
     return extraData;
   }
 
-  async updateExtraData(userId: number, dto: UserExtraDataDto): Promise<{ result: UserExtraData; documentsGenerated: boolean; }> {
+  async updateExtraData(userId: number, dto: UserExtraDataDto, requestUser: User): Promise<{ result: UserExtraData; documentsGenerated: boolean; }> {
     const user = await this.findOne(userId);
     if(!isStudent(user)) {
       throw new BadRequestException('Utilizatorul nu este student.');
@@ -120,7 +120,7 @@ export class UsersService {
     if(user.paper?.isValid !== null) {
       throw new BadRequestException('Datele suplimentare nu pot fi modificate după validarea lucrării.');
     }
-    if(!await this.sessionSettingsService.canUploadSecretaryFiles()) {
+    if(isStudent(requestUser) && !await this.sessionSettingsService.canUploadSecretaryFiles()) {
       if(user.paper) {
         // As a last resort, check if there are reupload requests for the sign_up_form and liquidation_form documents
         const requests = await this.dataSource.getRepository(DocumentReuploadRequest).find({
@@ -148,7 +148,7 @@ export class UsersService {
             changedFields: existingExtraData ? deepDiff(instanceToPlain(existingExtraData), instanceToPlain(extraData)) : null,
           }
         },
-        { user, manager }
+        { user: requestUser, manager }
       );
     });
     let documentsGenerated = false;

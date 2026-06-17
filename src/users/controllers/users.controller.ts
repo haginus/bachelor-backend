@@ -63,7 +63,7 @@ export class UsersController {
     @CurrentUser() user: User,
     @Body() dto: UserExtraDataDto,
   ) {
-    return this.usersService.updateExtraData(user.id, dto);
+    return this.usersService.updateExtraData(user.id, dto, user);
   }
 
   @UserTypes([UserType.Student, UserType.Admin, UserType.Secretary])
@@ -76,7 +76,7 @@ export class UsersController {
     if(user.type === UserType.Student && user.id !== id) {
       throw new ForbiddenException();
     }
-    return this.usersService.updateExtraData(id, dto);
+    return this.usersService.updateExtraData(id, dto, user);
   }
 
   @Get('check-email')
