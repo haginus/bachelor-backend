@@ -17,7 +17,7 @@ export class SignaturesService {
   ) {}
 
   async findOneByUserId(userId: number, user?: User): Promise<Signature | null> {
-    if(user && user.type !== UserType.Admin && userId !== user.id) {
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary && userId !== user.id) {
       throw new ForbiddenException();
     }
     return this.signaturesRepository.findOne({ 
@@ -29,7 +29,7 @@ export class SignaturesService {
 
   async findOne(id: number, user?: User): Promise<Signature | null> {
     const signature = await this.signaturesRepository.findOne({ where: { id } });
-    if(user && user.type !== UserType.Admin && signature?.userId !== user.id) {
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary && signature?.userId !== user.id) {
       throw new ForbiddenException();
     }
     return signature;
@@ -54,7 +54,7 @@ export class SignaturesService {
   }
 
   async createOrUpdate(userId: number, sample: Buffer, user?: User): Promise<Signature> {
-    if(user && user.type !== UserType.Admin && userId !== user.id) {
+    if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary && userId !== user.id) {
       throw new ForbiddenException();
     }
     try {
