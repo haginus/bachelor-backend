@@ -17,11 +17,13 @@ import { SubmissionsService } from './services/submissions.service';
 import { SubmissionsController } from './controllers/submissions.controller';
 import { WrittenExamController } from './controllers/written-exam.controller';
 import { CsvModule } from '../csv/csv.module';
+import { PapersModule } from '../papers/papers.module';
 
 @Module({
   imports: [
     CommonModule,
     UsersModule,
+    PapersModule,
     DocumentGenerationModule,
     CsvModule,
     TypeOrmModule.forFeature([

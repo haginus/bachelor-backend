@@ -67,6 +67,19 @@ export class DocumentsService {
     return new StreamableFile(createReadStream(storagePath), { length: statResult.size });
   }
 
+  async findByName(paperId: number, name: string, type?: DocumentType): Promise<Document[]> {
+    return this.documentsRepository.find({
+      where: { paperId, name, type },
+    });
+  }
+
+  async exists(paperId: number, name: string, type?: DocumentType): Promise<boolean> {
+    const count = await this.documentsRepository.count({
+      where: { paperId, name, type },
+    });
+    return count > 0;
+  }
+
   async findUploadHistory(paperId: number, name: string): Promise<Document[]> {
     return this.documentsRepository.find({
       where: { paperId, name },

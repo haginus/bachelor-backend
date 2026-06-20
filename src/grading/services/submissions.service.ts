@@ -8,6 +8,7 @@ import { User } from "../../users/entities/user.entity";
 import { UserType } from "../../lib/enums/user-type.enum";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
+import { DocumentsService } from "../../papers/services/documents.service";
 
 @Injectable()
 export class SubmissionsService {
@@ -15,6 +16,7 @@ export class SubmissionsService {
   constructor(
     @InjectRepository(Submission) private readonly submissionsRepository: Repository<Submission>,
     private readonly dataSource: DataSource,
+    private readonly documentsService: DocumentsService,
     private readonly loggerService: LoggerService,
   ) {}
 
@@ -149,6 +151,14 @@ export class SubmissionsService {
     const submission = await this.findOne(id, user);
     if(submission.isSubmitted) {
       throw new BadRequestException('Înscrierea s-a făcut deja.');
+    }
+    if(user?.type === UserType.Student) {
+      if(!await this.documentsService.exists(submission.student.paper.id, 'sign_up_form', 'signed')) {
+        throw new BadRequestException('Semnarea cererii de înscriere este obligatorie în vederea înscrierii.');
+      }
+      if(!await this.documentsService.exists(submission.student.paper.id, 'paper')) {
+        throw new BadRequestException('Încărcarea lucrării este obligatorie în vederea înscrierii.');
+      }
     }
     submission.isSubmitted = true;
     return this.dataSource.transaction(async manager => {
