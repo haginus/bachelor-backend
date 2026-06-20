@@ -42,7 +42,7 @@ export function LiquidationForm({ student, paper, sessionSettings, signatureSamp
           strada {student.extraData.address.street}, numărul {student.extraData.address.streetNumber},
           {
             student.extraData.address.building 
-              ? ` bloc ${student.extraData.address.building}, scara ${student.extraData.address.stair}, etaj ${student.extraData.address.floor}, apartament ${student.extraData.address.apartment},`
+              ? ` bloc ${student.extraData.address.building}, scara ${student.extraData.address.stair || '-'}, etaj ${student.extraData.address.floor || '-'}, apartament ${student.extraData.address.apartment || '-'},`
               : ''
           }
           {' '}telefon {student.extraData.mobilePhone}, e-mail {student.extraData.personalEmail}.
