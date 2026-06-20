@@ -1,7 +1,7 @@
-import { Transform } from "class-transformer";
-import { IsEnum, IsInt, IsNumberString, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsNumberString, IsOptional, IsString } from "class-validator";
 import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
 import { TrimString } from "../../lib/transformers/trim-string.transformer";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 
 export class StudentFilterDto extends PaginatedQueryDto {
 
@@ -14,38 +14,36 @@ export class StudentFilterDto extends PaginatedQueryDto {
   sortDirection: 'asc' | 'desc' = 'asc';
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
-  domainId: number;
+  @IsIntId()
+  domainId?: number;
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
-  specializationId: number;
-
-  @IsOptional()
-  @IsNumberString()
-  @TrimString()
-  group: string;
+  @IsIntId()
+  specializationId?: number;
 
   @IsOptional()
   @IsNumberString()
   @TrimString()
-  promotion: string;
+  group?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  @TrimString()
+  promotion?: string;
 
   @IsOptional()
   @IsString()
   @TrimString()
-  lastName: string;
+  lastName?: string;
 
   @IsOptional()
   @IsString()
   @TrimString()
-  firstName: string;
+  firstName?: string;
 
   @IsOptional()
   @IsString()
   @TrimString()
-  email: string;
+  email?: string;
 
 }

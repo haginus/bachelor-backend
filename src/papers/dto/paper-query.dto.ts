@@ -1,9 +1,9 @@
-import { Transform } from "class-transformer";
-import { IsEnum, IsInt, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 import { Bool } from "../../lib/decorators/bool.decorator";
 import { PaginatedQueryDto } from "../../lib/dto/paginated-query.dto";
 import { PaperType } from "../../lib/enums/paper-type.enum";
 import { TrimString } from "../../lib/transformers/trim-string.transformer";
+import { IsIntId } from "../../lib/decorators/is-int-id.decorator";
 
 export class PaperQueryDto extends PaginatedQueryDto {
 
@@ -24,13 +24,11 @@ export class PaperQueryDto extends PaginatedQueryDto {
   assigned?: boolean;
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
+  @IsIntId()
   assignedTo?: number;
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
+  @IsIntId()
   forCommittee?: number;
 
   @IsOptional()
@@ -39,6 +37,7 @@ export class PaperQueryDto extends PaginatedQueryDto {
 
   @IsOptional()
   @IsString()
+  @TrimString()
   title?: string;
 
   @IsOptional()
@@ -46,13 +45,11 @@ export class PaperQueryDto extends PaginatedQueryDto {
   type?: PaperType;
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
+  @IsIntId()
   domainId?: number;
 
   @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
+  @IsIntId()
   specializationId?: number;
 
   @IsOptional()

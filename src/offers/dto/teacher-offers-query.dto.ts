@@ -1,7 +1,7 @@
-import { Transform, Type } from "class-transformer";
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString } from "class-validator";
+import { IsInt, IsOptional, IsString } from "class-validator";
 import { Bool } from "../../lib/decorators/bool.decorator";
 import { QueryArray } from "../../lib/decorators/query-array.decorator";
+import { TrimString } from "../../lib/transformers/trim-string.transformer";
 
 export class TeacherOffersQueryDto {
 
@@ -17,6 +17,7 @@ export class TeacherOffersQueryDto {
 
   @IsOptional()
   @IsString()
+  @TrimString()
   search?: string;
 
 }
