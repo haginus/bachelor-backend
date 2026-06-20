@@ -59,13 +59,16 @@ export class SessionSettingsService {
       throw new BadRequestException('Data încheierii sesiunii de cereri nu poate fi mai devreme de cea a începerii!');
     }
     if(updatedSettings.fileSubmissionStartDate < updatedSettings.applyStartDate) {
-      throw new BadRequestException('Data începerii depunerilor de documente nu poate fi mai devreme de cea a începerii sesiunii de cereri!');
+      throw new BadRequestException('Data începerii depunerilor de documente nu poate fi mai devreme de cea a începerii asocierilor!');
     }
     if(updatedSettings.fileSubmissionEndDate < updatedSettings.fileSubmissionStartDate) {
       throw new BadRequestException('Data încheierii depunerilor de documente nu poate fi mai devreme de cea a începerii depunerilor!');
     }
     if(updatedSettings.paperSubmissionEndDate < updatedSettings.fileSubmissionStartDate) {
-      throw new BadRequestException('Data încheierii depunerilor lucrărilor nu poate fi mai devreme de cea a începerii depunerilor!');
+      throw new BadRequestException('Termenul limită pentru depunerea lucrărilor nu poate fi mai devreme de data începerii depunerilor de documente!');
+    }
+    if(updatedSettings.paperSubmissionEndDate > updatedSettings.fileSubmissionEndDate) {
+      throw new BadRequestException('Termenul limită pentru depunerea lucrărilor nu poate fi mai târziu de data încheierii depunerilor de documente!');
     }
     if(updatedSettings.writtenExamDate) {
       if(updatedSettings.writtenExamDate < updatedSettings.fileSubmissionStartDate) {
