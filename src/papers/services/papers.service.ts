@@ -22,6 +22,7 @@ import { LogName } from "../../lib/enums/log-name.enum";
 import { captureException } from "@sentry/nestjs";
 import { Submission } from "../../grading/entities/submission.entity";
 import { UpdatePaperDto } from "../dto/update-paper.dto";
+import { PaperDocumentArchiveQueryDto } from "../dto/paper-document-archive-query.dto";
 
 @Injectable()
 export class PapersService {
@@ -101,7 +102,7 @@ export class PapersService {
     });
   }
 
-  async findAll(query: PaperQueryDto): Promise<Paginated<Paper>> {
+  private async _getQueryBuilder(query: PaperQueryDto) {
     const qb = this.papersRepository.createQueryBuilder('paper')
       .leftJoinAndSelect('paper.student', 'student')
       .leftJoinAndSelect('paper.teacher', 'teacher')
@@ -168,6 +169,11 @@ export class PapersService {
         { search: `%${query.studentName}%` },
       );
     }
+    return qb;
+  }
+
+  async findAll(query: PaperQueryDto): Promise<Paginated<Paper>> {
+    const qb = await this._getQueryBuilder(query);
     const count = await qb.getCount();
     if(query.sortBy) {
       if(query.sortBy === 'committee') {
@@ -178,6 +184,18 @@ export class PapersService {
     }
     const rows = await qb.skip(query.offset).take(query.limit).getMany();
     return { rows, count };
+  }
+
+  async exportDocumentsArchive(dto: PaperDocumentArchiveQueryDto) {
+    const paperFilters = dto.paperFilters || { sortBy: 'id', sortDirection: 'asc', limit: 0 };
+    paperFilters.minified = true;
+    const qb = await this._getQueryBuilder(paperFilters);
+    const rows = await qb.getMany();
+    const paperIds = rows.map(paper => paper.id);
+    return this.documentGenerationService.generatePaperDocumentsArchive(paperIds, {
+      documentNames: dto.documentNames,
+      groupStrategy: dto.groupStrategy,
+    });
   }
 
   async create(dto: CreatePaperDto, user?: User) {

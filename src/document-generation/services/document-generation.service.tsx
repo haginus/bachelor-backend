@@ -38,6 +38,7 @@ import { render } from "@react-email/render";
 import { StudentList } from "../templates-html/student-list";
 import { Log } from "../../common/entities/log.entity";
 import { Submission } from "../../grading/entities/submission.entity";
+import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -630,7 +631,8 @@ export class DocumentGenerationService {
     return rows;
   }
 
-  async generatePaperDocumentsArchive(paperIds: number[], documentNames?: string[]): Promise<Buffer> {
+  async generatePaperDocumentsArchive(paperIds: number[], options?: { documentNames?: string[]; groupStrategy?: 'paper' | 'document_name' }): Promise<Buffer> {
+    const { documentNames, groupStrategy = 'paper' } = options || {};
     const qb = this.dataSource.manager.getRepository(Paper).createQueryBuilder('paper')
       .whereInIds(paperIds)
       .leftJoinAndSelect('paper.student', 'student');
@@ -643,22 +645,42 @@ export class DocumentGenerationService {
     if(papers.flatMap(paper => paper.documents).length == 0) {
       throw new BadRequestException('Nu există documente pentru lucrările selectate.');
     }
-    const requiredDocumentsIndex = indexArray(requiredDocumentSpecs, doc => doc.name);
     const archive = archiver('zip', {
       zlib: { level: 0 }
     });
-    papers.forEach(paper => {
+    const getDirectoryName = (paper: Paper, document: Document, requiredDocumentsIndex: Record<string, RequiredDocumentDto>) => {
       const studentName = `${paper.student.lastName} ${paper.student.firstName}`;
-      const directoryName = `${studentName}, ${paper.title}`;
+      const requiredDoc = requiredDocumentsIndex[document.name];
+      if(groupStrategy === 'paper') {
+        return `${studentName}, ${paper.title}`;
+      } else if(groupStrategy === 'document_name') {
+        return requiredDoc.title;
+      } else {
+        throw new InternalServerErrorException(`Invalid group strategy: ${groupStrategy}`);
+      }
+    }
+    const getFileName = (paper: Paper, document: Document, requiredDocumentsIndex: Record<string, RequiredDocumentDto>) => {
+      const studentName = `${paper.student.lastName} ${paper.student.firstName}`;
+      const requiredDoc = requiredDocumentsIndex[document.name];
+      const extension = mimeTypeExtensions[document.mimeType];
+      if(groupStrategy === 'paper') {
+        return `${requiredDoc.title} - ${studentName}.${extension}`;
+      } else if(groupStrategy === 'document_name') {
+        return `${studentName}, ${paper.title}.${extension}`;
+      } else {
+        throw new InternalServerErrorException(`Invalid group strategy: ${groupStrategy}`);
+      }
+    }
+    papers.forEach(paper => {
+      const requiredDocumentsIndex = indexArray(paper.requiredDocuments, doc => doc.name);
       const lastDocuments = paper.documents.reduce((acc, doc) => {
         acc[doc.name] = !acc[doc.name] || acc[doc.name].id < doc.id ? doc : acc[doc.name];
         return acc;
       }, {} as Record<string, Document>);
       Object.values(lastDocuments).forEach(document => {
-        const requiredDoc = requiredDocumentsIndex[document.name];
         const extension = mimeTypeExtensions[document.mimeType];
         const buffer = createReadStream(getDocumentStoragePath(`${document.id}.${extension}`));
-        archive.append(buffer, { prefix: directoryName, name: `${requiredDoc.title} - ${studentName}.${extension}` });
+        archive.append(buffer, { prefix: getDirectoryName(paper, document, requiredDocumentsIndex), name: getFileName(paper, document, requiredDocumentsIndex) });
       });
     });
     return new Promise<Buffer>((resolve, reject) => {

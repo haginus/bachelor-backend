@@ -327,8 +327,8 @@ export class CommitteesService {
         return this.documentGenerationService.generateCommitteeStudentAssignationXlsx([committeeId]);
       case 'paper_documents_zip':
         return this.documentGenerationService.generatePaperDocumentsArchive(
-          committee.papers.map(p => p.id), 
-          ['paper', 'plagiarism_report', 'committee_report', 'committee_turnitin']
+          committee.papers.map(p => p.id),
+          { documentNames: ['paper', 'plagiarism_report', 'committee_report', 'committee_turnitin'] }
         );
       default:
         throw new BadRequestException('Numele fișierului specificat nu este valid.');

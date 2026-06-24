@@ -13,6 +13,7 @@ import { PaperExportQueryDto } from "../dto/paper-export-query.dto";
 import { PaperInterceptor } from "../../auth/interceptors/paper-serializer.interceptor";
 import { CreatePaperDto } from "../dto/create-paper.dto";
 import { UpdatePaperDto } from "../dto/update-paper.dto";
+import { PaperDocumentArchiveQueryDto } from "../dto/paper-document-archive-query.dto";
 
 @Controller('papers')
 export class PapersController {
@@ -47,7 +48,14 @@ export class PapersController {
       teacherId: query.teacherId,
       fullStudent: user.type !== UserType.Teacher,
     });
-    return new StreamableFile(buffer, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    return new StreamableFile(buffer, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', length: buffer.length });
+  }
+
+  @UserTypes([UserType.Admin, UserType.Secretary])
+  @Get('export/zip')
+  async exportDocumentsArchive(@Query() query: PaperDocumentArchiveQueryDto) {
+    const buffer = await this.papersService.exportDocumentsArchive(query);
+    return new StreamableFile(buffer, { type: 'application/zip', length: buffer.length });
   }
 
   @Get(':id')
