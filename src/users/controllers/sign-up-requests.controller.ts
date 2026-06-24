@@ -7,6 +7,7 @@ import { Recaptcha } from "@nestlab/google-recaptcha";
 import { SignUpRequestDto } from "../dto/sign-up-request.dto";
 import { SignUpRequestPartialDto } from "../dto/sign-up-request-partial.dto";
 import { DocumentGenerationService } from "../../document-generation/services/document-generation.service";
+import { getContentDispositionHeader } from "../../lib/utils";
 
 @Controller('sign-up-requests')
 export class SignUpRequestsController {
@@ -25,7 +26,10 @@ export class SignUpRequestsController {
   @Get('export/excel')
   @UserTypes([UserType.Admin, UserType.Secretary])
   async exportExcel() {
-    return new StreamableFile(await this.documentGenerationService.generateSignUpRequestsExcel());
+    return new StreamableFile(await this.documentGenerationService.generateSignUpRequestsExcel(), {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: getContentDispositionHeader('Cereri înregistrare.xlsx'),
+    });
   }
 
   @Get(':id')

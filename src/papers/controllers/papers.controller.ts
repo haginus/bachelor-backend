@@ -14,6 +14,7 @@ import { PaperInterceptor } from "../../auth/interceptors/paper-serializer.inter
 import { CreatePaperDto } from "../dto/create-paper.dto";
 import { UpdatePaperDto } from "../dto/update-paper.dto";
 import { PaperDocumentArchiveQueryDto } from "../dto/paper-document-archive-query.dto";
+import { getContentDispositionHeader } from "../../lib/utils";
 
 @Controller('papers')
 export class PapersController {
@@ -48,14 +49,20 @@ export class PapersController {
       teacherId: query.teacherId,
       fullStudent: user.type !== UserType.Teacher,
     });
-    return new StreamableFile(buffer, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', length: buffer.length });
+    return new StreamableFile(buffer, { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      disposition: getContentDispositionHeader('Lista lucrărilor.xlsx'),
+    });
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary])
   @Get('export/zip')
   async exportDocumentsArchive(@Query() query: PaperDocumentArchiveQueryDto) {
     const buffer = await this.papersService.exportDocumentsArchive(query);
-    return new StreamableFile(buffer, { type: 'application/zip', length: buffer.length });
+    return new StreamableFile(buffer, {
+      type: 'application/zip',
+      disposition: getContentDispositionHeader('Arhivă documente.zip')
+    });
   }
 
   @Get(':id')

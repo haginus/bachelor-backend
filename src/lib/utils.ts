@@ -134,3 +134,9 @@ export function deepDiff(object: Record<any, any>, base: Record<any, any>): Reco
     }
   });
 }
+
+export function getContentDispositionHeader(fileName: string): string {
+  const asciiFileName = unaccent(fileName);
+  const encodedFileName = encodeURIComponent(fileName);
+  return `inline; filename="${asciiFileName}"; filename*=UTF-8''${encodedFileName}`;
+}

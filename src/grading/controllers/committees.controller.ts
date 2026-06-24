@@ -107,8 +107,7 @@ export class CommitteesController {
     @Param('id', ParseIntPipe) id: number,
     @Param('fileName') fileName: string,
   ) {
-    const buffer = await this.committeesService.generateCommitteeFile(id, fileName);
-    return new StreamableFile(buffer);
+    return this.committeesService.generateCommitteeFile(id, fileName);
   }
 
   @Delete(':id')

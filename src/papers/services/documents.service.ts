@@ -50,21 +50,12 @@ export class DocumentsService {
     return document;
   }
 
-  private async _getDocumentContentPath(id: number, user?: User): Promise<string> {
+  async getDocumentContentStream(id: number, user?: User): Promise<StreamableFile> {
     const document = await this.findOne(id, user);
     const fileExtension = mimeTypeExtensions[document.mimeType];
-    return this._getStoragePath(`${document.id}.${fileExtension}`);
-  }
-
-  async getDocumentContent(id: number, user?: User): Promise<Buffer> {
-    const storagePath = await this._getDocumentContentPath(id, user);
-    return readFile(storagePath);
-  }
-
-  async getDocumentContentStream(id: number, user?: User): Promise<StreamableFile> {
-    const storagePath = await this._getDocumentContentPath(id, user);
+    const storagePath = this._getStoragePath(`${document.id}.${fileExtension}`);
     const statResult = await stat(storagePath);
-    return new StreamableFile(createReadStream(storagePath), { length: statResult.size });
+    return new StreamableFile(createReadStream(storagePath), { length: statResult.size, type: document.mimeType });
   }
 
   async findByName(paperId: number, name: string, type?: DocumentType): Promise<Document[]> {

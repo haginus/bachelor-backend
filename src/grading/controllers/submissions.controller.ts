@@ -6,6 +6,7 @@ import { UserType } from "../../lib/enums/user-type.enum";
 import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { User } from "../../users/entities/user.entity";
 import { WrittenExamGradesSerializer } from "../../auth/interceptors/written-exam-grades-serializer.interceptor";
+import { getContentDispositionHeader } from "../../lib/utils";
 
 @Controller('submissions')
 export class SubmissionsController {
@@ -64,7 +65,7 @@ export class SubmissionsController {
   @Get('export/csv')
   async exportCsv() {
     const buffer = await this.submissionsService.exportCsv();
-    return new StreamableFile(buffer, { type: 'text/csv', disposition: 'attachment; filename="submissions.csv"' });
+    return new StreamableFile(buffer, { type: 'text/csv', disposition: getContentDispositionHeader('Note proba scrisă.csv') });
   }
 
 }

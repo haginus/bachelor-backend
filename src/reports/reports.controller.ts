@@ -16,8 +16,7 @@ export class ReportsController {
   async generateCommitteeFile(
     @Param('fileName') fileName: string,
   ) {
-    const buffer = await this.reportsService.generateReportFile(fileName);
-    return new StreamableFile(buffer);
+    return this.reportsService.generateReportFile(fileName);
   }
 
   @Sse('final-report')

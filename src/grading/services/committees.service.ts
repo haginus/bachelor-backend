@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, StreamableFile } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsRelations, In, Repository, DataSource } from "typeorm";
 import { Committee } from "../entities/committee.entity";
@@ -7,7 +7,7 @@ import { DomainsService } from "../../users/services/domains.service";
 import { CommitteeMemberRole } from "../../lib/enums/committee-member-role.enum";
 import { TeachersService } from "../../users/services/teachers.service";
 import { CommitteeMember } from "../entities/committee-member.entity";
-import { inclusiveDate, indexArray } from "../../lib/utils";
+import { getContentDispositionHeader, inclusiveDate, indexArray } from "../../lib/utils";
 import { Paper } from "../../papers/entities/paper.entity";
 import { PaperGrade } from "../entities/paper-grade.entity";
 import { User } from "../../users/entities/user.entity";
@@ -304,7 +304,7 @@ export class CommitteesService {
     });
   }
 
-  async generateCommitteeFile(committeeId: number, fileName: string, user?: User): Promise<Buffer> {
+  async generateCommitteeFile(committeeId: number, fileName: string, user?: User): Promise<StreamableFile> {
     const committee = await this._findOneMin(committeeId);
     const checkCanGenerateFiles = () => {
       if(user && user.type !== UserType.Admin && user.type !== UserType.Secretary) {
@@ -314,21 +314,42 @@ export class CommitteesService {
     switch(fileName) {
       case 'catalog_pdf':
         checkCanGenerateFiles();
-        return this.documentGenerationService.generateCommitteeCatalogPdf(committeeId);
+        return new StreamableFile(await this.documentGenerationService.generateCommitteeCatalogPdf(committeeId), {
+          type: 'application/pdf',
+          disposition: getContentDispositionHeader(`${committee.name} - Catalog.pdf`),
+        });
       case 'catalog_docx':
         checkCanGenerateFiles();
-        return this.documentGenerationService.generateCommitteeCatalogDocx(committeeId);
+        return new StreamableFile(await this.documentGenerationService.generateCommitteeCatalogDocx(committeeId), {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          disposition: getContentDispositionHeader(`${committee.name} - Catalog.docx`),
+        });
       case 'final_catalog_pdf':
         checkCanGenerateFiles();
-        return this.documentGenerationService.generateCommitteeFinalCatalogPdf(committeeId);
+        return new StreamableFile(await this.documentGenerationService.generateCommitteeFinalCatalogPdf(committeeId), {
+          type: 'application/pdf',
+          disposition: getContentDispositionHeader(`${committee.name} - Catalog final.pdf`),
+        });
       case 'student_assignation_pdf':
-        return this.documentGenerationService.generateCommitteeStudentAssignationPdf([committeeId]);
+        return new StreamableFile(await this.documentGenerationService.generateCommitteeStudentAssignationPdf([committeeId]), {
+          type: 'application/pdf',
+          disposition: getContentDispositionHeader(`${committee.name} - Programare studenți.pdf`),
+        });
       case 'student_assignation_xlsx':
-        return this.documentGenerationService.generateCommitteeStudentAssignationXlsx([committeeId]);
+        return new StreamableFile(await this.documentGenerationService.generateCommitteeStudentAssignationXlsx([committeeId]), {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          disposition: getContentDispositionHeader(`${committee.name} - Programare studenți.xlsx`),
+        });
       case 'paper_documents_zip':
-        return this.documentGenerationService.generatePaperDocumentsArchive(
-          committee.papers.map(p => p.id),
-          { documentNames: ['paper', 'plagiarism_report', 'committee_report', 'committee_turnitin'] }
+        return new StreamableFile(
+          await this.documentGenerationService.generatePaperDocumentsArchive(
+            committee.papers.map(p => p.id),
+            { documentNames: ['paper', 'plagiarism_report', 'committee_report', 'committee_turnitin'] }
+          ),
+          {
+            type: 'application/zip',
+            disposition: getContentDispositionHeader(`${committee.name} - Documente lucrări.zip`),
+          }
         );
       default:
         throw new BadRequestException('Numele fișierului specificat nu este valid.');
