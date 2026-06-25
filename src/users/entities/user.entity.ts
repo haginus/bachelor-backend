@@ -17,19 +17,19 @@ import { Submission } from "../../grading/entities/submission.entity";
 export class User {
 
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  type: UserType;
+  type!: UserType;
 
   @Column()
-  firstName: string;
+  firstName!: string;
 
   @Column()
-  lastName: string;
+  lastName!: string;
 
   @Column({ nullable: true })
-  title: string;
+  title!: string;
 
   @Expose()
   get fullName(): string {
@@ -37,37 +37,37 @@ export class User {
   }
 
   @Column()
-  email: string;
+  email!: string;
 
   @Exclude()
   @Column({ nullable: true })
-  password: string;
+  password!: string;
 
   @Expose({ groups: ['full'] })
   @Column({ type: 'varchar', nullable: true })
-  CNP: string | null;
+  CNP!: string | null;
 
   @Expose({ groups: ['full'] })
   @Column({ default: false })
-  validated: boolean;
+  validated!: boolean;
 
   @OneToOne(() => Profile, (profile) => profile.user, { cascade: ['insert', 'update', 'remove'], eager: true, nullable: true })
-  profile: Profile;
+  profile!: Profile;
 
   // For students
   @ManyToOne(() => Specialization, { nullable: true })
-  specialization: Specialization;
+  specialization!: Specialization;
 
   @OneToOne(() => UserExtraData, (extraData) => extraData.user, { cascade: true, nullable: true })
-  extraData: UserExtraData;
+  extraData!: UserExtraData;
 
   @Expose({ groups: ['full'] })
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Expose({ groups: ['full'] })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Expose({ groups: ['full'] })
   @DeleteDateColumn()
@@ -92,39 +92,39 @@ export class Student extends User {
   override type = UserType.Student;
 
   @Column()
-  group: string;
+  group!: string;
 
   @Column()
-  promotion: string;
-
-  @Expose({ groups: ['full'] })
-  @Column()
-  identificationCode: string;
+  promotion!: string;
 
   @Expose({ groups: ['full'] })
   @Column()
-  matriculationYear: string;
+  identificationCode!: string;
+
+  @Expose({ groups: ['full'] })
+  @Column()
+  matriculationYear!: string;
 
   @Expose({ groups: ['full'] })
   @Column({ type: 'enum', enum: FundingForm })
-  fundingForm: FundingForm;
+  fundingForm!: FundingForm;
 
   @Expose({ groups: ['full'] })
   @Column({ type: 'float', nullable: true })
-  generalAverage: number | null;
+  generalAverage!: number | null;
 
   @ManyToMany(() => Topic)
   @JoinTable({ name: 'student_topics' })
-  topics: Topic[];
+  topics!: Topic[];
 
   @OneToMany(() => Application, (application) => application.student)
-  applications: Application[];
+  applications!: Application[];
 
   @OneToOne(() => Paper, (paper) => paper.student, { nullable: true })
-  paper: Paper;
+  paper!: Paper;
 
   @OneToOne(() => Submission, (submission) => submission.student, { cascade: true, nullable: true })
-  submission: Submission;
+  submission!: Submission;
 
   @VirtualColumn({
     query: (alias) => `
@@ -139,7 +139,7 @@ export class Student extends User {
     },
     type: 'int',
   })
-  hasPaper: boolean;
+  hasPaper!: boolean;
 
 }
 
@@ -148,13 +148,13 @@ export class Teacher extends User {
   override type = UserType.Teacher;
 
   @OneToMany(() => Offer, (offer) => offer.teacher)
-  offers: Offer[];
+  offers!: Offer[];
 
   @OneToMany(() => Paper, (paper) => paper.teacher)
-  papers: Paper[];
+  papers!: Paper[];
 
   @OneToMany(() => CommitteeMember, member => member.teacher)
-  committeeMemberships: CommitteeMember[];
+  committeeMemberships!: CommitteeMember[];
 
   @VirtualColumn({
     query: (alias) => `
@@ -164,7 +164,7 @@ export class Teacher extends User {
     `,
     select: false,
   })
-  offerCount: number;
+  offerCount!: number;
 
   @VirtualColumn({
     query: (alias) => `
@@ -174,7 +174,7 @@ export class Teacher extends User {
     `,
     select: false,
   })
-  paperCount: number;
+  paperCount!: number;
 
   @VirtualColumn({
     query: (alias) => `
@@ -186,7 +186,7 @@ export class Teacher extends User {
     `,
     select: false,
   })
-  submittedPaperCount: number;
+  submittedPaperCount!: number;
 
   @VirtualColumn({
     query: (alias) => `
@@ -204,7 +204,28 @@ export class Teacher extends User {
     `,
     select: false,
   })
-  plagiarismReportCount: number;
+  plagiarismReportCount!: number;
+
+
+  @VirtualColumn({
+    query: (alias) => `
+      SELECT COUNT(paper.id)
+      FROM paper
+      INNER JOIN user student ON student.id = paper.studentId
+      INNER JOIN submission ON submission.studentId = student.id
+      LEFT JOIN document ON
+        document.paperId = paper.id
+        AND document.name = 'plagiarism_report'
+        AND document.deletedAt IS NULL
+      WHERE
+        paper.teacherId = ${alias}.id
+        AND submission.isSubmitted = 1
+        AND paper.deletedAt IS NULL
+        AND document.id IS NULL
+    `,
+    select: false,
+  })
+  missingPlagiarismReportCount!: number;
 }
 
 export function isStudent(user: User): user is Student {

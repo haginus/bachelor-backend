@@ -6,8 +6,8 @@ import { TrimString } from "../../lib/transformers/trim-string.transformer";
 export class TeacherFilterDto extends PaginatedQueryDto {
 
   @IsOptional()
-  @IsEnum(['id', 'firstName', 'lastName', 'email', 'offerCount', 'paperCount', 'plagiarismReportCount'])
-  sortBy: 'id' | 'firstName' | 'lastName' | 'email' | 'offerCount' | 'paperCount' | 'plagiarismReportCount' = 'id';
+  @IsEnum(['id', 'firstName', 'lastName', 'email', 'offerCount', 'paperCount', 'plagiarismReportCount', 'missingPlagiarismReportCount'])
+  sortBy: 'id' | 'firstName' | 'lastName' | 'email' | 'offerCount' | 'paperCount' | 'plagiarismReportCount' | 'missingPlagiarismReportCount' = 'id';
 
   @IsOptional()
   @IsEnum(['asc', 'desc'])

@@ -25,7 +25,7 @@ export class TeachersService {
   private getQueryBuilder(detailed = false) {
     const qb = this.teachersRepository.createQueryBuilder('teacher');
     if(detailed) {
-      qb.addSelect(['teacher.offerCount', 'teacher.paperCount', 'teacher.submittedPaperCount', 'teacher.plagiarismReportCount']);
+      qb.addSelect(['teacher.offerCount', 'teacher.paperCount', 'teacher.submittedPaperCount', 'teacher.plagiarismReportCount', 'teacher.missingPlagiarismReportCount']);
     }
     return qb;
   }
