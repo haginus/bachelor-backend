@@ -43,9 +43,32 @@ export function groupBy<T, K extends string | number>(array: readonly T[], getKe
   }, {} as Record<K, T[]>);
 }
 
+/** Groups an array of items by a key function, preserving the order of the first occurrence of each key. */
+export function stableGroupBy<T, K extends string | number>(array: readonly T[], getKey: (item: T) => K): T[][] {
+  const groups: T[][] = [];
+  const groupMap: Record<K, T[]> = {} as Record<K, T[]>;
+  for(const item of array) {
+    const key = getKey(item);
+    if(!groupMap[key]) {
+      groupMap[key] = [];
+      groups.push(groupMap[key]);
+    }
+    groupMap[key].push(item);
+  }
+  return groups;
+}
+
 export function uniqueArray<T, K extends string | number>(array: T[], getKey: (item: T) => K): T[] {
-  const index = indexArray(array, getKey);
-  return Object.values(index);
+  const result: T[] = [];
+  const index: Record<K, boolean> = {} as Record<K, boolean>;
+  for(const item of array) {
+    const key = getKey(item);
+    if(!index[key]) {
+      index[key] = true;
+      result.push(item);
+    }
+  }
+  return result;
 }
 
 export function unaccent(str: string): string {

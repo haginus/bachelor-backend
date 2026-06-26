@@ -7,7 +7,7 @@ import { Committee } from "../../grading/entities/committee.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
 import { Paper } from "../../papers/entities/paper.entity";
 import { User } from "../../users/entities/user.entity";
-import { groupBy } from "../../lib/utils";
+import { uniqueArray } from "../../lib/utils";
 
 interface CommitteeStudentAssignationProps {
   committees: Committee[];
@@ -48,8 +48,8 @@ export function CommitteeStudentAssignation({ committees, sessionSettings }: Com
     <Document title="Repartizarea studenților pe comisii">
       <Page size="A4" style={[globalStyles.page, { paddingHorizontal: '1cm' }]}>
         {committees.map((committee, index) => {
-          const groupedPapers = groupBy(committee.papers, paper => paper.type);
-          const paperTypeString = Object.keys(groupedPapers).map(type => PAPER_TYPES[type]).sort((a, b) => b.localeCompare(a)).join("/");
+          const paperTypes = uniqueArray(committee.papers.map(paper => paper.type), type => type);
+          const paperTypeString = paperTypes.map(type => PAPER_TYPES[type]).sort((a, b) => b.localeCompare(a)).join("/");
           return (
             <View key={index} break={index > 0}>
               <View style={[globalStyles.section, { fontWeight: "bold" }]}>

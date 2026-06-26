@@ -12,7 +12,7 @@ import { StudentDocumentGenerationProps } from "../../lib/interfaces/student-doc
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "../../users/entities/sign-up-request.entity";
-import { ellipsize, filterFalsy, getDocumentStoragePath, groupBy, indexArray, removeCharacters, safePath, sortArray } from "../../lib/utils";
+import { ellipsize, filterFalsy, getDocumentStoragePath, stableGroupBy, indexArray, removeCharacters, safePath, sortArray } from "../../lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "../../grading/entities/committee.entity";
@@ -39,6 +39,8 @@ import { StudentList } from "../templates-html/student-list";
 import { Log } from "../../common/entities/log.entity";
 import { Submission } from "../../grading/entities/submission.entity";
 import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
+import { DomainType } from "../../lib/enums/domain-type.enum";
+import { StudyForm } from "../../lib/enums/study-form.enum";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -162,9 +164,35 @@ export class DocumentGenerationService {
     return committee;
   }
 
+  private domainTypePriority(type: DomainType): number {
+    switch(type) {
+      case DomainType.Bachelor: return 0;
+      case DomainType.Master: return 1;
+      default:
+        const _exhaustiveCheck: never = type;
+        return Infinity;
+    }
+  }
+
+  private specializationStudyFormPriority(studyForm: StudyForm): number {
+    switch(studyForm) {
+      case StudyForm.IF: return 0;
+      case StudyForm.IFR: return 1;
+      case StudyForm.ID: return 2;
+      default:
+        const _exhaustiveCheck: never = studyForm;
+        return Infinity;
+    }
+  }
+
   private getPaperSortCriteria() {
     return [
-      ({ student: { specialization }}: Paper) => [specialization.domain.type, specialization.name, specialization.studyForm].toString(),
+      ({ student: { specialization }}: Paper) => 
+        [
+          this.domainTypePriority(specialization.domain.type), 
+          this.specializationStudyFormPriority(specialization.studyForm),
+          specialization.name
+        ].toString(),
       (paper: Paper) => paper.student.promotion,
       (paper: Paper) => [paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName].filter(Boolean).join(' '),
     ];
@@ -173,11 +201,9 @@ export class DocumentGenerationService {
   private async getCommitteeCatalogGenerationProps(committeeId: number): Promise<CommitteeCatalogGenerationProps> {
     const committee = await this.getCommitteeForGeneration(committeeId);
     sortArray(committee.papers, this.getPaperSortCriteria());
-    const paperGroups = Object.values(
-      groupBy(
-        committee.papers,
-        paper => [paper.student.promotion, paper.student.specialization.id].toString()
-      )
+    const paperGroups = stableGroupBy(
+      committee.papers,
+      (paper) => [paper.student.promotion, paper.student.specialization.id].toString()
     );
     const sessionSettings = await this.sessionSettingsService.getSettings();
     return {
@@ -190,20 +216,8 @@ export class DocumentGenerationService {
   private async getCommitteeFinalCatalogGenerationProps(committeeId: number): Promise<CommitteeFinalCatalogGenerationProps> {
     const committee = await this.getCommitteeForGeneration(committeeId);
     sortArray(committee.papers, this.getPaperSortCriteria());
-    const paperGroups = Object.values(
-      groupBy(
-        committee.papers,
-        paper => paper.student.specialization.id,
-      )
-    );
-    const paperPromotionGroups = paperGroups.map(papers => {
-      return Object.values(
-        groupBy(
-          papers,
-          paper => paper.student.promotion,
-        )
-      );
-    });
+    const paperGroups = stableGroupBy(committee.papers, (paper) => paper.student.specialization.id);
+    const paperPromotionGroups = paperGroups.map(papers => stableGroupBy(papers, (paper) => paper.student.promotion));
     const sessionSettings = await this.sessionSettingsService.getSettings();
     return {
       committee,
@@ -266,20 +280,11 @@ export class DocumentGenerationService {
       (submission) => submission.student.promotion,
       (submission) => [submission.student.lastName, submission.student.extraData?.parentInitial, submission.student.firstName].filter(Boolean).join(' '),
     ]);
-    const submissionGroups = Object.values(
-      groupBy(
-        submissions,
-        submission => submission.student.specialization.id,
-      )
-    );
-    const submissionPromotionGroups = submissionGroups.map(submissions => {
-      return Object.values(
-        groupBy(
-          submissions,
-          submission => submission.student.promotion,
-        )
-      );
-    });
+    const submissionGroups = stableGroupBy(submissions, (submission) => submission.student.specialization.id);
+    const submissionPromotionGroups = submissionGroups.map(submissions => stableGroupBy(
+      submissions,
+      submission => submission.student.promotion,
+    ));
     return {
       isAfterDisputes,
       submissionPromotionGroups,
@@ -341,20 +346,8 @@ export class DocumentGenerationService {
       });
     }
     sortArray(papers, this.getPaperSortCriteria());
-    const paperGroups = Object.values(
-      groupBy(
-        papers,
-        paper => paper.student.specialization.id,
-      )
-    );
-    const paperPromotionGroups = paperGroups.map(papers => {
-      return Object.values(
-        groupBy(
-          papers,
-          paper => paper.student.promotion,
-        )
-      );
-    });
+    const paperGroups = stableGroupBy(papers, (paper) => paper.student.specialization.id);
+    const paperPromotionGroups = paperGroups.map(papers => stableGroupBy(papers, (paper) => paper.student.promotion));
     const sessionSettings = await this.sessionSettingsService.getSettings();
     return {
       mode,
@@ -384,11 +377,9 @@ export class DocumentGenerationService {
   }
 
   async _generateCommitteeCompositionsPdf(committees: Committee[], sessionSettings: SessionSettings): Promise<Buffer> {
-    const committeeGroups = Object.values(
-      groupBy(
-        committees,
-        committee => committee.domains.map(domain => domain.id).sort().toString()
-      )
+    const committeeGroups = stableGroupBy(
+      committees,
+      (committee) => committee.domains.map((domain) => domain.id).sort().toString()
     );
     return renderToBuffer(<CommitteeCompositionsPdf groups={committeeGroups} sessionSettings={sessionSettings} />);
   }
@@ -776,11 +767,10 @@ export class DocumentGenerationService {
         student => student.extraData?.parentInitial || '',
         student => student.firstName,
       ]);
-      const studentsByDomain = groupBy(students, student => student.specialization.domain.id);
+      const studentsByDomain = stableGroupBy(students, student => student.specialization.domain.id);
       progressTracker.setProgress('student_list', 0.5);
-      const domainCount = Object.keys(studentsByDomain).length;
-      for(const domainId in studentsByDomain) {
-        const students = studentsByDomain[domainId];
+      const domainCount = studentsByDomain.length;
+      for(const students of studentsByDomain) {
         const domain = students[0].specialization.domain;
         const studentList = await render(<StudentList domain={domain} students={students} />);
         const directoryName = `Studenți/${domain.name}_${DOMAIN_TYPES[domain.type]}`;
