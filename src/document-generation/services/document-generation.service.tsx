@@ -125,6 +125,14 @@ export class DocumentGenerationService {
     return renderToBuffer(<StatutoryDeclaration {...props} />);
   }
 
+  private _getCommitteeNumberAndName(name: string): [number | null, string] {
+    const numberPart = name.match(/\d+/)?.[0];
+    if(!numberPart) {
+      return [null, name];
+    }
+    return [parseInt(numberPart), name.replace(numberPart, '')];
+  }
+
   private async getCommitteesForGeneration(committeeIds?: number[], grades = true) {
     const committees = await this.dataSource.manager.getRepository(Committee).find({
       relations: {
@@ -147,17 +155,10 @@ export class DocumentGenerationService {
       },
       where: committeeIds ? { id: In(committeeIds) } : undefined,
     });
-    const numberAndName = (name: string): [number, string] => {
-      const numberPart = name.match(/\d+/)?.[0];
-      if(!numberPart) {
-        return [Infinity, name];
-      }
-      return [parseInt(numberPart), name.replace(numberPart, '')];
-    }
     sortArray(committees, [
       (committee) => this.domainTypePriority(committee.domains[0].type),
       (committee) => committee.domains.map((domain) => domain.id).sort().toString(),
-      (committee) => numberAndName(committee.name).toString(),
+      (committee) => this._getCommitteeNumberAndName(committee.name).toString(),
     ]);
     return committees;
   }
@@ -413,12 +414,18 @@ export class DocumentGenerationService {
 
   async _generateCommitteeStudentAssignationXlsx({ committees }: CommitteeStudentAssignationGenerationProps): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
+    const existingNames: Record<string, number> = {};
     committees.forEach(committee => {
-      const sheetName = ellipsize(
-        removeCharacters(committee.name, ['/', '\\', '?', '*', ':', '[', ']']),
-        31
-      );
-      const sheet = workbook.addWorksheet(sheetName);
+      let [number, name] = this._getCommitteeNumberAndName(committee.name);
+      name = removeCharacters(name, ['/', '\\', '?', '*', ':', '[', ']']).trim().slice(0, 28);
+      existingNames[name] = (existingNames[name] || 0) + 1;
+      if(number) {
+        name += ` ${number}`;
+      } else {
+        const count = existingNames[name] || 0;
+        name += ` ${String.fromCharCode(64 + count)}`;
+      }
+      const sheet = workbook.addWorksheet(name);
       sortArray(committee.papers, [
         paper => paper.scheduledGrading?.getTime() || 0,
         paper => paper.id,
