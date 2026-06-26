@@ -147,14 +147,17 @@ export class DocumentGenerationService {
       },
       where: committeeIds ? { id: In(committeeIds) } : undefined,
     });
-    const nameAndNumber = (name: string): [string, number] => {
-      const numberPart = (name.match(/\d+/) || '')[0];
-      return [name.replace(numberPart, ''), parseInt(numberPart)];
+    const numberAndName = (name: string): [number, string] => {
+      const numberPart = name.match(/\d+/)?.[0];
+      if(!numberPart) {
+        return [Infinity, name];
+      }
+      return [parseInt(numberPart), name.replace(numberPart, '')];
     }
     sortArray(committees, [
-      committee => committee.domains[0].type,
-      committee => nameAndNumber(committee.name)[1],
-      committee => nameAndNumber(committee.name)[0],
+      (committee) => this.domainTypePriority(committee.domains[0].type),
+      (committee) => committee.domains.map((domain) => domain.id).sort().toString(),
+      (committee) => numberAndName(committee.name).toString(),
     ]);
     return committees;
   }
