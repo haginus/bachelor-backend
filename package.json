@@ -40,7 +40,7 @@
     "@nestlab/google-recaptcha": "^3.11.0",
     "@react-email/components": "^1.0.6",
     "@react-email/render": "^2.0.4",
-    "@react-pdf/renderer": "^4.3.2",
+    "@react-pdf/renderer": "^4.5.1",
     "@sentry/cli": "^2.58.4",
     "@sentry/nestjs": "^10.38.0",
     "@sentry/profiling-node": "^10.38.0",
