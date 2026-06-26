@@ -140,7 +140,8 @@ export class DocumentGenerationService {
             extraData: true,
             specialization: { domain: true },
           },
-        }
+        },
+        activityDays: true,
       },
       where: committeeIds ? { id: In(committeeIds) } : undefined,
     });
@@ -150,8 +151,8 @@ export class DocumentGenerationService {
     }
     sortArray(committees, [
       committee => committee.domains[0].type,
-      committee => nameAndNumber(committee.name)[0],
       committee => nameAndNumber(committee.name)[1],
+      committee => nameAndNumber(committee.name)[0],
     ]);
     return committees;
   }

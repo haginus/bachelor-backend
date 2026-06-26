@@ -4,6 +4,7 @@ import { globalStyles } from "../global-styles";
 import { PAPER_TYPES } from "../constants";
 import { Committee } from "../../grading/entities/committee.entity";
 import { SessionSettings } from "../../common/entities/session-settings.entity";
+import { Separator } from "../components/separator";
 
 interface CommitteeCompositionsProps {
   groups: Committee[][];
@@ -11,8 +12,14 @@ interface CommitteeCompositionsProps {
 }
 
 const styles = StyleSheet.create({
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   group: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   groupHeader: {
     fontSize: 14,
@@ -20,7 +27,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   committee: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   committeeTitle: {
     fontSize: 13,
@@ -31,7 +38,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   committeeRowFirstColumn: {
-    width: 140,
+    width: 100,
   },
   committeeRowSecondColumn: {
     flex: 1,
@@ -42,11 +49,14 @@ export function CommitteeCompositions({ groups, sessionSettings }: CommitteeComp
   return (
     <Document title="Componență comisii și repartiții pe zile">
       <Page size="A4" style={globalStyles.page}>
+        <Text style={styles.title}>
+          Comisiile pentru examenele de finalizare a studiilor{'\n'}Sesiunea {sessionSettings.sessionName}
+        </Text>
         {groups.map((group, index) => {
           const domains = group[0].domains;
           const domainNames = domains.map((domain) => domain.name).join(', ');
           const domainType = domains[0].type;
-          let groupHeader = `${domains.length > 1 ? 'Domeniile' : 'Domeniul'} ${domainNames} - comisii de ${PAPER_TYPES[domainType]} ${sessionSettings.sessionName}`;
+          let groupHeader = `${domains.length > 1 ? 'Domeniile' : 'Domeniul'} ${domainNames} - comisii de ${PAPER_TYPES[domainType]}`;
           return (
             <View key={index} style={styles.group}>
               <Text style={styles.groupHeader}>
@@ -97,6 +107,7 @@ export function CommitteeCompositions({ groups, sessionSettings }: CommitteeComp
                   );
                 })}
               </View>
+              {index < groups.length - 1 && <Separator />}
             </View>
           );
         })}
