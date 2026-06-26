@@ -38,6 +38,9 @@ export default function DocumentReuploadRequestNotice({ user, requests, url }: E
         </ul>
       </Section>
       <Text style={styles.paragraph}>
+        În cazul în care aveți întrebări suplimentare legate de cererea de reîncărcare, puteți da reply la acest e-mail.
+      </Text>
+      <Text style={styles.paragraph}>
         Accesați următorul link pentru a gestiona documentele lucrării dumneavoastră:
       </Text>
       <Section style={styles.buttonContainer}>

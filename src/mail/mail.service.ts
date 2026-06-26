@@ -10,6 +10,7 @@ import { SignUpRequest } from '../users/entities/sign-up-request.entity';
 import { Paper } from '../papers/entities/paper.entity';
 import { DocumentReuploadRequest } from '../papers/entities/document-reupload-request.entity';
 import { FeedbackDto } from '../feedback/feedback.dto';
+import { filterFalsy } from '../lib/utils';
 
 @Injectable()
 export class MailService {
@@ -114,10 +115,11 @@ export class MailService {
     });
   }
 
-  async sendDocumentReuploadRequestNoticeEmail(user: User, requests: DocumentReuploadRequest[]) {
+  async sendDocumentReuploadRequestNoticeEmail(user: User, requests: DocumentReuploadRequest[], requestUser?: User) {
     const url = `${this.frontendUrl}/student/submission`;
     return this.mailerService.sendMail({
       to: user.email,
+      replyTo: filterFalsy([requestUser?.email, this.sysadminEmail]),
       subject: 'Solicitare de reîncărcare a documentelor',
       template: './document-reupload-request-notice',
       context: { user, requests, url },

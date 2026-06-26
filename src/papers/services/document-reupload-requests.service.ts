@@ -51,7 +51,7 @@ export class DocumentReuploadRequestsService {
         await this.loggerService.log({ name: LogName.DocumentReuploadRequestCreated, documentReuploadRequestId: savedRequest.id, paperId: savedRequest.paperId }, { user, manager });
         savedRequests.push(savedRequest);
       }
-      await this.mailService.sendDocumentReuploadRequestNoticeEmail(paper.student, savedRequests);
+      await this.mailService.sendDocumentReuploadRequestNoticeEmail(paper.student, savedRequests, user);
       return savedRequests;
     });
   }
