@@ -68,6 +68,9 @@ export class CommitteesService {
         papers: {
           student: {
             submission: true,
+            specialization: {
+              domain: true,
+            },
           },
           teacher: true,
           documents: true,
