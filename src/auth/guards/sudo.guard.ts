@@ -9,7 +9,7 @@ import { User } from '../../users/entities/user.entity';
 export class SudoGuard implements CanActivate {
   constructor(private reflector: Reflector, private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiresSudo = this.reflector.getAllAndOverride<boolean>(SUDO_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -24,7 +24,7 @@ export class SudoGuard implements CanActivate {
       return false;
     }
     try {
-      this.authService.validateUser(user.email, sudoPassword);
+      await this.authService.validateUser(user.email, sudoPassword);
       return true;
     } catch {
       return false;
