@@ -12,6 +12,7 @@ import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { SessionSettingsService } from "../../common/services/session-settings.service";
 import { UserType } from "../../lib/enums/user-type.enum";
+import { Submission } from "../entities/submission.entity";
 
 @Injectable()
 export class WrittenExamGradesService {
@@ -60,9 +61,22 @@ export class WrittenExamGradesService {
     }
   }
 
-  async gradeSubmission(submissionId: number, dto: GradeWrittenExamDto, user?: User): Promise<WrittenExamGrade> {
-    await this.checkGradingAllowed();
+  async gradeSubmissionById(submissionId: number, dto: GradeWrittenExamDto, user?: User): Promise<WrittenExamGrade> {
     const submission = await this.submissionsService.findOne(submissionId);
+    return this.gradeSubmission(submission, dto, user);
+  }
+
+  async gradeSubmissionByIdOrStudentIdentificationCode(submissionId: number | undefined, studentIdentificationCode: string | undefined, dto: GradeWrittenExamDto, user?: User): Promise<WrittenExamGrade> {
+    const submission = await this.submissionsService.findOneByIdOrStudentIdentificationCode(submissionId, studentIdentificationCode);
+    return this.gradeSubmission(submission, dto, user);
+  }
+
+  async gradeSubmission(submission: Submission, dto: GradeWrittenExamDto, user?: User): Promise<WrittenExamGrade> {
+    const submissionId = submission.id;
+    await this.checkGradingAllowed();
+    if(!submission.isSubmitted) {
+      throw new BadRequestException('Acest student nu este înscris.');
+    }
     if(!submission.student.specialization.domain.hasWrittenExam) {
       throw new BadRequestException('Această înscriere nu suportă proba scrisă.');
     }
@@ -102,6 +116,7 @@ export class WrittenExamGradesService {
     const dtos = await this.csvParserService.parse(file, {
       headers: [
         ['ID_INSCRIERE', 'submissionId'],
+        ['NUMAR_MATRICOL', 'studentIdentificationCode'],
         ['NUME_STUDENT', 'studentName'],
         ['DOMENIU', 'domain'],
         ['NOTA_INITIALA', 'initialGrade'],
@@ -109,7 +124,7 @@ export class WrittenExamGradesService {
       ],
       dto: WrittenExamGradeImportDto,
     });
-    const promises = dtos.map(dto => this.gradeSubmission(dto.submissionId, dto, requestUser));
+    const promises = dtos.map(dto => this.gradeSubmissionByIdOrStudentIdentificationCode(dto.submissionId, dto.studentIdentificationCode, dto, requestUser));
     const results = await Promise.allSettled(promises);
     const bulkResult: ImportResult<WrittenExamGradeImportDto, WrittenExamGrade> = {
       summary: {

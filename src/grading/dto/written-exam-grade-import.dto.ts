@@ -4,19 +4,24 @@ import { Transform } from "class-transformer";
 
 export class WrittenExamGradeImportDto {
 
-  @IsIntId()
-  submissionId: number;
+  @IsOptional()
+  @IsIntId({ optional: true })
+  submissionId!: number;
+
+  @IsOptional()
+  @IsString()
+  studentIdentificationCode!: string;
 
   @IsString()
-  studentName: string;
+  studentName!: string;
 
   @IsString()
-  domain: string;
+  domain!: string;
 
   @IsIntId()
   @Min(0)
   @Max(10)
-  initialGrade: number;
+  initialGrade!: number;
 
   @IsOptional()
   @Transform(({ value }) => value ? parseInt(value) : undefined)

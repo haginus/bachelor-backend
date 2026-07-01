@@ -38,7 +38,7 @@ export class WrittenExamController {
     @Body() dto: GradeWrittenExamDto,
     @CurrentUser() user: User,
   ) {
-    return this.writtenExamGradesService.gradeSubmission(submissionId, dto, user);
+    return this.writtenExamGradesService.gradeSubmissionById(submissionId, dto, user);
   }
 
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Student])

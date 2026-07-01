@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Submission } from "../entities/submission.entity";
-import { DataSource, Repository } from "typeorm";
+import { Brackets, DataSource, Repository } from "typeorm";
 import { SubmissionQueryDto } from "../dto/submission-query.dto";
 import { Paginated } from "../../lib/interfaces/paginated.interface";
 import { User } from "../../users/entities/user.entity";
@@ -107,15 +107,46 @@ export class SubmissionsService {
     return submission;
   }
 
+  async findOneByStudentIdentificationCode(identificationCode: string): Promise<Submission> {
+    const qb = this.getQueryBuilder();
+    qb.andWhere('student.identificationCode = :identificationCode', { identificationCode });
+    const submission = await qb.getOne();
+    if(!submission) {
+      throw new NotFoundException();
+    }
+    return submission;
+  }
+
+  async findOneByIdOrStudentIdentificationCode(id?: number, identificationCode?: string): Promise<Submission> {
+    const qb = this.getQueryBuilder();
+    if(id === undefined && identificationCode === undefined) {
+      throw new BadRequestException('Trebuie să specificați ID-ul înscrierii sau numărul matricol al studentului.');
+    }
+    qb.andWhere(new Brackets(qb => {
+      if(id !== undefined) {
+        qb.where('submission.id = :id', { id });
+      }
+      if(identificationCode !== undefined) {
+        qb.orWhere('student.identificationCode = :identificationCode', { identificationCode });
+      }
+    }));
+    const submission = await qb.getOne();
+    if(!submission) {
+      throw new NotFoundException();
+    }
+    return submission;
+  }
+
   async exportCsv(): Promise<Buffer> {
     const qb = this.getQueryBuilder();
     qb.andWhere('submission.isSubmitted = 1');
     qb.andWhere('domain.hasWrittenExam = 1');
     qb.addOrderBy('domain.name', 'ASC').addOrderBy('student.lastName', 'ASC').addOrderBy('student.firstName', 'ASC');
     const submissions = await qb.getMany();
-    const header = ['ID_INSCRIERE', 'NUME_STUDENT', 'DOMENIU', 'NOTA_INITIALA', 'NOTA_CONTESTATIE'];
+    const header = ['ID_INSCRIERE', 'NUMAR_MATRICOL', 'NUME_STUDENT', 'DOMENIU', 'NOTA_INITIALA', 'NOTA_CONTESTATIE'];
     const rows = submissions.map(s => [
       s.id,
+      s.student.identificationCode?.trim() || '',
       `${s.student.fullName}`,
       s.student.specialization.domain.name,
       s.writtenExamGrade?.initialGrade || '',

@@ -18,6 +18,11 @@ export class CsvParserService {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      Object.keys(row).forEach(key => {
+        if(row[key] === '') {
+          delete row[key];
+        }
+      });
       const dtoInstance = plainToInstance(options.dto, row, {
         enableImplicitConversion: true,
       });
@@ -55,11 +60,13 @@ export class CsvParserService {
             mapHeaders: ({ header: csvHeader, index }) => {
               const header = options.headers[index];
               if(!header) {
-                throw new BadRequestException(`Lungimea antetului nu coincide cu cea așteptată.`);
+                reject(new BadRequestException(`Lungimea antetului nu coincide cu cea așteptată.`));
+                return null;
               }
               const expectedHeader = header[0];
               if (csvHeader != expectedHeader) {
-                throw new BadRequestException(`Eroare pe coloana ${index + 1}: se aștepta "${expectedHeader}", dar s-a găsit "${csvHeader}".`);
+                reject(new BadRequestException(`Eroare pe coloana ${index + 1}: se aștepta "${expectedHeader}", dar s-a găsit "${csvHeader}".`));
+                return null;
               }
               return header[1] as string;
             },
