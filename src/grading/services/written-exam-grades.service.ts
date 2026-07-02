@@ -164,6 +164,9 @@ export class WrittenExamGradesService {
     if(user.type == UserType.Student && grade.submission.student.id !== user.id) {
       throw new ForbiddenException();
     }
+    if(grade.initialGrade === 10) {
+      throw new BadRequestException('Nu se poate depune contestație dacă nota inițială este maximă.');
+    }
     if(grade.isDisputed) {
       throw new BadRequestException('Ați depus deja o contestație pentru această înscriere.');
     }
