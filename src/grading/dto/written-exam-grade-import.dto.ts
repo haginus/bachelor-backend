@@ -4,11 +4,9 @@ import { Transform } from "class-transformer";
 
 export class WrittenExamGradeImportDto {
 
-  @IsOptional()
-  @IsIntId({ optional: true })
+  @IsIntId()
   submissionId!: number;
 
-  @IsOptional()
   @IsString()
   studentIdentificationCode!: string;
 

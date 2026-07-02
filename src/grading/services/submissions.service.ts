@@ -107,36 +107,6 @@ export class SubmissionsService {
     return submission;
   }
 
-  async findOneByStudentIdentificationCode(identificationCode: string): Promise<Submission> {
-    const qb = this.getQueryBuilder();
-    qb.andWhere('student.identificationCode = :identificationCode', { identificationCode });
-    const submission = await qb.getOne();
-    if(!submission) {
-      throw new NotFoundException();
-    }
-    return submission;
-  }
-
-  async findOneByIdOrStudentIdentificationCode(id?: number, identificationCode?: string): Promise<Submission> {
-    const qb = this.getQueryBuilder();
-    if(id === undefined && identificationCode === undefined) {
-      throw new BadRequestException('Trebuie să specificați ID-ul înscrierii sau numărul matricol al studentului.');
-    }
-    qb.andWhere(new Brackets(qb => {
-      if(id !== undefined) {
-        qb.where('submission.id = :id', { id });
-      }
-      if(identificationCode !== undefined) {
-        qb.orWhere('student.identificationCode = :identificationCode', { identificationCode });
-      }
-    }));
-    const submission = await qb.getOne();
-    if(!submission) {
-      throw new NotFoundException();
-    }
-    return submission;
-  }
-
   async exportCsv(): Promise<Buffer> {
     const qb = this.getQueryBuilder();
     qb.andWhere('submission.isSubmitted = 1');
