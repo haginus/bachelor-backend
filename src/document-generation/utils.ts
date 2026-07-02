@@ -31,11 +31,16 @@ export function getSubmissionGrade(paper: Paper) {
   return (grades as number[]).reduce((a, b) => a + b, 0) / grades.length;
 }
 
+export function truncateNumber(number: number, decimalPlaces: number) {
+  const factor = Math.pow(10, decimalPlaces);
+  return Math.floor(number * factor) / factor;
+}
+
 export function gradeAverageString(committee: Committee, grade: number | null | undefined) {
   if(grade === undefined || grade === null) {
     return committee.finalGrades ? 'ABSENT' : '';
   }
-  const gradeString = grade.toFixed(2).replace('.', ',');
+  const gradeString = truncateNumber(grade, 2).toFixed(2).replace('.', ',');
   const supraunitaryPart = Math.floor(grade);
   const unitaryPart = gradeString.split(',')[1];
   return `${gradeString} (${NUMBERS[supraunitaryPart]}${unitaryPart == '00' ? '' : ` ${unitaryPart}%`})`;

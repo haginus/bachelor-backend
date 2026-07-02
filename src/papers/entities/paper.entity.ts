@@ -9,6 +9,7 @@ import { PaperGrade } from "../../grading/entities/paper-grade.entity";
 import { Committee } from "../../grading/entities/committee.entity";
 import { groupBy } from "../../lib/utils";
 import { DocumentReuploadRequest } from "./document-reupload-request.entity";
+import { truncateNumber } from "../../document-generation/utils";
 
 @Entity()
 export class Paper {
@@ -72,7 +73,7 @@ export class Paper {
       return undefined;
     }
     const sum = this.grades.reduce((acc, { forPaper, forPresentation }) => acc + (forPaper + forPresentation) / 2, 0);
-    return this.grades.length > 0 ? sum / this.grades.length : null;
+    return this.grades.length > 0 ? truncateNumber(sum / this.grades.length, 2) : null;
   }
 
   @Column({ 
