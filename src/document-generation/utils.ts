@@ -17,6 +17,11 @@ export function getSpecializationName(specialization: Specialization) {
   return [specialization.catalogName, specialization.name].filter(Boolean).join(' / ');
 }
 
+export function truncateNumber(number: number, decimalPlaces: number) {
+  const factor = Math.pow(10, decimalPlaces);
+  return Math.floor(number * factor) / factor;
+}
+
 export function getWrittenExamGrade(submission: Submission) {
   const grade = submission?.writtenExamGrade?.finalGrade;
   return !!grade ? grade : null;
@@ -28,12 +33,7 @@ export function getSubmissionGrade(paper: Paper) {
   if(grades.some(grade => !grade)) {
     return null;
   }
-  return (grades as number[]).reduce((a, b) => a + b, 0) / grades.length;
-}
-
-export function truncateNumber(number: number, decimalPlaces: number) {
-  const factor = Math.pow(10, decimalPlaces);
-  return Math.floor(number * factor) / factor;
+  return truncateNumber((grades as number[]).reduce((a, b) => a + b, 0) / grades.length, 2);
 }
 
 export function gradeAverageString(committee: Committee, grade: number | null | undefined) {
