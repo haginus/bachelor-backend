@@ -13,7 +13,13 @@ import { Paper } from '../../papers/entities/paper.entity';
 import { User } from '../../users/entities/user.entity';
 
 export function PaperInterceptor(
-  extractor?: (value: any) => Paper | Paper[] | undefined,
+  {
+    extractor,
+    stripGrades = false,
+  }: {
+    extractor?: (value: any) => Paper | Paper[] | undefined,
+    stripGrades?: boolean,
+  } = {},
 ): Type<NestInterceptor> {
 
   class MixinInterceptor implements NestInterceptor {
@@ -41,7 +47,7 @@ export function PaperInterceptor(
         paper.requiredDocuments = paper.requiredDocuments?.filter(document => document.category === DocumentCategory.PaperFiles);
         paper.documents = paper.documents?.filter(document => document.category === DocumentCategory.PaperFiles);
       }
-      if(user.type === UserType.Student) {
+      if(user.type === UserType.Student || stripGrades) {
         paper.grades = undefined;
         if(!paper.committee?.finalGrades) {
           // @ts-ignore

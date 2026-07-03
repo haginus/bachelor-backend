@@ -98,6 +98,7 @@ export class PapersService {
         teacher: false, 
         student: { specialization: true },
         documentReuploadRequests: false,
+        grades: true,
       }),
     });
   }

@@ -34,7 +34,7 @@ export class CommitteesController {
 
   @Get(':id')
   @UserTypes([UserType.Admin, UserType.Secretary, UserType.Teacher])
-  @UseInterceptors(PaperInterceptor((committee) => committee.papers))
+  @UseInterceptors(PaperInterceptor({ extractor: (committee) => committee.papers }))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,

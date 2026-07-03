@@ -25,7 +25,7 @@ export class PapersController {
   ) {}
 
   @UserTypes([UserType.Student, UserType.Teacher])
-  @UseInterceptors(PaperInterceptor())
+  @UseInterceptors(PaperInterceptor({ stripGrades: true }))
   @Get('me')
   async findMine(
     @CurrentUser() user: any,
@@ -92,7 +92,7 @@ export class PapersController {
   }
 
   @Put(':id')
-  @UseInterceptors(PaperInterceptor((data) => data.result))
+  @UseInterceptors(PaperInterceptor({ extractor: (data) => data.result }))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePaperDto,
