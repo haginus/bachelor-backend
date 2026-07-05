@@ -41,6 +41,7 @@ import { Submission } from "../../grading/entities/submission.entity";
 import { RequiredDocumentDto } from "../../lib/dto/required-document.dto";
 import { DomainType } from "../../lib/enums/domain-type.enum";
 import { StudyForm } from "../../lib/enums/study-form.enum";
+import { getSubmissionGrade, getWrittenExamGrade } from "../utils";
 
 @Injectable()
 export class DocumentGenerationService {
@@ -369,6 +370,9 @@ export class DocumentGenerationService {
     const props = await this.getFinalCatalogGenerationProps('final');
     return FinalCatalogDocx(props);
   }
+  async generateFinalCatalogXlsx(): Promise<Buffer> {
+    return this._generateFinalCatalogXlsx('final');
+  }
 
   async generateCentralizingCatalogPdf(): Promise<Buffer> {
     const props = await this.getFinalCatalogGenerationProps('centralizing');
@@ -378,6 +382,66 @@ export class DocumentGenerationService {
   async generateCentralizingCatalogDocx(): Promise<Buffer> {
     const props = await this.getFinalCatalogGenerationProps('centralizing');
     return FinalCatalogDocx(props);
+  }
+
+  async generateCentralizingCatalogXlsx(): Promise<Buffer> {
+    return this._generateFinalCatalogXlsx('centralizing');
+  }
+
+  private async _generateFinalCatalogXlsx(mode: 'final' | 'centralizing'): Promise<Buffer> {
+    const props = await this.getFinalCatalogGenerationProps(mode);
+    const papers = props.paperPromotionGroups.flatMap(promotionGroups => promotionGroups.flat());
+    const catalogName = {
+      final: 'Catalog final',
+      centralizing: 'Catalog centralizator'
+    }[mode];
+    const columns: ExcelJS.TableColumnProperties[] = [
+      { name: 'Nr. crt.', filterButton: true },
+      { name: 'Numele, inițiala tatălui și prenumele absolventului', filterButton: true },
+      { name: 'Domeniul', filterButton: true },
+      { name: 'Specializarea', filterButton: true },
+      { name: 'Promoția', filterButton: true },
+      { name: 'Anul înmatriculării', filterButton: true },
+      { name: 'Numărul matricol', filterButton: true },
+      { name: 'Proba 1', filterButton: true },
+      { name: 'Proba 2', filterButton: true },
+      { name: 'Media finală', filterButton: true },
+    ];
+    const rows = papers.map((paper, index) => {
+      const student = paper.student;
+      const domain = student.specialization.domain;
+      const specialization = student.specialization;
+      return [
+        index + 1,
+        filterFalsy([paper.student.lastName, paper.student.extraData?.parentInitial, paper.student.firstName]).join(' '),
+        `${domain.name} - ${DOMAIN_TYPES[domain.type]}`,
+        `${specialization.name} - ${STUDY_FORMS[specialization.studyForm]}`,
+        student.promotion,
+        student.matriculationYear,
+        student.identificationCode,
+        ...(
+          domain.hasWrittenExam 
+            ? [
+              getWrittenExamGrade(paper.student.submission)?.toFixed(2) || 'ABSENT',
+              paper.gradeAverage?.toFixed(2) || 'ABSENT'
+            ]
+            : [paper.gradeAverage?.toFixed(2) || 'ABSENT', '-']
+        ),
+        getSubmissionGrade(paper)?.toFixed(2) || 'ABSENT',
+      ];
+    });
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(catalogName);
+    sheet.addTable({
+      name: 'CatalogTable',
+      ref: 'A1',
+      headerRow: true,
+      columns,
+      rows,
+    });
+    this._autoSizeColumns(sheet);
+    const arrayBuffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   async _generateCommitteeCompositionsPdf(committees: Committee[], sessionSettings: SessionSettings): Promise<Buffer> {

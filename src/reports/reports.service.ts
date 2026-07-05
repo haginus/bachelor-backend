@@ -83,6 +83,11 @@ export class ReportsService {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           disposition: getContentDispositionHeader('Catalog final.docx'),
         });
+      case 'final_catalog_xlsx':
+        return new StreamableFile(await this.documentGenerationService.generateFinalCatalogXlsx(), {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          disposition: getContentDispositionHeader('Catalog final.xlsx'),
+        });
       case 'centralizing_catalog_pdf':
         return new StreamableFile(await this.documentGenerationService.generateCentralizingCatalogPdf(), {
           type: 'application/pdf',
@@ -92,6 +97,11 @@ export class ReportsService {
         return new StreamableFile(await this.documentGenerationService.generateCentralizingCatalogDocx(), {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           disposition: getContentDispositionHeader('Catalog centralizator.docx'),
+        });
+      case 'centralizing_catalog_xlsx':
+        return new StreamableFile(await this.documentGenerationService.generateCentralizingCatalogXlsx(), {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          disposition: getContentDispositionHeader('Catalog centralizator.xlsx'),
         });
       case 'committee_compositions_pdf':
         return new StreamableFile(await this.documentGenerationService.generateCommitteeCompositionsPdf(), {
