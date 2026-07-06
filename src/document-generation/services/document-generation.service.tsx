@@ -12,7 +12,7 @@ import { StudentDocumentGenerationProps } from "../../lib/interfaces/student-doc
 import { Signature } from "../entities/signature.entity";
 import { SignaturesService } from "./signatures.service";
 import { SignUpRequest } from "../../users/entities/sign-up-request.entity";
-import { ellipsize, filterFalsy, getDocumentStoragePath, stableGroupBy, indexArray, removeCharacters, safePath, sortArray } from "../../lib/utils";
+import { filterFalsy, getDocumentStoragePath, stableGroupBy, indexArray, removeCharacters, safePath, sortArray } from "../../lib/utils";
 import ExcelJS from 'exceljs';
 import { DOMAIN_TYPES, FUNDING_FORMS, PAPER_TYPES, STUDY_FORMS } from "../constants";
 import { Committee } from "../../grading/entities/committee.entity";
@@ -20,7 +20,7 @@ import { CommitteeCatalog as CommitteeCatalogPdf } from "../templates/committee-
 import { CommitteeCatalog as CommitteeCatalogDocx, FinalCatalog as FinalCatalogDocx, WrittenExamCatalog as WrittenExamCatalogDocx } from "../word-templates";
 import { CommitteeFinalCatalog as CommitteeFinalCatalogPdf } from "../templates/committee-final-catalog";
 import { requiredDocumentSpecs } from "../../lib/required-document-specs";
-import archiver from "archiver";
+import archiver, { ArchiverOptions } from "archiver";
 import { Document } from "../../papers/entities/document.entity";
 import { mimeTypeExtensions } from "../../lib/mimes";
 import { createReadStream, createWriteStream } from "fs";
@@ -65,7 +65,13 @@ export class DocumentGenerationService {
     );
   }
 
-  private signaturesService: SignaturesService;
+  private readonly signaturesService: SignaturesService;
+
+  private readonly archiverOptions: ArchiverOptions = {
+    zlib: {
+      level: Number(process.env.COMPRESSION_LEVEL) || 0,
+    },
+  };
 
   async getStudentDocumentGenerationProps(paperId: number, signatureUserId?: number, manager?: EntityManager): Promise<StudentDocumentGenerationProps> {
     manager = manager || this.dataSource.manager;
@@ -715,9 +721,7 @@ export class DocumentGenerationService {
     if(papers.flatMap(paper => paper.documents).length == 0) {
       throw new BadRequestException('Nu există documente pentru lucrările selectate.');
     }
-    const archive = archiver('zip', {
-      zlib: { level: 0 }
-    });
+    const archive = archiver('zip', this.archiverOptions);
     const getDirectoryName = (paper: Paper, document: Document, requiredDocumentsIndex: Record<string, RequiredDocumentDto>) => {
       const studentName = `${paper.student.lastName} ${paper.student.firstName}`;
       const requiredDoc = requiredDocumentsIndex[document.name];
@@ -773,9 +777,7 @@ export class DocumentGenerationService {
       { name: 'archive', weight: 0.25 },
     ] as const satisfies readonly ProgressSection<string>[];
     return this._createFileGenerationObservable(progressSections, async (progressTracker) => {
-      const archive = archiver('zip', {
-        zlib: { level: 6 },
-      });
+      const archive = archiver('zip', this.archiverOptions);
       async function appendAndBump(getBuffer: () => Promise<Buffer>, opts: archiver.EntryData, sectionName: typeof progressSections[number]['name'], deltaProgress: number) {
         const buffer = await getBuffer();
         archive.append(buffer, opts);
