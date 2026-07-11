@@ -3,32 +3,39 @@ import { PassThrough } from "stream";
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import csvParser from "csv-parser";
+import { CSV_COLUMNS_KEY, CsvColumnMeta } from "../lib/decorators/csv-column.decorator";
+import { ImportSpecification, ImportSpecificationExampleFile } from "../lib/interfaces/import-specification.interface";
 
 
 @Injectable()
 export class CsvParserService {
 
-  async parse<T extends Record<string, any> = any>(file: Buffer, options: ParseFileOptions<T>): Promise<T[]> {
-    const rows = await this._runParser(file, options);
-    if(!options.dto) {
-      return rows;
+  async parse<T extends Record<string, any> = any>(file: Buffer, dto: ClassConstructor<T>): Promise<T[]> {
+    if(!file) {
+      throw new BadRequestException('Prezentați un fișier CSV.');
     }
+
+    const headers = this._getCsvColumns(dto);
+    const rows = await this._runParser(file, headers);
     const result: T[] = [];
     const errors: any[] = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      Object.keys(row).forEach(key => {
-        if(row[key] === '') {
-          delete row[key];
+      for(let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        const value = row[header.propertyKey];
+        if(!header.required && value === '') {
+          delete row[header.propertyKey];
         }
-      });
-      const dtoInstance = plainToInstance(options.dto, row, {
+      }
+      const dtoInstance = plainToInstance(dto, row, {
         enableImplicitConversion: true,
       });
       const validationErrors = await validate(dtoInstance, {
         whitelist: true,
         forbidNonWhitelisted: true,
+        dismissDefaultMessages: true,
       });
       if (validationErrors.length > 0) {
         errors.push({
@@ -49,45 +56,74 @@ export class CsvParserService {
     return result;
   }
 
-  _runParser(file: Buffer, options: ParseFileOptions<any>): Promise<any[]> {
+  getImportSpecification(dto: ClassConstructor<any>, exampleFile?: ImportSpecificationExampleFile): ImportSpecification {
+    const columns = this._getCsvColumns(dto);
+    return {
+      type: 'csv',
+      mimeType: 'text/csv',
+      properties: columns.map(column => ({
+        name: column.name,
+        propertyPath: column.propertyKey,
+        entityPropertyPath: column.entityPropertyPath,
+        order: column.order,
+        required: column.required,
+        description: column.description,
+        types: column.types,
+        anyOf: column.anyOf,
+        examples: column.examples,
+      })),
+      exampleFile,
+    };
+  }
+
+  private _getCsvColumns(dto: Function): CsvColumnMeta[] {
+    const columns: CsvColumnMeta[] = Reflect.getMetadata(CSV_COLUMNS_KEY, dto) ?? [];
+    columns.sort((a, b) => a.order - b.order);
+    return columns;
+  }
+
+  private _runParser(file: Buffer, headers: CsvColumnMeta[]): Promise<any[]> {
     const rows: any[] = [];
+
     return new Promise((resolve, reject) => {
       const bufferStream = new PassThrough();
       bufferStream.end(file);
+
       bufferStream
         .pipe(
           csvParser({
             mapHeaders: ({ header: csvHeader, index }) => {
-              const header = options.headers[index];
-              if(!header) {
+              const expected = headers[index];
+
+              if(!expected) {
                 reject(new BadRequestException(`Lungimea antetului nu coincide cu cea așteptată.`));
                 return null;
               }
-              const expectedHeader = header[0];
-              if (csvHeader != expectedHeader) {
-                reject(new BadRequestException(`Eroare pe coloana ${index + 1}: se aștepta "${expectedHeader}", dar s-a găsit "${csvHeader}".`));
+
+              if(csvHeader !== expected.name) {
+                reject(new BadRequestException(`Eroare pe coloana ${index + 1}: se aștepta "${expected.name}", dar s-a găsit "${csvHeader}".`));
                 return null;
               }
-              return header[1] as string;
+
+              return expected.propertyKey;
             },
-          })
+          }),
         )
-        .on('error', (error) => {
-          if(error instanceof BadRequestException) {
-            reject(error);
-          } else {
-            reject(new BadRequestException('Eroare la parsarea fișierului CSV.'));
+        .on('headers', parsedHeaders => {
+          if(parsedHeaders.length !== headers.length) {
+            reject(new BadRequestException(`Lungimea antetului nu coincide cu cea așteptată.`));
           }
         })
-        .on('data', (data) => rows.push(data))
-        .on('end', () => {
-          resolve(rows);
+        .on('data', data => rows.push(data))
+        .on('end', () => resolve(rows))
+        .on('error', error => {
+          reject(
+            error instanceof BadRequestException
+              ? error
+              : new BadRequestException(`A apărut o eroare la procesarea fișierului CSV.`),
+          );
         });
     });
   }
-}
-
-interface ParseFileOptions<T extends Record<string, any> = Record<string, any>> {
-  headers: [string, keyof T][];
-  dto?: ClassConstructor<T>;
+  
 }

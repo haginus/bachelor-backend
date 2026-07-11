@@ -8,37 +8,37 @@ export class StudentDto extends UserDto {
   @IsNumberString()
   @IsNotEmpty()
   @TrimString()
-  group: string;
+  group!: string;
 
   @IsNumberString()
   @IsNotEmpty()
   @TrimString()
-  promotion: string;
+  promotion!: string;
 
   @IsString()
   @IsNotEmpty()
   @TrimString()
-  identificationCode: string;
+  identificationCode!: string;
 
   @IsNumberString()
   @IsNotEmpty()
   @TrimString()
-  matriculationYear: string;
+  matriculationYear!: string;
 
   @IsEnum(FundingForm)
   @IsNotEmpty()
-  fundingForm: FundingForm;
+  fundingForm!: FundingForm;
 
   @IsInt()
   @IsNotEmpty()
-  specializationId: number;
+  specializationId!: number;
 
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(10)
   @ValidateIf((_, v) => v !== null)
-  generalAverage: number | null;
+  generalAverage?: number | null;
 
   @IsOptional()
   @IsBoolean()

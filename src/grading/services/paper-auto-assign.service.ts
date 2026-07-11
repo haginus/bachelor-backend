@@ -66,7 +66,7 @@ export class PaperAutoAssignService {
       });
       let importResult: ImportResult<Paper, Paper> = {
         summary: {
-          proccessed: papers.length,
+          processed: papers.length,
           created: 0,
           updated: 0,
           failed: 0,
@@ -89,7 +89,7 @@ export class PaperAutoAssignService {
             result: 'failed',
             row: paper,
             data: null,
-            error: 'Nu a fost găsită nicio comisie compatibilă pentru această lucrare.'
+            error: `Nu a fost găsită nicio comisie compatibilă pentru lucrarea "${paper.title}".`
           });
         } else {
           const minPaperCount = Math.min(...compatibleCommittees.map(wrapper => wrapper.totalPaperCount));

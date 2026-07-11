@@ -11,12 +11,12 @@ export class UserDto {
   @IsString()
   @IsNotEmpty()
   @TrimString()
-  firstName: string;
+  firstName!: string;
 
   @IsString()
   @IsNotEmpty()
   @TrimString()
-  lastName: string;
+  lastName!: string;
 
   @IsOptional()
   @IsString()
@@ -26,6 +26,6 @@ export class UserDto {
   @IsEmail()
   @IsNotEmpty()
   @TrimString()
-  email: string;
+  email!: string;
 
 }

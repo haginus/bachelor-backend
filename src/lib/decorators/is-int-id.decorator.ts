@@ -3,7 +3,7 @@ import { Transform } from 'class-transformer';
 import { applyDecorators } from '@nestjs/common';
 import { IsInt, IsOptional, Min } from 'class-validator';
 
-export function IsIntId(options?: { optional?: boolean; }) {
+export function IsIntId(options?: { optional?: boolean; min?: number }) {
   return applyDecorators(
     Transform(({ value }) => {
       if(value === undefined || value === null) return undefined;
@@ -12,6 +12,6 @@ export function IsIntId(options?: { optional?: boolean; }) {
     }),
     options?.optional !== false ? IsOptional() : (target: any) => target,
     IsInt(),
-    Min(1),
+    Min(options?.min ?? 1),
   );
 }

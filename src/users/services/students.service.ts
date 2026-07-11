@@ -11,7 +11,7 @@ import { RequiredDocumentsService } from "../../papers/services/required-documen
 import { DocumentsService } from "../../papers/services/documents.service";
 import { ImportResult } from "../../lib/interfaces/import-result.interface";
 import { CsvParserService } from "../../csv/csv-parser.service";
-import { StudentCsvDto } from "../dto/student-csv.dto";
+import { StudentImportDto } from "../dto/student-import.dto";
 import { UserType } from "../../lib/enums/user-type.enum";
 import { indexArray } from "../../lib/utils";
 import { LoggerService } from "../../common/services/logger.service";
@@ -143,20 +143,7 @@ export class StudentsService {
 
   async import(file: Buffer, specializationId: number, requestUser?: User): Promise<ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }>> {
     const specialization = await this.specializationsService.findOne(specializationId);
-    const parsedDtos = await this.csvParserService.parse(file, {
-      headers: [
-        ['NUME', 'lastName'],
-        ['PRENUME', 'firstName'],
-        ['CNP', 'CNP'],
-        ['EMAIL', 'email'],
-        ['GRUPA', 'group'],
-        ['NUMAR_MATRICOL', 'identificationCode'],
-        ['PROMOTIE', 'promotion'],
-        ['FORMA_FINANTARE', 'fundingForm'],
-        ['AN_INMATRICULARE', 'matriculationYear']
-      ],
-      dto: StudentCsvDto,
-    });
+    const parsedDtos = await this.csvParserService.parse(file, StudentImportDto);
     const dtos: StudentDto[] = parsedDtos.map(dto => ({ ...dto, specializationId }));
     const existingUsers = await (this.usersRepository as Repository<User & Student>).find({
       relations: { 
@@ -170,7 +157,7 @@ export class StudentsService {
     const existingUsersByEmail = indexArray(existingUsers, user => user.email);
     const bulkResult: ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }> = {
       summary: {
-        proccessed: dtos.length,
+        processed: dtos.length,
         created: 0,
         updated: 0,
         failed: 0,
@@ -187,7 +174,7 @@ export class StudentsService {
         }
         const studentEntity = this.studentsRepository.create({ ...existingUser, ...studentDto, specialization });
         const data = existingUser
-          ? await this._update(studentEntity, requestUser)
+          ? await this._update(studentEntity, requestUser).then(result => result.result)
           : await this._create(studentEntity, false, requestUser);
         if(!existingUser) {
           bulkResult.summary.created!++;
@@ -207,11 +194,23 @@ export class StudentsService {
           result: 'failed',
           row: dto,
           data: null,
-          error: error?.message || 'Unknown error',
+          error: (error as any)?.message || 'Unknown error',
         });
       }
     }
     return bulkResult;
+  }
+
+   async getImportSpecification() {
+    return this.csvParserService.getImportSpecification(StudentImportDto, {
+      fileName: 'Exemplu import studenți.csv',
+      mimeType: 'text/csv;charset=utf-8',
+      encoding: 'utf-8',
+      content: `Nume,Prenume,CNP,E-mail,Grupă,Promoție,Număr matricol,An înmatriculare,Formă finanțare
+Popescu,Ion,,ion.popescu@email.org,331,2026,123/2023,2023,buget
+Popescu,Ioana,2910706125181,ioana.popescu@email.org,331,2026,124/2023,2023,taxă
+`,
+    });
   }
 
 }

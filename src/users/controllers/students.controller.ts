@@ -59,6 +59,11 @@ export class StudentsController {
     return this.studentsService.import(file.buffer, specializationId, user);
   }
 
+  @Get('import/specification')
+  async getImportSpecification() {
+    return this.studentsService.getImportSpecification();
+  }
+
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,

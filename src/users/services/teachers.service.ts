@@ -10,6 +10,7 @@ import { CsvParserService } from "../../csv/csv-parser.service";
 import { ImportResult } from "../../lib/interfaces/import-result.interface";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
+import { TeacherImportDto } from "../dto/teacher-import.dto";
 
 @Injectable()
 export class TeachersService {
@@ -127,21 +128,12 @@ export class TeachersService {
   }
 
   async import(file: Buffer, requestUser?: User): Promise<ImportResult<UserDto, Teacher>> {
-    const dtos = await this.csvParserService.parse(file, {
-      headers: [
-        ['TITLU', 'title'],
-        ['NUME', 'lastName'],
-        ['PRENUME', 'firstName'],
-        ['CNP', 'CNP'],
-        ['EMAIL', 'email'],
-      ],
-      dto: UserDto,
-    });
+    const dtos = await this.csvParserService.parse(file, TeacherImportDto);
     const promises = dtos.map(dto => this.create(dto, requestUser));
     const results = await Promise.allSettled(promises);
     const bulkResult: ImportResult<UserDto, Teacher> = {
       summary: {
-        proccessed: results.length,
+        processed: results.length,
         created: 0,
         failed: 0,
       },
@@ -168,6 +160,18 @@ export class TeachersService {
       }
     });
     return bulkResult;
+  }
+
+  async getImportSpecification() {
+    return this.csvParserService.getImportSpecification(TeacherImportDto, {
+      fileName: 'Exemplu import profesori.csv',
+      mimeType: 'text/csv;charset=utf-8',
+      encoding: 'utf-8',
+      content: `Titlu,Nume,Prenume,CNP,E-mail
+Prof.univ.dr.,Popescu,Ion,,ion.popescu@email.org
+Conf.univ.dr.,Popescu,Ioana,2910706125181,ioana.popescu@email.org
+`,
+    });
   }
 
 }

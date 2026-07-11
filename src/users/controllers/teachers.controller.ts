@@ -44,6 +44,11 @@ export class TeachersController {
     return this.teachersService.import(file.buffer, user);
   }
 
+  @Get('import/specification')
+  async getImportSpecification() {
+    return this.teachersService.getImportSpecification();
+  }
+
   @Put(':id')
   async update(@Param('id') id: number, @Body() dto: UserDto, @CurrentUser() user: User) {
     return this.teachersService.update(id, dto, user);

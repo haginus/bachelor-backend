@@ -73,7 +73,7 @@ export class WrittenExamGradesService {
     const grade = await this.writtenExamGradesRepository.findOneOrFail({ where: { submissionId } }).catch(() => {
       return this.writtenExamGradesRepository.create({ submission, submissionId });
     });
-    this.writtenExamGradesRepository.merge(grade, dto);
+    this.writtenExamGradesRepository.merge(grade, dto, { submission });
     if(grade.initialGrade == undefined) {
       throw new BadRequestException('Specificați o notă inițială.');
     }
@@ -103,22 +103,12 @@ export class WrittenExamGradesService {
 
   async import(file: Buffer, requestUser?: User): Promise<ImportResult<WrittenExamGradeImportDto, WrittenExamGrade>> {
     await this.checkGradingAllowed();
-    const dtos = await this.csvParserService.parse(file, {
-      headers: [
-        ['ID_INSCRIERE', 'submissionId'],
-        ['NUMAR_MATRICOL', 'studentIdentificationCode'],
-        ['NUME_STUDENT', 'studentName'],
-        ['DOMENIU', 'domain'],
-        ['NOTA_INITIALA', 'initialGrade'],
-        ['NOTA_CONTESTATIE', 'disputeGrade'],
-      ],
-      dto: WrittenExamGradeImportDto,
-    });
+    const dtos = await this.csvParserService.parse(file, WrittenExamGradeImportDto);
     const promises = dtos.map(dto => this.gradeSubmission(dto.submissionId, dto, requestUser));
     const results = await Promise.allSettled(promises);
     const bulkResult: ImportResult<WrittenExamGradeImportDto, WrittenExamGrade> = {
       summary: {
-        proccessed: results.length,
+        processed: results.length,
         updated: 0,
         failed: 0,
       },
@@ -145,6 +135,10 @@ export class WrittenExamGradesService {
       }
     });
     return bulkResult;
+  }
+
+  async getImportSpecification() {
+    return this.csvParserService.getImportSpecification(WrittenExamGradeImportDto);
   }
 
   async disputeGrade(submissionId: number, user: User): Promise<WrittenExamGrade> {
