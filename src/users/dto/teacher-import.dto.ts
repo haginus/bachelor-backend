@@ -1,6 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { TrimString } from "../../lib/transformers/trim-string.transformer";
 import { CsvColumn } from "../../lib/decorators/csv-column.decorator";
+import { IsCnp } from "../../lib/validators/is-cnp.validator";
 
 export class TeacherImportDto {
 
@@ -57,7 +58,7 @@ export class TeacherImportDto {
     example: '2910706125181'
   })
   @IsOptional()
-  @IsString()
+  @IsCnp()
   @TrimString()
   CNP?: string | null;
 

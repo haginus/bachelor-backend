@@ -1,5 +1,6 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { TrimString } from "../../lib/transformers/trim-string.transformer";
+import { IsCnp } from "../../lib/validators/is-cnp.validator";
 
 export class UserDto {
 
@@ -19,7 +20,7 @@ export class UserDto {
   lastName!: string;
 
   @IsOptional()
-  @IsString()
+  @IsCnp()
   @TrimString()
   CNP?: string | null;
 

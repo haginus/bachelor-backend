@@ -4,6 +4,7 @@ import { Transform } from "class-transformer";
 import { unaccent } from "../../lib/utils";
 import { TrimString } from "../../lib/transformers/trim-string.transformer";
 import { CsvColumn } from "../../lib/decorators/csv-column.decorator";
+import { IsCnp } from "../../lib/validators/is-cnp.validator";
 
 export class StudentImportDto {
 
@@ -45,8 +46,8 @@ export class StudentImportDto {
     example: '2910706125181'
   })
   @IsOptional()
-  @IsString()
   @TrimString()
+  @IsCnp()
   CNP?: string | null;
 
   @CsvColumn({
