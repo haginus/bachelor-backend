@@ -14,7 +14,7 @@ export class WrittenExamGradeImportDto {
     type: 'number',
     example: 123
   })
-  @IsIntId()
+  @IsIntId({ message: 'ID-ul înscrierii este obligatoriu.' })
   submissionId!: number;
 
   @CsvColumn({
@@ -62,8 +62,8 @@ export class WrittenExamGradeImportDto {
     type: 'number(int)',
     example: [0, 10]
   })
-  @IsIntId({ min: 0 })
-  @Max(10)
+  @IsIntId({ min: 0, message: 'Nota inițială trebuie să fie un număr întreg între 0 și 10.' })
+  @Max(10, { message: 'Nota inițială trebuie să fie un număr întreg între 0 și 10.' })
   initialGrade!: number;
 
   @CsvColumn({
@@ -77,8 +77,8 @@ export class WrittenExamGradeImportDto {
   })
   @IsOptional()
   @Transform(({ value }) => value ? parseInt(value) : undefined)
-  @Min(0)
-  @Max(10)
+  @Min(1, { message: 'Nota după contestație trebuie să fie un număr întreg între 1 și 10.' })
+  @Max(10, { message: 'Nota după contestație trebuie să fie un număr întreg între 1 și 10.' })
   disputeGrade?: number;
   
 }

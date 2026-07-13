@@ -113,13 +113,13 @@ export class SubmissionsService {
     qb.andWhere('domain.hasWrittenExam = 1');
     qb.addOrderBy('domain.name', 'ASC').addOrderBy('student.lastName', 'ASC').addOrderBy('student.firstName', 'ASC');
     const submissions = await qb.getMany();
-    const header = ['ID_INSCRIERE', 'NUMAR_MATRICOL', 'NUME_STUDENT', 'DOMENIU', 'NOTA_INITIALA', 'NOTA_CONTESTATIE'];
+    const header = ['ID înscriere', 'Număr matricol', 'Nume student', 'Domeniu', 'Notă inițială', 'Notă contestație'];
     const rows = submissions.map(s => [
       s.id,
       s.student.identificationCode?.trim() || '',
       `${s.student.fullName}`,
       s.student.specialization.domain.name,
-      s.writtenExamGrade?.initialGrade || '',
+      s.writtenExamGrade ? s.writtenExamGrade.initialGrade : '',
       s.writtenExamGrade?.disputeGrade || '',
     ]);
     const csvContent = [header, ...rows].map(e => e.join(',')).join('\n');

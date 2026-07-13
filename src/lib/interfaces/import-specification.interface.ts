@@ -3,6 +3,7 @@ export interface ImportSpecification {
   mimeType: string;
   properties: ImportSpecificationProperty[];
   exampleFile?: ImportSpecificationExampleFile;
+  result?: ImportSpecificationResult;
 }
 
 export interface ImportSpecificationProperty {
@@ -22,4 +23,8 @@ export interface ImportSpecificationExampleFile {
   mimeType: string;
   encoding: 'base64' | 'utf-8';
   content: string;
+}
+
+export interface ImportSpecificationResult {
+  isStream?: boolean;
 }

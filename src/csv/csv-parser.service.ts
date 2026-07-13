@@ -4,7 +4,7 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import csvParser from "csv-parser";
 import { CSV_COLUMNS_KEY, CsvColumnMeta } from "../lib/decorators/csv-column.decorator";
-import { ImportSpecification, ImportSpecificationExampleFile } from "../lib/interfaces/import-specification.interface";
+import { ImportSpecification, ImportSpecificationExampleFile, ImportSpecificationResult } from "../lib/interfaces/import-specification.interface";
 
 
 @Injectable()
@@ -29,18 +29,20 @@ export class CsvParserService {
           delete row[header.propertyKey];
         }
       }
-      const dtoInstance = plainToInstance(dto, row, {
-        enableImplicitConversion: true,
-      });
+      const dtoInstance = plainToInstance(dto, row);
       const validationErrors = await validate(dtoInstance, {
         whitelist: true,
         forbidNonWhitelisted: true,
-        dismissDefaultMessages: true,
       });
       if (validationErrors.length > 0) {
         errors.push({
           rowIndex: i + 2, // +2 because CSV has header and is 1-based
-          errors: validationErrors.map(err => Object.values(err.constraints || {})).flat(),
+          row,
+          validationErrors: validationErrors.map(err => ({
+            property: err.property,
+            constraints: err.constraints,
+            messages: [...new Set(Object.values(err.constraints || {}))],
+          })),
         });
         continue;
       }
@@ -56,7 +58,7 @@ export class CsvParserService {
     return result;
   }
 
-  getImportSpecification(dto: ClassConstructor<any>, exampleFile?: ImportSpecificationExampleFile): ImportSpecification {
+  getImportSpecification(dto: ClassConstructor<any>, exampleFile?: ImportSpecificationExampleFile, result?: ImportSpecificationResult): ImportSpecification {
     const columns = this._getCsvColumns(dto);
     return {
       type: 'csv',
@@ -73,6 +75,7 @@ export class CsvParserService {
         examples: column.examples,
       })),
       exampleFile,
+      result,
     };
   }
 

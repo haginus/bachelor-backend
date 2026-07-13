@@ -10,6 +10,8 @@ import { Log } from './entities/log.entity';
 import { LoggerService } from './services/logger.service';
 import { LogsController } from './controllers/logs.controller';
 import { LogsService } from './services/logs.service';
+import { ImportJobsController } from './controllers/import-jobs.controller';
+import { ImportJobsService } from './services/import-jobs.service';
 
 @Module({
   imports: [
@@ -23,17 +25,20 @@ import { LogsService } from './services/logs.service';
     SessionSettingsController,
     TopicsController,
     LogsController,
+    ImportJobsController,
   ],
   providers: [
     SessionSettingsService,
     LoggerService,
     LogsService,
     TopicsService,
+    ImportJobsService,
   ],
   exports: [
     SessionSettingsService,
     LoggerService,
     TopicsService,
+    ImportJobsService,
   ]
 })
 export class CommonModule {}

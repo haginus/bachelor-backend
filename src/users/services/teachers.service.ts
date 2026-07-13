@@ -7,10 +7,11 @@ import { UsersService } from "./users.service";
 import { UserDto } from "../dto/user.dto";
 import { TeacherFilterDto } from "../dto/teacher-filter.dto";
 import { CsvParserService } from "../../csv/csv-parser.service";
-import { ImportResult } from "../../lib/interfaces/import-result.interface";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { TeacherImportDto } from "../dto/teacher-import.dto";
+import { ImportJobsService } from "../../common/services/import-jobs.service";
+import { ImportResponse } from "../../lib/interfaces/import-response.interface";
 
 @Injectable()
 export class TeachersService {
@@ -21,6 +22,7 @@ export class TeachersService {
     private readonly dataSource: DataSource,
     private readonly csvParserService: CsvParserService,
     private readonly loggerService: LoggerService,
+    private readonly importJobsService: ImportJobsService,
   ) {}
 
   private getQueryBuilder(detailed = false) {
@@ -127,39 +129,13 @@ export class TeachersService {
     });
   }
 
-  async import(file: Buffer, requestUser?: User): Promise<ImportResult<UserDto, Teacher>> {
+  async import(file: Buffer, requestUser?: User): Promise<ImportResponse<TeacherImportDto, Teacher>> {
     const dtos = await this.csvParserService.parse(file, TeacherImportDto);
-    const promises = dtos.map(dto => this.create(dto, requestUser));
-    const results = await Promise.allSettled(promises);
-    const bulkResult: ImportResult<UserDto, Teacher> = {
-      summary: {
-        processed: results.length,
-        created: 0,
-        failed: 0,
-      },
-      rows: [],
-    };
-    results.forEach((result, index) => {
-      if(result.status === 'fulfilled') {
-        bulkResult.summary.created!++;
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: 'created',
-          row: dtos[index],
-          data: result.value,
-        });
-      } else {
-        bulkResult.summary.failed++;
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: 'failed',
-          row: dtos[index],
-          data: null,
-          error: result.reason?.message || 'Unknown error',
-        });
-      }
+    const importJob = this.importJobsService.createJob(dtos, async (dto) => {
+      const teacher = await this.create(dto, requestUser);
+      return { result: 'created', data: teacher };
     });
-    return bulkResult;
+    return importJob.getStatus();
   }
 
   async getImportSpecification() {

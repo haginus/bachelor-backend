@@ -9,13 +9,14 @@ import { UsersService } from "./users.service";
 import { SpecializationsService } from "./specializations.service";
 import { RequiredDocumentsService } from "../../papers/services/required-documents.service";
 import { DocumentsService } from "../../papers/services/documents.service";
-import { ImportResult } from "../../lib/interfaces/import-result.interface";
 import { CsvParserService } from "../../csv/csv-parser.service";
 import { StudentImportDto } from "../dto/student-import.dto";
 import { UserType } from "../../lib/enums/user-type.enum";
 import { indexArray } from "../../lib/utils";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
+import { ImportJobsService } from "../../common/services/import-jobs.service";
+import { ImportResponse } from "../../lib/interfaces/import-response.interface";
 
 @Injectable()
 export class StudentsService {
@@ -29,6 +30,7 @@ export class StudentsService {
     private readonly documentsService: DocumentsService,
     private readonly requiredDocumentsService: RequiredDocumentsService,
     private readonly csvParserService: CsvParserService,
+    private readonly importJobsService: ImportJobsService,
     private readonly loggerService: LoggerService,
   ) {}
 
@@ -141,7 +143,7 @@ export class StudentsService {
     });
   }
 
-  async import(file: Buffer, specializationId: number, requestUser?: User): Promise<ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }>> {
+  async import(file: Buffer, specializationId: number, requestUser?: User): Promise<ImportResponse<StudentDto, Student>> {
     const specialization = await this.specializationsService.findOne(specializationId);
     const parsedDtos = await this.csvParserService.parse(file, StudentImportDto);
     const dtos: StudentDto[] = parsedDtos.map(dto => ({ ...dto, specializationId }));
@@ -155,50 +157,27 @@ export class StudentsService {
       },
     });
     const existingUsersByEmail = indexArray(existingUsers, user => user.email);
-    const bulkResult: ImportResult<StudentDto, Student | { result: Student; documentsGenerated: boolean; }> = {
-      summary: {
-        processed: dtos.length,
-        created: 0,
-        updated: 0,
-        failed: 0,
-      },
-      rows: [],
-    };
-    for(let index = 0; index < dtos.length; index++) {
-      const dto = dtos[index];
+    const importJob = this.importJobsService.createJob<StudentDto, Student>(dtos, async (dto) => {
       const existingUser = existingUsersByEmail[dto.email];
       const studentDto = { ...dto, specializationId };
-      try {
-        if(existingUser && existingUser.type !== UserType.Student) {
-          throw new BadRequestException(`Adresa de e-mail este deja utilizată, dar nu de un student.`);
-        }
-        const studentEntity = this.studentsRepository.create({ ...existingUser, ...studentDto, specialization });
-        const data = existingUser
-          ? await this._update(studentEntity, requestUser).then(result => result.result)
-          : await this._create(studentEntity, false, requestUser);
-        if(!existingUser) {
-          bulkResult.summary.created!++;
-        } else {
-          bulkResult.summary.updated!++;
-        }
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: existingUser ? 'updated' : 'created',
-          row: dto,
-          data,
-        });
-      } catch (error) {
-        bulkResult.summary.failed++;
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: 'failed',
-          row: dto,
-          data: null,
-          error: (error as any)?.message || 'Unknown error',
-        });
+      if(existingUser && existingUser.type !== UserType.Student) {
+        throw new BadRequestException(`Adresa de e-mail este deja utilizată, dar nu de un student.`);
       }
-    }
-    return bulkResult;
+      const studentEntity = this.studentsRepository.create({ ...existingUser, ...studentDto, specialization });
+      if(existingUser) {
+        return this._update(studentEntity, requestUser).then(result => ({ 
+          result: 'updated' as const,
+          data: result.result,
+          warnings: result.documentsGenerated ? ['Documentele au fost regenerate.'] : [],
+        }));
+      } else {
+        return this._create(studentEntity, false, requestUser).then(result => ({ 
+          result: 'created' as const,
+          data: result 
+        }));
+      }
+    });
+    return importJob.getStatus();
   }
 
    async getImportSpecification() {
@@ -210,7 +189,7 @@ export class StudentsService {
 Popescu,Ion,,ion.popescu@email.org,331,2026,123/2023,2023,buget
 Popescu,Ioana,2910706125181,ioana.popescu@email.org,331,2026,124/2023,2023,taxă
 `,
-    });
+    }, { isStream: true });
   }
 
 }

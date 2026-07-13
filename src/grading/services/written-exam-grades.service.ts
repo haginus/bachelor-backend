@@ -5,14 +5,14 @@ import { DataSource, FindOptionsRelations, Repository } from "typeorm";
 import { GradeWrittenExamDto } from "../dto/grade-written-exam.dto";
 import { SubmissionsService } from "./submissions.service";
 import { WrittenExamGradeImportDto } from "../dto/written-exam-grade-import.dto";
-import { ImportResult } from "../../lib/interfaces/import-result.interface";
+import { ImportResponse } from "../../lib/interfaces/import-response.interface";
 import { User } from "../../users/entities/user.entity";
 import { CsvParserService } from "../../csv/csv-parser.service";
 import { LoggerService } from "../../common/services/logger.service";
 import { LogName } from "../../lib/enums/log-name.enum";
 import { SessionSettingsService } from "../../common/services/session-settings.service";
 import { UserType } from "../../lib/enums/user-type.enum";
-import { Submission } from "../entities/submission.entity";
+import { ImportJobsService } from "../../common/services/import-jobs.service";
 
 @Injectable()
 export class WrittenExamGradesService {
@@ -23,6 +23,7 @@ export class WrittenExamGradesService {
     private readonly sessionSettingsService: SessionSettingsService,
     private readonly submissionsService: SubmissionsService,
     private readonly csvParserService: CsvParserService,
+    private readonly importJobsService: ImportJobsService,
     private readonly loggerService: LoggerService,
   ) {}
 
@@ -101,40 +102,13 @@ export class WrittenExamGradesService {
     });
   }
 
-  async import(file: Buffer, requestUser?: User): Promise<ImportResult<WrittenExamGradeImportDto, WrittenExamGrade>> {
+  async import(file: Buffer, requestUser?: User): Promise<ImportResponse<WrittenExamGradeImportDto, WrittenExamGrade>> {
     await this.checkGradingAllowed();
     const dtos = await this.csvParserService.parse(file, WrittenExamGradeImportDto);
-    const promises = dtos.map(dto => this.gradeSubmission(dto.submissionId, dto, requestUser));
-    const results = await Promise.allSettled(promises);
-    const bulkResult: ImportResult<WrittenExamGradeImportDto, WrittenExamGrade> = {
-      summary: {
-        processed: results.length,
-        updated: 0,
-        failed: 0,
-      },
-      rows: [],
-    };
-    results.forEach((result, index) => {
-      if(result.status === 'fulfilled') {
-        bulkResult.summary.updated!++;
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: 'updated',
-          row: dtos[index],
-          data: result.value,
-        });
-      } else {
-        bulkResult.summary.failed++;
-        bulkResult.rows.push({
-          rowIndex: index + 1,
-          result: 'failed',
-          row: dtos[index],
-          data: null,
-          error: result.reason?.message || 'Unknown error',
-        });
-      }
+    const importJob = this.importJobsService.createJob<WrittenExamGradeImportDto, WrittenExamGrade>(dtos, async (dto) => {
+      return { result: 'updated', data: await this.gradeSubmission(dto.submissionId, dto, requestUser) };
     });
-    return bulkResult;
+    return importJob.getStatus();
   }
 
   async getImportSpecification() {
