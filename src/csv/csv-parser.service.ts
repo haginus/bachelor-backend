@@ -96,6 +96,9 @@ export class CsvParserService {
         .pipe(
           csvParser({
             mapHeaders: ({ header: csvHeader, index }) => {
+              const normalizeHeader = (value: string): string =>
+                value.replace(/^\uFEFF/, '').replace(/\u00A0/g, ' ').normalize('NFC').trim();
+              
               const expected = headers[index];
 
               if(!expected) {
@@ -103,7 +106,7 @@ export class CsvParserService {
                 return null;
               }
 
-              if(csvHeader !== expected.name) {
+              if(normalizeHeader(csvHeader) !== normalizeHeader(expected.name)) {
                 reject(new BadRequestException(`Eroare pe coloana ${index + 1}: se aștepta "${expected.name}", dar s-a găsit "${csvHeader}".`));
                 return null;
               }
