@@ -338,7 +338,7 @@ export class DocumentGenerationService {
         }
       },
       where: {
-        committeeId: Not(IsNull()),
+        isValid: true,
         student: {
           submission: {
             isSubmitted: true,
